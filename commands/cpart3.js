@@ -138,5 +138,5 @@ module.exports = {
         const c3 = outcomes[Math.floor(Math.random() * outcomes.length)];
         await interaction.reply(`🪙 Triple Coin Flip Results: **${c1} | ${c2} | ${c3}**`);
     },
-};
+}; 
   
