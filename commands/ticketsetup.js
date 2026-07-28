@@ -40,4 +40,4 @@ module.exports = {
             await interaction.reply({ content: '❌ Failed to send the ticket panel. Make sure I have permissions to send messages in that channel!', ephemeral: true });
         }
     },
-};
+}; 
