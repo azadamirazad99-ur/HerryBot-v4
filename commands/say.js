@@ -19,19 +19,3 @@ module.exports = {
     },
 };
 
-// ==========================================
-// FAST PREFIX COMMAND SUPPORT (!say <message>)
-// Is code ko apni index.js ke messageCreate event mein daal dena:
-/*
-if (command === 'say') {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
-        return message.reply('❌ You do not have permission to use this command.');
-    }
-
-    const sayMessage = args.join(' ');
-    if (!sayMessage) return message.reply('❌ Please provide a message for the bot to say! Example: `!say Hello everyone`');
-
-    message.delete().catch(() => {});
-    message.channel.send(sayMessage);
-}
-*/
