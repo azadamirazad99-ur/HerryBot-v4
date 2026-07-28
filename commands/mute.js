@@ -36,4 +36,4 @@ module.exports = {
             await interaction.reply({ content: 'There was an error trying to timeout this user!', ephemeral: true });
         }
     },
-};
+}; 
