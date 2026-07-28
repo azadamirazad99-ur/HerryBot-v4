@@ -252,4 +252,4 @@ client.on('guildMemberAdd', async (member) => {
 
 // Bot Login via Railway Variable
 client.login(process.env.TOKEN); 
-                
+ 
