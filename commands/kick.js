@@ -4,14 +4,15 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('kick')
         .setDescription('Kicks a member from the server.')
-        .addUserOption(option => 
+        .addUserOption(option =>
             option.setName('target')
                 .setDescription('The member to kick')
                 .setRequired(true))
-        .addStringOption(option => 
+        .addStringOption(option =>
             option.setName('reason')
                 .setDescription('Reason for kicking'))
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+
     async execute(interaction) {
         const target = interaction.options.getMember('target');
         const reason = interaction.options.getString('reason') ?? 'No reason provided';
@@ -22,10 +23,34 @@ module.exports = {
 
         try {
             await target.kick(reason);
-            await interaction.reply(`Successfully kicked ${target.user.tag} for: ${reason}`);
+            await interaction.reply({ content: `Successfully kicked ${target.user.tag}. Reason: ${reason}` });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'There was an error trying to kick this user!', ephemeral: true });
+            await interaction.reply({ content: 'There was an error trying to kick this user! Check role hierarchy permissions.', ephemeral: true });
         }
     },
 };
+
+// ==========================================
+// FAST PREFIX COMMAND SUPPORT (!kick @user reason)
+// Is code ko apni index.js ke messageCreate event mein daal dena:
+/*
+if (command === 'kick') {
+    if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) {
+        return message.reply('❌ You do not have permission to use this command.');
+    }
+
+    const target = message.mentions.members.first();
+    if (!target) return message.reply('❌ Please mention a valid member to kick! Example: `!kick @user Spamming`');
+
+    const reason = args.slice(1).join(' ') || 'No reason provided';
+
+    try {
+        await target.kick(reason);
+        message.channel.send(`👢 Successfully kicked **${target.user.tag}**. Reason: ${reason}`);
+    } catch (error) {
+        console.error(error);
+        message.channel.send('❌ Failed to kick this user. Check role hierarchy permissions.');
+    }
+}
+*/
