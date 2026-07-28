@@ -175,5 +175,5 @@ module.exports = {
         const apiPing = Math.round(interaction.client.ws.ping);
         await interaction.reply({ content: `⚙️ **System Diagnostics:**\n- Roundtrip Latency: \`${latency}ms\`\n- Gateway API Ping: \`${apiPing}ms\``, ephemeral: true });
     },
-};
+}; 
           
