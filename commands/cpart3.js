@@ -139,4 +139,4 @@ module.exports = {
         await interaction.reply(`🪙 Triple Coin Flip Results: **${c1} | ${c2} | ${c3}**`);
     },
 }; 
-  
+    
