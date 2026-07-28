@@ -140,5 +140,5 @@ module.exports = {
 
         await interaction.reply(`🎲 You rolled: **${userRoll}** | I rolled: **${botRoll}**\n${outcome}`);
     },
-}; 
+};  
           
