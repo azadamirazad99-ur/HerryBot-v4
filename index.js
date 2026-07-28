@@ -2,10 +2,9 @@
 // FRESH INDEX.JS FOR GRANDHACKS BOT (ALL-IN-ONE)
 // ==========================================
 
-const { Client, GatewayIntentBits, Collection, REST, Routes, AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const Canvas = require('canvas');
 
 // Bot Intents
 const client = new Client({
@@ -87,6 +86,7 @@ client.on('messageCreate', async message => {
 
     const args = message.content.slice(1).trim().split(/ +/);
     const command = args.shift().toLowerCase();
+    const content = message.content;
 
     // 1. !kick @user [reason]
     if (command === 'kick') {
@@ -199,7 +199,7 @@ client.on('messageCreate', async message => {
 });
 
 // ==========================================
-// AUTOMATIC WELCOME CARD EVENT (guildMemberAdd)
+// AUTOMATIC WELCOME EMBED EVENT (guildMemberAdd)
 // ==========================================
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID || 'APKE_WELCOME_CHANNEL_ID_YAHAN_DALEN'; 
@@ -207,49 +207,25 @@ client.on('guildMemberAdd', async (member) => {
     if (!channel) return;
 
     try {
-        const canvas = Canvas.createCanvas(1024, 500);
-        const ctx = canvas.getContext('2d');
+        const welcomeEmbed = new EmbedBuilder()
+            .setColor('#00ffcc')
+            .setTitle('🎉 New Member Joined!')
+            .setDescription(`Oye sab suno! ${member} bhai hamare server **GrandHacks** mein aa chuke hain! Dil se welcome hai bhai! 🚀`)
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 512 }))
+            .addFields(
+                { name: 'Total Members', value: `${member.guild.memberCount}`, inline: true },
+                { name: 'Enjoy', value: 'Aaja maidan mein, maza aayega!', inline: true }
+            )
+            .setFooter({ text: 'GrandHacks Community', iconURL: member.guild.iconURL({ dynamic: true }) })
+            .setTimestamp();
 
-        ctx.fillStyle = '#111111';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const avatarURL = member.guild.iconURL({ extension: 'png', size: 512 }) || 'https://i.imgur.com/AfFp7pu.png';
-        const avatar = await Canvas.loadImage(avatarURL);
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(512, 160, 90, 0, Math.PI * 2, true);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(avatar, 422, 70, 180, 180);
-        ctx.restore();
-
-        ctx.font = 'bold 45px sans-serif';
-        ctx.fillStyle = '#00ffcc';
-        ctx.textAlign = 'center';
-        ctx.fillText('GrandHacks Community', canvas.width / 2, 310);
-
-        ctx.font = 'bold 32px sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(`WELCOME, ${member.user.tag}!`, canvas.width / 2, 380);
-
-        ctx.font = '20px sans-serif';
-        ctx.fillStyle = '#aaaaaa';
-        ctx.fillText('Bhai ka swagat hai! Aaja maidan mein, maza aayega!', canvas.width / 2, 430);
-
-        const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'welcome-image.png' });
-
-        await channel.send({
-            content: `🎉 Oye sab suno! ${member} bhai hamare server **GrandHacks** mein aa chuke hain! Dil se welcome hai bhai! 🚀`,
-            files: [attachment]
-        });
-
+        await channel.send({ content: `Welcome ${member}!`, embeds: [welcomeEmbed] });
     } catch (error) {
-        console.log('Welcome image error: ', error);
-        await channel.send(`🎉 Welcome ${member} to **GrandHacks**! Server pe aane ke liye shukriya, enjoy your stay! 🚀`);
+        console.log('Welcome error: ', error);
+        await channel.send(`🎉 Welcome ${member} to **GrandHacks**!`);
     }
 });
 
 // Bot Login via Railway Variable
-client.login(process.env.TOKEN); 
- 
+client.login(process.env.TOKEN);
+            
