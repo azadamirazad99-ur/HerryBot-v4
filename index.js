@@ -1,12 +1,11 @@
 // ==========================================
-// FRESH INDEX.JS FOR GRANDHACKS BOT (ALL-IN-ONE)
+// GRANDHACKS BOT - INDEX.JS (NO CANVAS, CLEAN & FAST)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
-// Bot Intents
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -17,11 +16,9 @@ const client = new Client({
     ]
 });
 
-// Commands collection setup
 client.commands = new Collection();
 const commands = [];
 
-// Commands folder handler
 const foldersPath = path.join(__dirname, 'commands');
 if (fs.existsSync(foldersPath)) {
     const commandFolders = fs.readdirSync(foldersPath);
@@ -39,7 +36,6 @@ if (fs.existsSync(foldersPath)) {
     }
 }
 
-// Bot Ready Event & Slash Commands Deployment via Railway Variables
 client.once('ready', async () => {
     console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks system online.`);
 
@@ -57,9 +53,6 @@ client.once('ready', async () => {
     }
 });
 
-// ==========================================
-// SLASH COMMAND INTERACTION HANDLER
-// ==========================================
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -78,9 +71,6 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// ==========================================
-// PREFIX COMMANDS HANDLER (!) — Kick, Ban, Timeout, Clear, Say, Avatar
-// ==========================================
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content.startsWith('!')) return;
 
@@ -88,13 +78,12 @@ client.on('messageCreate', async message => {
     const command = args.shift().toLowerCase();
     const content = message.content;
 
-    // 1. !kick @user [reason]
     if (command === 'kick') {
         if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) {
             return message.reply('❌ You do not have permission to use this command.');
         }
         const target = message.mentions.members.first();
-        if (!target) return message.reply('❌ Please mention a valid member to kick! Example: `!kick @user Spamming`');
+        if (!target) return message.reply('❌ Please mention a valid member to kick!');
         const reason = args.slice(1).join(' ') || 'No reason provided';
 
         try {
@@ -102,17 +91,16 @@ client.on('messageCreate', async message => {
             message.channel.send(`👢 Successfully kicked **${target.user.tag}**. Reason: ${reason}`);
         } catch (error) {
             console.error(error);
-            message.channel.send('❌ Failed to kick this user. Check role hierarchy permissions.');
+            message.channel.send('❌ Failed to kick this user.');
         }
     }
 
-    // 2. !ban @user [reason]
     if (command === 'ban') {
         if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
             return message.reply('❌ You do not have permission to use this command.');
         }
         const target = message.mentions.members.first();
-        if (!target) return message.reply('❌ Please mention a valid member to ban! Example: `!ban @user Breaking rules`');
+        if (!target) return message.reply('❌ Please mention a valid member to ban!');
         const reason = args.slice(1).join(' ') || 'No reason provided';
 
         try {
@@ -120,39 +108,34 @@ client.on('messageCreate', async message => {
             message.channel.send(`🔨 Successfully banned **${target.user.tag}**. Reason: ${reason}`);
         } catch (error) {
             console.error(error);
-            message.channel.send('❌ Failed to ban this user. Check role hierarchy permissions.');
+            message.channel.send('❌ Failed to ban this user.');
         }
     }
 
-    // 3. !timeout @user <minutes> [reason]
     if (command === 'timeout' || command === 'mute') {
         if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
             return message.reply('❌ You do not have permission to use this command.');
         }
         const target = message.mentions.members.first();
         const minutes = parseInt(args[1]);
-        if (!target) return message.reply('❌ Please mention a valid member! Example: `!timeout @user 10`');
-        if (!minutes || isNaN(minutes)) return message.reply('❌ Please specify valid minutes! Example: `!timeout @user 10`');
+        if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user <minutes>`');
         const reason = args.slice(2).join(' ') || 'No reason provided';
 
         try {
             await target.timeout(minutes * 60 * 1000, reason);
-            message.channel.send(`🔇 Successfully timed out **${target.user.tag}** for **${minutes}** minutes. Reason: ${reason}`);
+            message.channel.send(`🔇 Successfully timed out **${target.user.tag}** for **${minutes}** minutes.`);
         } catch (error) {
             console.error(error);
-            message.channel.send('❌ Failed to timeout this user. Check role hierarchy permissions.');
+            message.channel.send('❌ Failed to timeout this user.');
         }
     }
 
-    // 4. !clear <number>
     if (command === 'clear') {
         if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
             return message.reply('❌ You do not have permission to use this command.');
         }
         const amount = parseInt(args[0]);
-        if (!amount || amount < 1 || amount > 100) {
-            return message.reply('❌ Please specify a valid number between 1 and 100! Example: `!clear 10`');
-        }
+        if (!amount || amount < 1 || amount > 100) return message.reply('❌ Specify a number between 1 and 100.');
 
         try {
             message.delete().catch(() => {});
@@ -161,23 +144,20 @@ client.on('messageCreate', async message => {
             setTimeout(() => replyMsg.delete().catch(() => {}), 4000);
         } catch (error) {
             console.error(error);
-            message.channel.send('❌ Failed to clear messages (Messages older than 14 days cannot be deleted).');
+            message.channel.send('❌ Failed to clear messages.');
         }
     }
 
-    // 5. !say <message>
     if (command === 'say') {
         if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
             return message.reply('❌ You do not have permission to use this command.');
         }
         const sayMessage = args.join(' ');
-        if (!sayMessage) return message.reply('❌ Please provide a message for the bot to say! Example: `!say Hello everyone`');
-
+        if (!sayMessage) return message.reply('❌ Please provide a message.');
         message.delete().catch(() => {});
         message.channel.send(sayMessage);
     }
 
-    // 6. !avatar [@user]
     if (command === 'avatar' || command === 'pfp') {
         const target = message.mentions.users.first() || message.author;
         const avatarEmbed = new EmbedBuilder()
@@ -185,11 +165,9 @@ client.on('messageCreate', async message => {
             .setTitle(`${target.username}'s Avatar`)
             .setImage(target.displayAvatarURL({ size: 1024, dynamic: true }))
             .setFooter({ text: `Requested by ${message.author.tag}` });
-
         message.channel.send({ embeds: [avatarEmbed] });
     }
 
-    // Extra utilities
     if (content === '!grandhackyt') {
         message.channel.send('🔴 Official GrandHackYT Gaming Channel: https://www.youtube.com/@grandhacks-l7j');
     }
@@ -198,34 +176,17 @@ client.on('messageCreate', async message => {
     }
 });
 
-// ==========================================
-// AUTOMATIC WELCOME EMBED EVENT (guildMemberAdd)
-// ==========================================
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID || 'APKE_WELCOME_CHANNEL_ID_YAHAN_DALEN'; 
     const channel = member.guild.channels.cache.get(channelId);
     if (!channel) return;
 
     try {
-        const welcomeEmbed = new EmbedBuilder()
-            .setColor('#00ffcc')
-            .setTitle('🎉 New Member Joined!')
-            .setDescription(`Oye sab suno! ${member} bhai hamare server **GrandHacks** mein aa chuke hain! Dil se welcome hai bhai! 🚀`)
-            .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 512 }))
-            .addFields(
-                { name: 'Total Members', value: `${member.guild.memberCount}`, inline: true },
-                { name: 'Enjoy', value: 'Aaja maidan mein, maza aayega!', inline: true }
-            )
-            .setFooter({ text: 'GrandHacks Community', iconURL: member.guild.iconURL({ dynamic: true }) })
-            .setTimestamp();
-
-        await channel.send({ content: `Welcome ${member}!`, embeds: [welcomeEmbed] });
+        await channel.send(`🎉 Oye sab suno! ${member} bhai hamare server **GrandHacks** mein aa chuke hain! Aaja maidan mein, maza aayega! 🚀`);
     } catch (error) {
         console.log('Welcome error: ', error);
-        await channel.send(`🎉 Welcome ${member} to **GrandHacks**!`);
     }
 });
 
-// Bot Login via Railway Variable
 client.login(process.env.TOKEN);
-            
+        
