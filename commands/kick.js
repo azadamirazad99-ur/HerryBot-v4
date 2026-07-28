@@ -30,27 +30,3 @@ module.exports = {
         }
     },
 };
-
-// ==========================================
-// FAST PREFIX COMMAND SUPPORT (!kick @user reason)
-// Is code ko apni index.js ke messageCreate event mein daal dena:
-/*
-if (command === 'kick') {
-    if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) {
-        return message.reply('❌ You do not have permission to use this command.');
-    }
-
-    const target = message.mentions.members.first();
-    if (!target) return message.reply('❌ Please mention a valid member to kick! Example: `!kick @user Spamming`');
-
-    const reason = args.slice(1).join(' ') || 'No reason provided';
-
-    try {
-        await target.kick(reason);
-        message.channel.send(`👢 Successfully kicked **${target.user.tag}**. Reason: ${reason}`);
-    } catch (error) {
-        console.error(error);
-        message.channel.send('❌ Failed to kick this user. Check role hierarchy permissions.');
-    }
-}
-*/
