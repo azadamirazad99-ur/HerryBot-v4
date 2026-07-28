@@ -1,5 +1,6 @@
+
 // ==========================================
-// GRANDHACKS BOT - INDEX.JS (NO CANVAS, CLEAN & FAST)
+// GRANDHACKS BOT - FRESH INDEX.JS (CRASH-FREE)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -19,19 +20,16 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-const foldersPath = path.join(__dirname, 'commands');
-if (fs.existsSync(foldersPath)) {
-    const commandFolders = fs.readdirSync(foldersPath);
-    for (const folder of commandFolders) {
-        const commandsPath = path.join(foldersPath, folder);
-        const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-        for (const file of commandFiles) {
-            const filePath = path.join(commandsPath, file);
-            const command = require(filePath);
-            if ('data' in command && 'execute' in command) {
-                client.commands.set(command.data.name, command);
-                commands.push(command.data.toJSON());
-            }
+// Safe Command Handler (Reads direct .js files from commands folder without folder-crash)
+const commandsPath = path.join(__dirname, 'commands');
+if (fs.existsSync(commandsPath)) {
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command);
+            commands.push(command.data.toJSON());
         }
     }
 }
@@ -189,4 +187,3 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-        
