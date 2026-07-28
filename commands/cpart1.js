@@ -163,5 +163,5 @@ module.exports = {
         const result = outcomes[Math.floor(Math.random() * outcomes.length)];
         await interaction.reply(`🪙 The coin spin result is: **${result}**`);
     }, 
-};
+}; 
   
