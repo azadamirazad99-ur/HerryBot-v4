@@ -147,5 +147,5 @@ module.exports = {
         const first = outcomes[Math.floor(Math.random() * outcomes.length)];
         const second = outcomes[Math.floor(Math.random() * outcomes.length)];
         await interaction.reply(`🪙 Double Streak Result -> Flip 1: **${first}** | Flip 2: **${second}**`);
-    },
+    }, 
 };
