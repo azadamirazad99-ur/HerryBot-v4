@@ -1,8 +1,8 @@
 // ==========================================
-// RAILWAY-READY FRESH INDEX.JS FOR GRANDHACKS BOT
+// FRESH INDEX.JS FOR GRANDHACKS BOT (ALL-IN-ONE)
 // ==========================================
 
-const { Client, GatewayIntentBits, Collection, REST, Routes, AttachmentBuilder, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes, AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const Canvas = require('canvas');
@@ -80,29 +80,121 @@ client.on('interactionCreate', async interaction => {
 });
 
 // ==========================================
-// PREFIX COMMANDS HANDLER (!)
+// PREFIX COMMANDS HANDLER (!) — Kick, Ban, Timeout, Clear, Say, Avatar
 // ==========================================
 client.on('messageCreate', async message => {
-    if (message.author.bot) return;
+    if (message.author.bot || !message.content.startsWith('!')) return;
 
-    const content = message.content.trim();
+    const args = message.content.slice(1).trim().split(/ +/);
+    const command = args.shift().toLowerCase();
 
+    // 1. !kick @user [reason]
+    if (command === 'kick') {
+        if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) {
+            return message.reply('❌ You do not have permission to use this command.');
+        }
+        const target = message.mentions.members.first();
+        if (!target) return message.reply('❌ Please mention a valid member to kick! Example: `!kick @user Spamming`');
+        const reason = args.slice(1).join(' ') || 'No reason provided';
+
+        try {
+            await target.kick(reason);
+            message.channel.send(`👢 Successfully kicked **${target.user.tag}**. Reason: ${reason}`);
+        } catch (error) {
+            console.error(error);
+            message.channel.send('❌ Failed to kick this user. Check role hierarchy permissions.');
+        }
+    }
+
+    // 2. !ban @user [reason]
+    if (command === 'ban') {
+        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+            return message.reply('❌ You do not have permission to use this command.');
+        }
+        const target = message.mentions.members.first();
+        if (!target) return message.reply('❌ Please mention a valid member to ban! Example: `!ban @user Breaking rules`');
+        const reason = args.slice(1).join(' ') || 'No reason provided';
+
+        try {
+            await target.ban({ reason });
+            message.channel.send(`🔨 Successfully banned **${target.user.tag}**. Reason: ${reason}`);
+        } catch (error) {
+            console.error(error);
+            message.channel.send('❌ Failed to ban this user. Check role hierarchy permissions.');
+        }
+    }
+
+    // 3. !timeout @user <minutes> [reason]
+    if (command === 'timeout' || command === 'mute') {
+        if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+            return message.reply('❌ You do not have permission to use this command.');
+        }
+        const target = message.mentions.members.first();
+        const minutes = parseInt(args[1]);
+        if (!target) return message.reply('❌ Please mention a valid member! Example: `!timeout @user 10`');
+        if (!minutes || isNaN(minutes)) return message.reply('❌ Please specify valid minutes! Example: `!timeout @user 10`');
+        const reason = args.slice(2).join(' ') || 'No reason provided';
+
+        try {
+            await target.timeout(minutes * 60 * 1000, reason);
+            message.channel.send(`🔇 Successfully timed out **${target.user.tag}** for **${minutes}** minutes. Reason: ${reason}`);
+        } catch (error) {
+            console.error(error);
+            message.channel.send('❌ Failed to timeout this user. Check role hierarchy permissions.');
+        }
+    }
+
+    // 4. !clear <number>
+    if (command === 'clear') {
+        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
+            return message.reply('❌ You do not have permission to use this command.');
+        }
+        const amount = parseInt(args[0]);
+        if (!amount || amount < 1 || amount > 100) {
+            return message.reply('❌ Please specify a valid number between 1 and 100! Example: `!clear 10`');
+        }
+
+        try {
+            message.delete().catch(() => {});
+            const deleted = await message.channel.bulkDelete(amount, true);
+            const replyMsg = await message.channel.send(`🧹 Successfully cleared **${deleted.size}** messages.`);
+            setTimeout(() => replyMsg.delete().catch(() => {}), 4000);
+        } catch (error) {
+            console.error(error);
+            message.channel.send('❌ Failed to clear messages (Messages older than 14 days cannot be deleted).');
+        }
+    }
+
+    // 5. !say <message>
+    if (command === 'say') {
+        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
+            return message.reply('❌ You do not have permission to use this command.');
+        }
+        const sayMessage = args.join(' ');
+        if (!sayMessage) return message.reply('❌ Please provide a message for the bot to say! Example: `!say Hello everyone`');
+
+        message.delete().catch(() => {});
+        message.channel.send(sayMessage);
+    }
+
+    // 6. !avatar [@user]
+    if (command === 'avatar' || command === 'pfp') {
+        const target = message.mentions.users.first() || message.author;
+        const avatarEmbed = new EmbedBuilder()
+            .setColor('#00ffcc')
+            .setTitle(`${target.username}'s Avatar`)
+            .setImage(target.displayAvatarURL({ size: 1024, dynamic: true }))
+            .setFooter({ text: `Requested by ${message.author.tag}` });
+
+        message.channel.send({ embeds: [avatarEmbed] });
+    }
+
+    // Extra utilities
     if (content === '!grandhackyt') {
         message.channel.send('🔴 Official GrandHackYT Gaming Channel: https://www.youtube.com/@grandhacks-l7j');
     }
-    if (content === '!serverinfo') {
-        message.channel.send(`📊 Server Name: **${message.guild.name}** | Total Members: **${message.guild.memberCount}**`);
-    }
-    if (content === '!servericon') {
-        const icon = message.guild.iconURL({ size: 1024, dynamic: true });
-        if (!icon) return message.channel.send('❌ This server has no icon.');
-        message.channel.send(icon);
-    }
     if (content === '!ping') {
         message.channel.send(`🏓 Pong! Latency is \`${client.ws.ping}ms\`.`);
-    }
-    if (content === '!membercount') {
-        message.channel.send(`👥 Current members in **${message.guild.name}**: **${message.guild.memberCount}**`);
     }
 });
 
@@ -160,3 +252,4 @@ client.on('guildMemberAdd', async (member) => {
 
 // Bot Login via Railway Variable
 client.login(process.env.TOKEN);
+                
