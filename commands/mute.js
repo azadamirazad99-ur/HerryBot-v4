@@ -1,12 +1,13 @@
+
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('mute')
-        .setDescription('Timeouts (mutes) a member for a specific time.')
+        .setName('timeout')
+        .setDescription('Timeouts a member for a specific duration.')
         .addUserOption(option =>
             option.setName('target')
-                .setDescription('The member to mute')
+                .setDescription('The member to timeout')
                 .setRequired(true))
         .addIntegerOption(option =>
             option.setName('minutes')
@@ -14,8 +15,9 @@ module.exports = {
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('reason')
-                .setDescription('Reason for muting'))
+                .setDescription('Reason for timeout'))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
     async execute(interaction) {
         const target = interaction.options.getMember('target');
         const minutes = interaction.options.getInteger('minutes');
@@ -28,10 +30,10 @@ module.exports = {
         try {
             const durationMs = minutes * 60 * 1000;
             await target.timeout(durationMs, reason);
-            await interaction.reply(`Successfully muted ${target.user.tag} for ${minutes} minutes. Reason: ${reason}`);
+            await interaction.reply({ content: `Successfully timed out ${target.user.tag} for ${minutes} minutes. Reason: ${reason}` });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'There was an error trying to mute this user!', ephemeral: true });
+            await interaction.reply({ content: 'There was an error trying to timeout this user!', ephemeral: true });
         }
     },
 };
