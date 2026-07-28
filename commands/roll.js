@@ -9,3 +9,4 @@ module.exports = {
         await interaction.reply(`🎲 You rolled a: **${roll}**`);
     },
 };
+ 
