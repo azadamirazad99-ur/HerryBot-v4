@@ -20,4 +20,4 @@ module.exports = {
         await pollMessage.react('👍');
         await pollMessage.react('👎');
     },
-};
+}; 
