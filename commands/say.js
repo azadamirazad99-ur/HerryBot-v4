@@ -17,5 +17,5 @@ module.exports = {
         await interaction.channel.send(text);
         await interaction.reply({ content: '✅ Message sent successfully!', ephemeral: true });
     },
-};
+}; 
 
