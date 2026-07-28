@@ -1,13 +1,14 @@
+
 {
   "name": "HerryBot",
   "version": "1.0.0",
-  "description": "Discord bot with commands",
+  "description": "GrandHacks Discord Bot",
   "main": "index.js",
   "scripts": {
-    "start": "node deploy-commands.js && node index.js"
+    "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.14.0"
+    "canvas": "^2.11.2",
+    "discord.js": "^14.14.1"
   }
 }
- 
