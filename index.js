@@ -1,6 +1,6 @@
 
 // ==========================================
-// GRANDHACKS BOT - SMART AI ASSISTANT (V5)
+// GRANDHACKS BOT - FRESH INDEX.JS (V6 CLEAN)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -15,18 +15,19 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildPresences // Status (Online/Offline) check karne ke liye
+        GatewayIntentBits.GuildPresences
     ]
 });
 
-// Gemini AI Setup
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Gemini AI Setup (Model name updated for stability)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "DUMMY_KEY");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
 client.commands = new Collection();
 const commands = [];
 
-// Command Handler
+// Command Handler (Loads commands safely)
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -43,6 +44,11 @@ if (fs.existsSync(commandsPath)) {
 client.once('ready', async () => {
     console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks system online.`);
 
+    if (!process.env.TOKEN || !process.env.CLIENT_ID) {
+        console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
+        return;
+    }
+
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
     try {
@@ -53,7 +59,7 @@ client.once('ready', async () => {
         );
         console.log('✅ Successfully reloaded application (/) commands.');
     } catch (error) {
-        console.error(error);
+        console.error("Slash Command Error:", error);
     }
 });
 
@@ -66,11 +72,11 @@ client.on('interactionCreate', async interaction => {
     try {
         await command.execute(interaction);
     } catch (error) {
-        console.error(error);
+        console.error("Interaction Error:", error);
         if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: '❌ There was an error while executing this command!', ephemeral: true });
+            await interaction.followUp({ content: '❌ Error executing command!', ephemeral: true });
         } else {
-            await interaction.reply({ content: '❌ There was an error while executing this command!', ephemeral: true });
+            await interaction.reply({ content: '❌ Error executing command!', ephemeral: true });
         }
     }
 });
@@ -78,21 +84,20 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // AI AUTO-REPLY ENGINE
+    // AI AUTO-REPLY ENGINE (Jab bot ko tag/mention kiya jaye)
     if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
         await message.channel.sendTyping();
 
         try {
-            // Server Owner (Herry Sir) ka Status check karna
+            // Owner Status Check
             const ownerId = process.env.OWNER_ID || message.guild.ownerId; 
             const owner = await message.guild.members.fetch(ownerId).catch(() => null);
             const ownerStatus = owner ? (owner.presence ? owner.presence.status : 'offline') : 'offline';
             
-            let statusText = "Offline";
+            let statusText = "Offline ⚪";
             if (ownerStatus === 'online') statusText = "Online 🟢";
             else if (ownerStatus === 'idle') statusText = "Away/Idle 🌙";
-            else if (ownerStatus === 'dnd') statusText = "Busy (Do Not Disturb) 🔴";
-            else statusText = "Offline ⚪";
+            else if (ownerStatus === 'dnd') statusText = "Busy/DND 🔴";
 
             // AI System Prompt
             const prompt = `Tum GrandHacks Discord server ke official smart AI assistant ho.
@@ -101,31 +106,31 @@ client.on('messageCreate', async message => {
             - Server Owner (Herry) status right now: ${statusText}.
             - User's Message: "${message.cleanContent}"
 
-            RULES & INSTRUCTIONS:
+            RULES:
             1. AGAR USER HERRY KO TAG/MENTION KAR RAHA HAI:
-               - Language Detect karo: Agar message English me hai, strictly bolo: "Please don't tag Herry Sir. He is currently ${statusText}. I am his AI assistant, tell me how I can help you."
+               - Agar message English me hai, strictly bolo: "Please don't tag Herry Sir. He is currently ${statusText}. I am his AI assistant, tell me how I can help you."
                - Agar message Hindi/Desi me hai, bolo: "Bhai Herry Sir ko unnecessary tag mat karo, wo abhi ${statusText} hain. Unki jagah main aapki help kar deta hoon, batao kya issue hai?"
 
             2. AGAR USER SCRIPTS, HACKS, DOWNLOADS YA FILES MAANGE:
-               - Batayein ki saare downloads aur files server ke **#downloads** ya **#hacks-scripts** channel mein hain. Unhe kisi ko tag karne ki zaroorat nahi hai.
+               - Unhe bolo ki saari files aur download links **#downloads** ya **#hacks-scripts** channel mein hain.
 
-            3. AGAR USER YOUTUBE CHANNEL YA LINKS MAANGE:
-               - Official YouTube Link dein: https://www.youtube.com/@grandhacks-l7j
+            3. AGAR USER YOUTUBE LINK MAANGE:
+               - Official YouTube Link do: https://www.youtube.com/@grandhacks-l7j
 
-            4. TONE & STYLE:
-               - Natural, smart aur quick response do. English wale ko pure English me reply do, Desi wale ko casual Desi/Hinglish style me reply do.`;
+            4. TONE:
+               - Short, helpful, natural style rakho.`;
 
             const result = await model.generateContent(prompt);
             const responseText = result.response.text();
 
             return message.reply(responseText);
         } catch (error) {
-            console.error("AI Response Error:", error);
-            return message.reply("❌ Bhai abhi AI server response nahi de raha, thodi der baad try karo!");
+            console.error("Detailed AI Error:", error);
+            return message.reply("❌ Bhai AI response nahi de raha! Railway logs check karo.");
         }
     }
 
-    // Prefix Commands
+    // Prefix Commands Handling
     if (!message.content.startsWith('!')) return;
 
     const args = message.content.slice(1).trim().split(/ +/);
@@ -231,7 +236,8 @@ client.on('messageCreate', async message => {
 });
 
 client.on('guildMemberAdd', async (member) => {
-    const channelId = process.env.WELCOME_CHANNEL_ID || 'APKE_WELCOME_CHANNEL_ID_YAHAN_DALEN'; 
+    const channelId = process.env.WELCOME_CHANNEL_ID; 
+    if (!channelId) return;
     const channel = member.guild.channels.cache.get(channelId);
     if (!channel) return;
 
@@ -243,4 +249,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                
+            
