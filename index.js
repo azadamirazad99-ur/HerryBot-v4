@@ -1,5 +1,5 @@
 // ==========================================
-// GRANDHACKS BOT - FRESH INDEX.JS (V8 GEMINI 2.0 FIXED)
+// GRANDHACKS BOT - FRESH INDEX.JS (AUTO-FALLBACK FIX)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -18,15 +18,14 @@ const client = new Client({
     ]
 });
 
-// Gemini AI Setup (Updated to gemini-2.0-flash)
+// Gemini AI Setup
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "DUMMY_KEY");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 client.commands = new Collection();
 const commands = [];
 
-// Command Handler (Loads commands safely)
+// Command Handler
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -83,11 +82,15 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // AI AUTO-REPLY ENGINE (Jab bot ko tag/mention kiya jaye)
+    // AI AUTO-REPLY ENGINE
     if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
         await message.channel.sendTyping();
 
         try {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "DUMMY_KEY") {
+                return message.reply("❌ `GEMINI_API_KEY` Railway Variables me missing hai!");
+            }
+
             // Owner Status Check
             const ownerId = process.env.OWNER_ID || message.guild.ownerId; 
             const owner = await message.guild.members.fetch(ownerId).catch(() => null);
@@ -98,7 +101,6 @@ client.on('messageCreate', async message => {
             else if (ownerStatus === 'idle') statusText = "Away/Idle 🌙";
             else if (ownerStatus === 'dnd') statusText = "Busy/DND 🔴";
 
-            // AI System Prompt
             const prompt = `Tum GrandHacks Discord server ke official smart AI assistant ho.
             
             CONTEXT & STATUS:
@@ -119,13 +121,24 @@ client.on('messageCreate', async message => {
             4. TONE:
                - Short, helpful, natural style rakho.`;
 
-            const result = await model.generateContent(prompt);
-            const responseText = result.response.text();
+            let responseText = "";
+            
+            // Model Fallback Logic (Tries 2.0-flash first, then 1.5-flash)
+            try {
+                const model2 = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+                const result = await model2.generateContent(prompt);
+                responseText = result.response.text();
+            } catch (err1) {
+                console.log("gemini-2.0-flash failed, trying gemini-1.5-flash...", err1.message);
+                const model1 = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const result = await model1.generateContent(prompt);
+                responseText = result.response.text();
+            }
 
             return message.reply(responseText);
         } catch (error) {
             console.error("Detailed AI Error:", error);
-            return message.reply("❌ Bhai AI response nahi de raha! Railway logs check karo.");
+            return message.reply(`❌ AI Error Details: \`${error.message.slice(0, 150)}\``);
         }
     }
 
@@ -248,4 +261,3 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                
