@@ -1,6 +1,5 @@
-
 // ==========================================
-// GRANDHACKS BOT - FRESH INDEX.JS (V6 CLEAN)
+// GRANDHACKS BOT - FRESH INDEX.JS (V7 FIX)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -19,10 +18,10 @@ const client = new Client({
     ]
 });
 
-// Gemini AI Setup (Model name updated for stability)
+// Gemini AI Setup (Model fixed to gemini-1.5-flash)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "DUMMY_KEY");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 client.commands = new Collection();
 const commands = [];
@@ -147,7 +146,7 @@ client.on('messageCreate', async message => {
 
         try {
             await target.kick(reason);
-            message.channel.send(`👢 Successfully kicked **${target.user.tag}**. Reason: ${reason}`);
+            message.channel.send(``👢 Successfully kicked **${target.user.tag}**. Reason: ${reason}`);
         } catch (error) {
             console.error(error);
             message.channel.send('❌ Failed to kick this user.');
@@ -249,4 +248,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-            
+                
