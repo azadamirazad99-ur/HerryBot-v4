@@ -1,5 +1,5 @@
 // ==========================================
-// GRANDHACKS BOT - FRESH INDEX.JS (AUTO-FALLBACK FIX)
+// GRANDHACKS BOT - FULL INDEX.JS (MODEL FIXED)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -18,9 +18,10 @@ const client = new Client({
     ]
 });
 
-// Gemini AI Setup
+// Gemini AI Setup (Model updated to gemini-pro to stop 404 errors)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "DUMMY_KEY");
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 client.commands = new Collection();
 const commands = [];
@@ -101,6 +102,7 @@ client.on('messageCreate', async message => {
             else if (ownerStatus === 'idle') statusText = "Away/Idle 🌙";
             else if (ownerStatus === 'dnd') statusText = "Busy/DND 🔴";
 
+            // AI System Prompt
             const prompt = `Tum GrandHacks Discord server ke official smart AI assistant ho.
             
             CONTEXT & STATUS:
@@ -121,19 +123,8 @@ client.on('messageCreate', async message => {
             4. TONE:
                - Short, helpful, natural style rakho.`;
 
-            let responseText = "";
-            
-            // Model Fallback Logic (Tries 2.0-flash first, then 1.5-flash)
-            try {
-                const model2 = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-                const result = await model2.generateContent(prompt);
-                responseText = result.response.text();
-            } catch (err1) {
-                console.log("gemini-2.0-flash failed, trying gemini-1.5-flash...", err1.message);
-                const model1 = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                const result = await model1.generateContent(prompt);
-                responseText = result.response.text();
-            }
+            const result = await model.generateContent(prompt);
+            const responseText = result.response.text();
 
             return message.reply(responseText);
         } catch (error) {
@@ -261,3 +252,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+        
