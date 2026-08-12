@@ -1,6 +1,5 @@
-
 // ==========================================
-// GRANDHACKS BOT - FRESH INDEX.JS (CRASH-FIXED)
+// GRANDHACKS BOT - FRESH INDEX.JS (V8 GEMINI 2.0 FIXED)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -19,15 +18,15 @@ const client = new Client({
     ]
 });
 
-// Gemini AI Setup
+// Gemini AI Setup (Updated to gemini-2.0-flash)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "DUMMY_KEY");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 client.commands = new Collection();
 const commands = [];
 
-// Command Handler
+// Command Handler (Loads commands safely)
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -84,7 +83,7 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // AI AUTO-REPLY ENGINE
+    // AI AUTO-REPLY ENGINE (Jab bot ko tag/mention kiya jaye)
     if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
         await message.channel.sendTyping();
 
@@ -249,4 +248,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-        
+                
