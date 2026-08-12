@@ -1,9 +1,9 @@
+
 // ==========================================
-// GRANDHACKS BOT - CHATGPT (OPENAI) INDEX.JS
+// GRANDHACKS BOT - OPENROUTER FREE AI INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const OpenAI = require('openai');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -18,15 +18,10 @@ const client = new Client({
     ]
 });
 
-// OpenAI Setup
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-
 client.commands = new Collection();
 const commands = [];
 
-// Command Handler
+// Command Handler Setup
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -41,7 +36,7 @@ if (fs.existsSync(commandsPath)) {
 }
 
 client.once('ready', async () => {
-    console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks ChatGPT system online.`);
+    console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks OpenRouter AI system online.`);
 
     if (!process.env.TOKEN || !process.env.CLIENT_ID) {
         console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
@@ -83,13 +78,14 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // CHATGPT AUTO-REPLY ENGINE
+    // OPENROUTER FREE AI AUTO-REPLY ENGINE
     if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
         await message.channel.sendTyping();
 
         try {
-            if (!process.env.OPENAI_API_KEY) {
-                return message.reply("❌ `OPENAI_API_KEY` Railway Variables me missing hai!");
+            const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+            if (!OPENROUTER_API_KEY) {
+                return message.reply("❌ `OPENROUTER_API_KEY` Railway Variables me missing hai!");
             }
 
             // Owner Status Check
@@ -120,21 +116,38 @@ client.on('messageCreate', async message => {
 
             4. TONE: Short, helpful, natural style rakho.`;
 
-            const completion = await openai.chat.completions.create({
-                model: "gpt-3.5-turbo",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: message.cleanContent }
-                ],
-                max_tokens: 250,
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "meta-llama/llama-3.2-3b-instruct:free",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: message.cleanContent }
+                    ]
+                })
             });
 
-            const replyMessage = completion.choices[0].message.content;
-            return message.reply(replyMessage);
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error("OpenRouter API Error:", data);
+                return message.reply(`❌ AI Error: \`${data.error?.message || response.statusText}\``);
+            }
+
+            const replyMessage = data.choices?.[0]?.message?.content;
+            if (replyMessage) {
+                return message.reply(replyMessage);
+            } else {
+                return message.reply("❌ AI response generate nahi kar paaya.");
+            }
 
         } catch (error) {
-            console.error("ChatGPT Error:", error);
-            return message.reply(`❌ OpenAI Error Details: \`${error.message.slice(0, 150)}\``);
+            console.error("OpenRouter Error:", error);
+            return message.reply(`❌ OpenRouter Error Details: \`${error.message.slice(0, 150)}\``);
         }
     }
 
@@ -257,4 +270,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                                                              
+        
