@@ -1,9 +1,9 @@
 // ==========================================
-// GRANDHACKS BOT - 100% FIXED INDEX.JS
+// GRANDHACKS BOT - CHATGPT (OPENAI) INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const OpenAI = require('openai');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -18,10 +18,10 @@ const client = new Client({
     ]
 });
 
-// Gemini AI Setup (Google standard endpoint)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "DUMMY_KEY");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+// OpenAI Setup
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 client.commands = new Collection();
 const commands = [];
@@ -41,7 +41,7 @@ if (fs.existsSync(commandsPath)) {
 }
 
 client.once('ready', async () => {
-    console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks system online.`);
+    console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks ChatGPT system online.`);
 
     if (!process.env.TOKEN || !process.env.CLIENT_ID) {
         console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
@@ -83,13 +83,13 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // AI AUTO-REPLY ENGINE
+    // CHATGPT AUTO-REPLY ENGINE
     if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
         await message.channel.sendTyping();
 
         try {
-            if (!GEMINI_API_KEY || GEMINI_API_KEY === "DUMMY_KEY") {
-                return message.reply("❌ `GEMINI_API_KEY` Railway Variables me missing hai!");
+            if (!process.env.OPENAI_API_KEY) {
+                return message.reply("❌ `OPENAI_API_KEY` Railway Variables me missing hai!");
             }
 
             // Owner Status Check
@@ -102,17 +102,15 @@ client.on('messageCreate', async message => {
             else if (ownerStatus === 'idle') statusText = "Away/Idle 🌙";
             else if (ownerStatus === 'dnd') statusText = "Busy/DND 🔴";
 
-            // AI System Prompt
-            const prompt = `Tum GrandHacks Discord server ke official smart AI assistant ho.
+            const systemPrompt = `Tum GrandHacks Discord server ke official smart AI assistant ho.
             
             CONTEXT & STATUS:
             - Server Owner (Herry) status right now: ${statusText}.
-            - User's Message: "${message.cleanContent}"
 
             RULES:
             1. AGAR USER HERRY KO TAG/MENTION KAR RAHA HAI:
-               - Agar message English me hai, strictly bolo: "Please don't tag Herry Sir. He is currently ${statusText}. I am his AI assistant, tell me how I can help you."
-               - Agar message Hindi/Desi me hai, bolo: "Bhai Herry Sir ko unnecessary tag mat karo, wo abhi ${statusText} hain. Unki jagah main aapki help kar deta hoon, batao kya issue hai?"
+               - Agar message English me hai: "Please don't tag Herry Sir. He is currently ${statusText}. I am his AI assistant, tell me how I can help you."
+               - Agar message Hindi/Desi me hai: "Bhai Herry Sir ko unnecessary tag mat karo, wo abhi ${statusText} hain. Unki jagah main aapki help kar deta hoon, batao kya issue hai?"
 
             2. AGAR USER SCRIPTS, HACKS, DOWNLOADS YA FILES MAANGE:
                - Unhe bolo ki saari files aur download links **#downloads** ya **#hacks-scripts** channel mein hain.
@@ -120,16 +118,23 @@ client.on('messageCreate', async message => {
             3. AGAR USER YOUTUBE LINK MAANGE:
                - Official YouTube Link do: https://www.youtube.com/@grandhacks-l7j
 
-            4. TONE:
-               - Short, helpful, natural style rakho.`;
+            4. TONE: Short, helpful, natural style rakho.`;
 
-            const result = await model.generateContent(prompt);
-            const responseText = result.response.text();
+            const completion = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: message.cleanContent }
+                ],
+                max_tokens: 250,
+            });
 
-            return message.reply(responseText);
+            const replyMessage = completion.choices[0].message.content;
+            return message.reply(replyMessage);
+
         } catch (error) {
-            console.error("Detailed AI Error:", error);
-            return message.reply(`❌ AI Error Details: \`${error.message.slice(0, 150)}\``);
+            console.error("ChatGPT Error:", error);
+            return message.reply(`❌ OpenAI Error Details: \`${error.message.slice(0, 150)}\``);
         }
     }
 
@@ -252,3 +257,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+                                                              
