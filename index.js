@@ -1,5 +1,6 @@
+
 // ==========================================
-// GRANDHACKS BOT - FRESH INDEX.JS (WITH AI & CRASH-FREE)
+// GRANDHACKS BOT - SMART AI ASSISTANT (V5)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -13,18 +14,19 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildVoiceStates
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildPresences // Status (Online/Offline) check karne ke liye
     ]
 });
 
-// Gemini AI Initialization (Reads directly from Railway Environment Variables)
+// Gemini AI Setup
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 client.commands = new Collection();
 const commands = [];
 
-// Safe Command Handler (Reads direct .js files from commands folder without folder-crash)
+// Command Handler
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -76,14 +78,42 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // AI AUTO-REPLY (Jab bot ko tag/mention kiya jaye)
+    // AI AUTO-REPLY ENGINE
     if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
         await message.channel.sendTyping();
 
         try {
-            const prompt = `Tum GrandHacks ke official AI assistant ho. 
-            User ne tumse yeh poochha hai: "${message.cleanContent}".
-            Unko Grand Mobile RP scripts, Android tools, modding setup ya general query ka short, accurate, aur friendly solution do.`;
+            // Server Owner (Herry Sir) ka Status check karna
+            const ownerId = process.env.OWNER_ID || message.guild.ownerId; 
+            const owner = await message.guild.members.fetch(ownerId).catch(() => null);
+            const ownerStatus = owner ? (owner.presence ? owner.presence.status : 'offline') : 'offline';
+            
+            let statusText = "Offline";
+            if (ownerStatus === 'online') statusText = "Online 🟢";
+            else if (ownerStatus === 'idle') statusText = "Away/Idle 🌙";
+            else if (ownerStatus === 'dnd') statusText = "Busy (Do Not Disturb) 🔴";
+            else statusText = "Offline ⚪";
+
+            // AI System Prompt
+            const prompt = `Tum GrandHacks Discord server ke official smart AI assistant ho.
+            
+            CONTEXT & STATUS:
+            - Server Owner (Herry) status right now: ${statusText}.
+            - User's Message: "${message.cleanContent}"
+
+            RULES & INSTRUCTIONS:
+            1. AGAR USER HERRY KO TAG/MENTION KAR RAHA HAI:
+               - Language Detect karo: Agar message English me hai, strictly bolo: "Please don't tag Herry Sir. He is currently ${statusText}. I am his AI assistant, tell me how I can help you."
+               - Agar message Hindi/Desi me hai, bolo: "Bhai Herry Sir ko unnecessary tag mat karo, wo abhi ${statusText} hain. Unki jagah main aapki help kar deta hoon, batao kya issue hai?"
+
+            2. AGAR USER SCRIPTS, HACKS, DOWNLOADS YA FILES MAANGE:
+               - Batayein ki saare downloads aur files server ke **#downloads** ya **#hacks-scripts** channel mein hain. Unhe kisi ko tag karne ki zaroorat nahi hai.
+
+            3. AGAR USER YOUTUBE CHANNEL YA LINKS MAANGE:
+               - Official YouTube Link dein: https://www.youtube.com/@grandhacks-l7j
+
+            4. TONE & STYLE:
+               - Natural, smart aur quick response do. English wale ko pure English me reply do, Desi wale ko casual Desi/Hinglish style me reply do.`;
 
             const result = await model.generateContent(prompt);
             const responseText = result.response.text();
@@ -91,11 +121,11 @@ client.on('messageCreate', async message => {
             return message.reply(responseText);
         } catch (error) {
             console.error("AI Response Error:", error);
-            return message.reply("❌ Bhai abhi AI server se response nahi aa raha, thodi der baad try karo!");
+            return message.reply("❌ Bhai abhi AI server response nahi de raha, thodi der baad try karo!");
         }
     }
 
-    // Prefix Commands Handling
+    // Prefix Commands
     if (!message.content.startsWith('!')) return;
 
     const args = message.content.slice(1).trim().split(/ +/);
@@ -213,3 +243,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+                
