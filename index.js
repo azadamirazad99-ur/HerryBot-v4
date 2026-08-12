@@ -1,5 +1,5 @@
 // ==========================================
-// GRANDHACKS BOT - OPENROUTER FREE AI INDEX.JS
+// GRANDHACKS BOT - CLEAN VERSION
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -35,7 +35,7 @@ if (fs.existsSync(commandsPath)) {
 }
 
 client.once('ready', async () => {
-    console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks OpenRouter AI system online.`);
+    console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks system online.`);
 
     if (!process.env.TOKEN || !process.env.CLIENT_ID) {
         console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
@@ -76,79 +76,6 @@ client.on('interactionCreate', async interaction => {
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
-
-    // OPENROUTER FREE AI AUTO-REPLY ENGINE
-    if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
-        await message.channel.sendTyping();
-
-        try {
-            const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-            if (!OPENROUTER_API_KEY) {
-                return message.reply("❌ `OPENROUTER_API_KEY` Railway Variables me missing hai!");
-            }
-
-            // Owner Status Check
-            const ownerId = process.env.OWNER_ID || message.guild.ownerId; 
-            const owner = await message.guild.members.fetch(ownerId).catch(() => null);
-            const ownerStatus = owner ? (owner.presence ? owner.presence.status : 'offline') : 'offline';
-            
-            let statusText = "Offline ⚪";
-            if (ownerStatus === 'online') statusText = "Online 🟢";
-            else if (ownerStatus === 'idle') statusText = "Away/Idle 🌙";
-            else if (ownerStatus === 'dnd') statusText = "Busy/DND 🔴";
-
-            const systemPrompt = `Tum GrandHacks Discord server ke official smart AI assistant ho.
-            
-            CONTEXT & STATUS:
-            - Server Owner (Herry) status right now: ${statusText}.
-
-            RULES:
-            1. AGAR USER HERRY KO TAG/MENTION KAR RAHA HAI:
-               - Agar message English me hai: "Please don't tag Herry Sir. He is currently ${statusText}. I am his AI assistant, tell me how I can help you."
-               - Agar message Hindi/Desi me hai: "Bhai Herry Sir ko unnecessary tag mat karo, wo abhi ${statusText} hain. Unki jagah main aapki help kar deta hoon, batao kya issue hai?"
-
-            2. AGAR USER SCRIPTS, HACKS, DOWNLOADS YA FILES MAANGE:
-               - Unhe bolo ki saari files aur download links **#downloads** ya **#hacks-scripts** channel mein hain.
-
-            3. AGAR USER YOUTUBE LINK MAANGE:
-               - Official YouTube Link do: https://www.youtube.com/@grandhacks-l7j
-
-            4. TONE: Short, helpful, natural style rakho.`;
-
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "meta-llama/llama-3.1-8b-instruct:free",
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: message.cleanContent }
-                    ]
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                console.error("OpenRouter API Error:", data);
-                return message.reply(`❌ AI Error: \`${data.error?.message || response.statusText}\``);
-            }
-
-            const replyMessage = data.choices?.[0]?.message?.content;
-            if (replyMessage) {
-                return message.reply(replyMessage);
-            } else {
-                return message.reply("❌ AI response generate nahi kar paaya.");
-            }
-
-        } catch (error) {
-            console.error("OpenRouter Error:", error);
-            return message.reply(`❌ OpenRouter Error Details: \`${error.message.slice(0, 150)}\``);
-        }
-    }
 
     // Prefix Commands Handling
     if (!message.content.startsWith('!')) return;
@@ -269,4 +196,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-            
+        
