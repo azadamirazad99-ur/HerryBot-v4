@@ -1,9 +1,9 @@
-
 // ==========================================
-// GRANDHACKS BOT - FRESH INDEX.JS (CRASH-FREE)
+// GRANDHACKS BOT - FRESH INDEX.JS (WITH AI & CRASH-FREE)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -16,6 +16,10 @@ const client = new Client({
         GatewayIntentBits.GuildVoiceStates
     ]
 });
+
+// Gemini AI Initialization (Reads directly from Railway Environment Variables)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 client.commands = new Collection();
 const commands = [];
@@ -70,7 +74,29 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('messageCreate', async message => {
-    if (message.author.bot || !message.content.startsWith('!')) return;
+    if (message.author.bot) return;
+
+    // AI AUTO-REPLY (Jab bot ko tag/mention kiya jaye)
+    if (message.mentions.has(client.user) && !message.content.startsWith('!')) {
+        await message.channel.sendTyping();
+
+        try {
+            const prompt = `Tum GrandHacks ke official AI assistant ho. 
+            User ne tumse yeh poochha hai: "${message.cleanContent}".
+            Unko Grand Mobile RP scripts, Android tools, modding setup ya general query ka short, accurate, aur friendly solution do.`;
+
+            const result = await model.generateContent(prompt);
+            const responseText = result.response.text();
+
+            return message.reply(responseText);
+        } catch (error) {
+            console.error("AI Response Error:", error);
+            return message.reply("❌ Bhai abhi AI server se response nahi aa raha, thodi der baad try karo!");
+        }
+    }
+
+    // Prefix Commands Handling
+    if (!message.content.startsWith('!')) return;
 
     const args = message.content.slice(1).trim().split(/ +/);
     const command = args.shift().toLowerCase();
