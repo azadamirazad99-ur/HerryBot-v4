@@ -1,5 +1,5 @@
 // ==========================================
-// GRANDHACKS BOT - FULL INDEX.JS (MODEL FIXED)
+// GRANDHACKS BOT - 100% FIXED INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -18,10 +18,10 @@ const client = new Client({
     ]
 });
 
-// Gemini AI Setup (Model updated to gemini-pro to stop 404 errors)
+// Gemini AI Setup (Google standard endpoint)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "DUMMY_KEY");
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 client.commands = new Collection();
 const commands = [];
@@ -252,4 +252,3 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-        
