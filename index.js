@@ -1,4 +1,3 @@
-
 // ==========================================
 // GRANDHACKS BOT - OPENROUTER FREE AI INDEX.JS
 // ==========================================
@@ -123,7 +122,7 @@ client.on('messageCreate', async message => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    model: "meta-llama/llama-3.2-3b-instruct:free",
+                    model: "google/gemma-2-9b-it:free",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: message.cleanContent }
@@ -270,4 +269,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-        
+                
