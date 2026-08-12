@@ -1,7 +1,7 @@
 {
-  "name": "HerryBot",
+  "name": "herrybot-v4",
   "version": "1.0.0",
-  "description": "GrandHacks Discord Bot",
+  "description": "GrandHacks AI Discord Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -11,3 +11,4 @@
     "discord.js": "^14.14.1"
   }
 }
+
