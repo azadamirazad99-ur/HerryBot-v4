@@ -1,11 +1,20 @@
+
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const fs = require('node:fs');
+const path = require('node:path');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('ticketsetup')
-        .setDescription('Sends the official support ticket panel.')
+        .setDescription('Sets the ticket panel channel.')
+        .addChannelOption(o => 
+            o.setName('channel')
+             .setDescription('Select channel for ticket panel')
+             .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction) {
+        const targetChannel = interaction.options.getChannel('channel');
+
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
             .setTitle('🎫 Support Tickets')
@@ -18,8 +27,12 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
         );
 
-        await interaction.channel.send({ embeds: [embed], components: [row] });
-        await interaction.reply({ content: '✅ Ticket panel successfully send ho gaya hai!', ephemeral: true });
+        try {
+            await targetChannel.send({ embeds: [embed], components: [row] });
+            await interaction.reply({ content: `✅ Ticket panel successfully ${targetChannel} mein bhej diya gaya hai!`, ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: '❌ Us channel par message bhejne ki permission nahi hai!', ephemeral: true });
+        }
     },
 };
-
