@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,11 +10,11 @@ module.exports = {
     async execute(interaction) {
         const targetChannel = interaction.options.getChannel('channel');
         
-        // Yahan aap channel ID ko database ya file mein save kar sakte ho
+        // Yahan aap channel ID ko database ya file mein save kar sakte hain
         await interaction.reply({ 
             content: `✅ Success! Welcome channel has been set to ${targetChannel}. Ab se naye members yahin welcome honge!`, 
             ephemeral: true 
         });
     },
-}; 
+};
 
