@@ -1,5 +1,6 @@
+
 // ==========================================
-// GRANDHACKS BOT - FULL COMPLETE INDEX
+// GRANDHACKS BOT - FINAL COMPLETE INDEX
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -203,15 +204,29 @@ client.on('messageCreate', async message => {
     if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\`.`);
 });
 
-// Welcome Event
+// Welcome Event (Server Embed + Threatening DM Alert)
 client.on('guildMemberAdd', async (member) => {
     const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
-    if (!channel) return;
-    const embed = new EmbedBuilder().setColor('#00ffcc').setTitle('👋 Welcome!').setDescription(`Hey ${member}, welcome to **${member.guild.name}**!`).addFields({ name: '📊 Total', value: `${member.guild.memberCount}`, inline: true }).setThumbnail(member.user.displayAvatarURL());
-    channel.send({ content: `${member}`, embeds: [embed] });
+    if (channel) {
+        const embed = new EmbedBuilder()
+            .setColor('#ff0000')
+            .setTitle('🚨 Welcome To HerryHacks Server 🚨')
+            .setDescription(`Aapka swagat hai ${member}!\n\n**Rules:**\n1. Leave all other Grand RP hack servers immediately! If you don't leave, u will be banned from our server. We have a custom bot that will detect u, if found u will be ban! 🛑`)
+            .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .setFooter({ text: 'HerryHacks Security System' });
+
+        channel.send({ content: `⚠️ **WARNING ALERT:** ${member}`, embeds: [embed] });
+    }
+
+    try {
+        await member.send(`🚨 **WARNING FROM HERRYHACKS** 🚨\n\n**Rules:**\n1. Leave all other Grand RP hack servers immediately! If you don't leave, u will be banned from our server. We have a custom bot that will detect u, if found u will be ban! 🛑`);
+    } catch (error) {
+        console.log(`Could not send DM to ${member.user.tag}`);
+    }
 });
 
-// Leave Event
+// Leave Event (Custom Tag + Good Bye Text + User Avatar Embed)
 client.on('guildMemberRemove', async (member) => {
     let channelId = process.env.LEAVE_CHANNEL_ID;
     const configPath = path.join(__dirname, 'config.json');
@@ -221,13 +236,21 @@ client.on('guildMemberRemove', async (member) => {
             channelId = config.leaveChannelId;
         } catch (e) { console.error(e); }
     }
+
     if (!channelId) return;
     const channel = member.guild.channels.cache.get(channelId);
     if (!channel) return;
-    const embed = new EmbedBuilder().setColor('#ff4d4d').setTitle('😢 Member Left').setDescription(`Alvida **${member.user.tag}**! 🥀`).addFields({ name: '📊 Remaining', value: `${member.guild.memberCount}`, inline: true }).setThumbnail(member.user.displayAvatarURL());
+
+    const embed = new EmbedBuilder()
+        .setColor('#ff4d4d')
+        .setTitle('🚪 Player Left')
+        .setDescription(`**${member.user.tag}** Leaved The Server\n\nGood Bye 👋`)
+        .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}`, inline: true })
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setFooter({ text: 'HerryHacks Security System' });
+
     channel.send({ embeds: [embed] });
 });
 
 client.login(process.env.TOKEN);
-                                    
-
+                                     
