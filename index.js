@@ -1,6 +1,6 @@
 
 // ==========================================
-// GRANDHACKS BOT - FINAL COMPLETE INDEX
+// GRANDHACKS BOT - FULL COMPLETE INDEX (FIXED)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -57,13 +57,14 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket Button & Close System Handler (Updated with STAFF_ROLE_ID)
+// Ticket Button & Close System Handler (Safe & Error-Free)
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
             const guild = interaction.guild;
-            const categoryId = process.env.TICKET_CATEGORY_ID; 
-            const staffRoleId = process.env.STAFF_ROLE_ID;
+            const rawCategoryId = process.env.TICKET_CATEGORY_ID;
+            const categoryId = (rawCategoryId && rawCategoryId.length > 10) ? rawCategoryId : null;
+            const staffRoleId = process.env.STAFF_ROLE_ID || null;
 
             try {
                 const permissionOverwrites = [
@@ -84,12 +85,17 @@ client.on('interactionCreate', async interaction => {
                     });
                 }
 
-                const channel = await guild.channels.create({
+                const channelOptions = {
                     name: `ticket-${interaction.user.username}`,
                     type: ChannelType.GuildText,
-                    parent: null,
                     permissionOverwrites: permissionOverwrites,
-                });
+                };
+
+                if (categoryId) {
+                    channelOptions.parent = categoryId;
+                }
+
+                const channel = await guild.channels.create(channelOptions);
 
                 const embed = new EmbedBuilder()
                     .setColor('#00ffcc')
@@ -106,8 +112,8 @@ client.on('interactionCreate', async interaction => {
                 await channel.send({ content: `${interaction.user} ${staffRoleId ? `<@&${staffRoleId}>` : ''}`, embeds: [embed], components: [row] });
                 await interaction.reply({ content: `✅ Aapka ticket ban gaya hai: ${channel}`, ephemeral: true });
             } catch (error) {
-                console.error(error);
-                await interaction.reply({ content: '❌ Ticket banane mein error aaya!', ephemeral: true });
+                console.error("Ticket Creation Error:", error);
+                await interaction.reply({ content: `❌ Ticket banane mein error aaya! (${error.message})`, ephemeral: true });
             }
         }
 
