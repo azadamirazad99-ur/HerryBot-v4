@@ -1,5 +1,5 @@
 // ==========================================
-// GRANDHACKS BOT - FINAL VERSION WITH TICKET SYSTEM
+// GRANDHACKS BOT - FULL COMPLETE INDEX
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -56,29 +56,38 @@ client.once('ready', async () => {
     }
 });
 
-// Interaction Handler (Slash Commands & Ticket Buttons)
+// Ticket Button & Close System Handler (Updated with STAFF_ROLE_ID)
 client.on('interactionCreate', async interaction => {
-    // Ticket Button & Close System Handler
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
             const guild = interaction.guild;
-            const categoryId = process.env.TICKET_CATEGORY_ID; // Railway variable for Ticket Category ID
+            const categoryId = process.env.TICKET_CATEGORY_ID; 
+            const staffRoleId = process.env.STAFF_ROLE_ID;
 
             try {
+                const permissionOverwrites = [
+                    {
+                        id: guild.id,
+                        deny: [PermissionFlagsBits.ViewChannel],
+                    },
+                    {
+                        id: interaction.user.id,
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+                    }
+                ];
+
+                if (staffRoleId) {
+                    permissionOverwrites.push({
+                        id: staffRoleId,
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+                    });
+                }
+
                 const channel = await guild.channels.create({
                     name: `ticket-${interaction.user.username}`,
                     type: ChannelType.GuildText,
-                    parent: null,
-                    permissionOverwrites: [
-                        {
-                            id: guild.id,
-                            deny: [PermissionFlagsBits.ViewChannel],
-                        },
-                        {
-                            id: interaction.user.id,
-                            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
-                        },
-                    ],
+                    parent: categoryId || null,
+                    permissionOverwrites: permissionOverwrites,
                 });
 
                 const embed = new EmbedBuilder()
@@ -93,7 +102,7 @@ client.on('interactionCreate', async interaction => {
                         .setStyle(ButtonStyle.Danger)
                 );
 
-                await channel.send({ content: `${interaction.user}`, embeds: [embed], components: [row] });
+                await channel.send({ content: `${interaction.user} ${staffRoleId ? `<@&${staffRoleId}>` : ''}`, embeds: [embed], components: [row] });
                 await interaction.reply({ content: `✅ Aapka ticket ban gaya hai: ${channel}`, ephemeral: true });
             } catch (error) {
                 console.error(error);
@@ -220,4 +229,5 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+                                    
 
