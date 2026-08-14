@@ -57,14 +57,14 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket Button & Close System Handler (Safe & Error-Free)
+// Ticket Button & Clean System Handler (Error Free)
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
             const guild = interaction.guild;
             const rawCategoryId = process.env.TICKET_CATEGORY_ID;
             const categoryId = (rawCategoryId && rawCategoryId.length > 10) ? rawCategoryId : null;
-            const staffRoleId = process.env.STAFF_ROLE_ID || null;
+            const staffRoleId = process.env.STAFF_ROLE_ID;
 
             try {
                 const permissionOverwrites = [
@@ -78,7 +78,7 @@ client.on('interactionCreate', async interaction => {
                     }
                 ];
 
-                if (staffRoleId) {
+                if (staffRoleId && staffRoleId.length > 10) {
                     permissionOverwrites.push({
                         id: staffRoleId,
                         allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
@@ -109,7 +109,8 @@ client.on('interactionCreate', async interaction => {
                         .setStyle(ButtonStyle.Danger)
                 );
 
-                await channel.send({ content: `${interaction.user} ${staffRoleId ? `<@&${staffRoleId}>` : ''}`, embeds: [embed], components: [row] });
+                // Safe message sending without breaking role tags
+                await channel.send({ content: `${interaction.user}`, embeds: [embed], components: [row] });
                 await interaction.reply({ content: `✅ Aapka ticket ban gaya hai: ${channel}`, ephemeral: true });
             } catch (error) {
                 console.error("Ticket Creation Error:", error);
@@ -259,4 +260,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                                     
+        
