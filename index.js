@@ -1,8 +1,8 @@
 // ==========================================
-// GRANDHACKS BOT - CLEAN VERSION (COMPLETE)
+// GRANDHACKS BOT - FINAL VERSION WITH TICKET SYSTEM
 // ==========================================
 
-const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -56,7 +56,60 @@ client.once('ready', async () => {
     }
 });
 
+// Interaction Handler (Slash Commands & Ticket Buttons)
 client.on('interactionCreate', async interaction => {
+    // Ticket Button & Close System Handler
+    if (interaction.isButton()) {
+        if (interaction.customId === 'create_ticket') {
+            const guild = interaction.guild;
+            const categoryId = process.env.TICKET_CATEGORY_ID; // Railway variable for Ticket Category ID
+
+            try {
+                const channel = await guild.channels.create({
+                    name: `ticket-${interaction.user.username}`,
+                    type: ChannelType.GuildText,
+                    parent: categoryId || null,
+                    permissionOverwrites: [
+                        {
+                            id: guild.id,
+                            deny: [PermissionFlagsBits.ViewChannel],
+                        },
+                        {
+                            id: interaction.user.id,
+                            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
+                        },
+                    ],
+                });
+
+                const embed = new EmbedBuilder()
+                    .setColor('#00ffcc')
+                    .setTitle('🎫 Support Ticket')
+                    .setDescription(`Hello ${interaction.user}, support team jald hi yahan aayegi. Apni problem batayein.`);
+
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('close_ticket')
+                        .setLabel('🔒 Close Ticket')
+                        .setStyle(ButtonStyle.Danger)
+                );
+
+                await channel.send({ content: `${interaction.user}`, embeds: [embed], components: [row] });
+                await interaction.reply({ content: `✅ Aapka ticket ban gaya hai: ${channel}`, ephemeral: true });
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: '❌ Ticket banane mein error aaya!', ephemeral: true });
+            }
+        }
+
+        if (interaction.customId === 'close_ticket') {
+            await interaction.reply({ content: '🔒 Ticket 5 seconds mein band ho raha hai...' });
+            setTimeout(() => {
+                interaction.channel.delete().catch(() => {});
+            }, 5000);
+        }
+        return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
@@ -74,10 +127,10 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Prefix Commands Handling
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // Prefix Commands Handling
     if (!message.content.startsWith('!')) return;
 
     const args = message.content.slice(1).trim().split(/ +/);
@@ -85,161 +138,86 @@ client.on('messageCreate', async message => {
     const content = message.content;
 
     if (command === 'kick') {
-        if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) {
-            return message.reply('❌ You do not have permission to use this command.');
-        }
+        if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ No permission.');
         const target = message.mentions.members.first();
-        if (!target) return message.reply('❌ Please mention a valid member to kick!');
+        if (!target) return message.reply('❌ Mention a member!');
         const reason = args.slice(1).join(' ') || 'No reason provided';
-
-        try {
-            await target.kick(reason);
-            message.channel.send(`👢 Successfully kicked **${target.user.tag}**. Reason: ${reason}`);
-        } catch (error) {
-            console.error(error);
-            message.channel.send('❌ Failed to kick this user.');
-        }
+        try { await target.kick(reason); message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
     }
 
     if (command === 'ban') {
-        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
-            return message.reply('❌ You do not have permission to use this command.');
-        }
+        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
         const target = message.mentions.members.first();
-        if (!target) return message.reply('❌ Please mention a valid member to ban!');
+        if (!target) return message.reply('❌ Mention a member!');
         const reason = args.slice(1).join(' ') || 'No reason provided';
-
-        try {
-            await target.ban({ reason });
-            message.channel.send(`🔨 Successfully banned **${target.user.tag}**. Reason: ${reason}`);
-        } catch (error) {
-            console.error(error);
-            message.channel.send('❌ Failed to ban this user.');
-        }
+        try { await target.ban({ reason }); message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
     }
 
     if (command === 'unban') {
-        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
-            return message.reply('❌ You do not have permission to use this command.');
-        }
+        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
         const userId = args[0];
-        if (!userId) return message.reply('❌ Please provide a valid user ID to unban!');
+        if (!userId) return message.reply('❌ Provide a valid ID!');
         const reason = args.slice(1).join(' ') || 'No reason provided';
-
-        try {
-            await message.guild.members.unban(userId, reason);
-            message.channel.send(`✅ Successfully unbanned user ID: \`${userId}\`. Reason: ${reason}`);
-        } catch (error) {
-            console.error(error);
-            message.channel.send('❌ Failed to unban this user (Check ID).');
-        }
+        try { await message.guild.members.unban(userId, reason); message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
     }
 
     if (command === 'timeout' || command === 'mute') {
-        if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-            return message.reply('❌ You do not have permission to use this command.');
-        }
+        if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
         const target = message.mentions.members.first();
         const minutes = parseInt(args[1]);
         if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user <minutes>`');
         const reason = args.slice(2).join(' ') || 'No reason provided';
-
-        try {
-            await target.timeout(minutes * 60 * 1000, reason);
-            message.channel.send(`🔇 Successfully timed out **${target.user.tag}** for **${minutes}** minutes.`);
-        } catch (error) {
-            console.error(error);
-            message.channel.send('❌ Failed to timeout this user.');
-        }
+        try { await target.timeout(minutes * 60 * 1000, reason); message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** min.`); } catch (e) { message.channel.send('❌ Failed.'); }
     }
 
     if (command === 'clear') {
-        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
-            return message.reply('❌ You do not have permission to use this command.');
-        }
+        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
         const amount = parseInt(args[0]);
-        if (!amount || amount < 1 || amount > 100) return message.reply('❌ Specify a number between 1 and 100.');
-
-        try {
-            message.delete().catch(() => {});
-            const deleted = await message.channel.bulkDelete(amount, true);
-            const replyMsg = await message.channel.send(`🧹 Successfully cleared **${deleted.size}** messages.`);
-            setTimeout(() => replyMsg.delete().catch(() => {}), 4000);
-        } catch (error) {
-            console.error(error);
-            message.channel.send('❌ Failed to clear messages.');
-        }
+        if (!amount || amount < 1 || amount > 100) return message.reply('❌ Specify 1-100.');
+        try { message.delete(); const deleted = await message.channel.bulkDelete(amount, true); const r = await message.channel.send(`🧹 Cleared **${deleted.size}** msgs.`); setTimeout(() => r.delete(), 4000); } catch (e) { message.channel.send('❌ Failed.'); }
     }
 
     if (command === 'say') {
-        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
-            return message.reply('❌ You do not have permission to use this command.');
-        }
+        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
         const sayMessage = args.join(' ');
-        if (!sayMessage) return message.reply('❌ Please provide a message.');
-        message.delete().catch(() => {});
-        message.channel.send(sayMessage);
+        if (!sayMessage) return message.reply('❌ Provide a message.');
+        message.delete(); message.channel.send(sayMessage);
     }
 
     if (command === 'avatar' || command === 'pfp') {
         const target = message.mentions.users.first() || message.author;
-        const avatarEmbed = new EmbedBuilder()
-            .setColor('#00ffcc')
-            .setTitle(`${target.username}'s Avatar`)
-            .setImage(target.displayAvatarURL({ size: 1024, dynamic: true }))
-            .setFooter({ text: `Requested by ${message.author.tag}` });
-        message.channel.send({ embeds: [avatarEmbed] });
+        const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
+        message.channel.send({ embeds: [embed] });
     }
 
-    if (content === '!grandhackyt') {
-        message.channel.send('🔴 Official GrandHackYT Gaming Channel: https://www.youtube.com/@grandhacks-l7j');
-    }
-    if (content === '!ping') {
-        message.channel.send(`🏓 Pong! Latency is \`${client.ws.ping}ms\`.`);
-    }
+    if (content === '!grandhackyt') message.channel.send('🔴 Official: https://www.youtube.com/@grandhacks-l7j');
+    if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\`.`);
 });
 
-// Welcome Event (Embed + Member Count)
+// Welcome Event
 client.on('guildMemberAdd', async (member) => {
-    const channelId = process.env.WELCOME_CHANNEL_ID; 
-    if (!channelId) return;
-    const channel = member.guild.channels.cache.get(channelId);
+    const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
     if (!channel) return;
-
-    try {
-        const embed = new EmbedBuilder()
-            .setColor('#00ffcc')
-            .setTitle('👋 Welcome to GrandHacks!')
-            .setDescription(`Hey ${member}, welcome to the family! Aaja maidan mein, maza aayega! 🚀`)
-            .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
-            .setThumbnail(member.user.displayAvatarURL());
-
-        channel.send({ content: `${member}`, embeds: [embed] });
-    } catch (error) {
-        console.log('Welcome error: ', error);
-    }
+    const embed = new EmbedBuilder().setColor('#00ffcc').setTitle('👋 Welcome!').setDescription(`Hey ${member}, welcome to **${member.guild.name}**!`).addFields({ name: '📊 Total', value: `${member.guild.memberCount}`, inline: true }).setThumbnail(member.user.displayAvatarURL());
+    channel.send({ content: `${member}`, embeds: [embed] });
 });
 
-// Leave Event (Sad Embed + Member Count)
+// Leave Event
 client.on('guildMemberRemove', async (member) => {
-    const channelId = process.env.LEAVE_CHANNEL_ID; 
+    let channelId = process.env.LEAVE_CHANNEL_ID;
+    const configPath = path.join(__dirname, 'config.json');
+    if (!channelId && fs.existsSync(configPath)) {
+        try {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            channelId = config.leaveChannelId;
+        } catch (e) { console.error(e); }
+    }
     if (!channelId) return;
     const channel = member.guild.channels.cache.get(channelId);
     if (!channel) return;
-
-    try {
-        const embed = new EmbedBuilder()
-            .setColor('#ff4d4d')
-            .setTitle('😢 Member Left')
-            .setDescription(`Alvida **${member.user.tag}**, humein dukh hai aap chale gaye! 🥀`)
-            .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}`, inline: true })
-            .setThumbnail(member.user.displayAvatarURL());
-
-        channel.send({ embeds: [embed] });
-    } catch (error) {
-        console.log('Leave error: ', error);
-    }
+    const embed = new EmbedBuilder().setColor('#ff4d4d').setTitle('😢 Member Left').setDescription(`Alvida **${member.user.tag}**! 🥀`).addFields({ name: '📊 Remaining', value: `${member.guild.memberCount}`, inline: true }).setThumbnail(member.user.displayAvatarURL());
+    channel.send({ embeds: [embed] });
 });
 
 client.login(process.env.TOKEN);
-                                                            
+
