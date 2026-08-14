@@ -1,5 +1,5 @@
 // ==========================================
-// GRANDHACKS BOT - CLEAN VERSION
+// GRANDHACKS BOT - CLEAN VERSION (COMPLETE)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
@@ -118,6 +118,23 @@ client.on('messageCreate', async message => {
         }
     }
 
+    if (command === 'unban') {
+        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+            return message.reply('❌ You do not have permission to use this command.');
+        }
+        const userId = args[0];
+        if (!userId) return message.reply('❌ Please provide a valid user ID to unban!');
+        const reason = args.slice(1).join(' ') || 'No reason provided';
+
+        try {
+            await message.guild.members.unban(userId, reason);
+            message.channel.send(`✅ Successfully unbanned user ID: \`${userId}\`. Reason: ${reason}`);
+        } catch (error) {
+            console.error(error);
+            message.channel.send('❌ Failed to unban this user (Check ID).');
+        }
+    }
+
     if (command === 'timeout' || command === 'mute') {
         if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
             return message.reply('❌ You do not have permission to use this command.');
@@ -182,6 +199,7 @@ client.on('messageCreate', async message => {
     }
 });
 
+// Welcome Event (Embed + Member Count)
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID; 
     if (!channelId) return;
@@ -189,11 +207,39 @@ client.on('guildMemberAdd', async (member) => {
     if (!channel) return;
 
     try {
-        await channel.send(`🎉 Oye sab suno! ${member} bhai hamare server **GrandHacks** mein aa chuke hain! Aaja maidan mein, maza aayega! 🚀`);
+        const embed = new EmbedBuilder()
+            .setColor('#00ffcc')
+            .setTitle('👋 Welcome to GrandHacks!')
+            .setDescription(`Hey ${member}, welcome to the family! Aaja maidan mein, maza aayega! 🚀`)
+            .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
+            .setThumbnail(member.user.displayAvatarURL());
+
+        channel.send({ content: `${member}`, embeds: [embed] });
     } catch (error) {
         console.log('Welcome error: ', error);
     }
 });
 
-client.login(process.env.TOKEN); 
-        
+// Leave Event (Sad Embed + Member Count)
+client.on('guildMemberRemove', async (member) => {
+    const channelId = process.env.LEAVE_CHANNEL_ID; 
+    if (!channelId) return;
+    const channel = member.guild.channels.cache.get(channelId);
+    if (!channel) return;
+
+    try {
+        const embed = new EmbedBuilder()
+            .setColor('#ff4d4d')
+            .setTitle('😢 Member Left')
+            .setDescription(`Alvida **${member.user.tag}**, humein dukh hai aap chale gaye! 🥀`)
+            .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}`, inline: true })
+            .setThumbnail(member.user.displayAvatarURL());
+
+        channel.send({ embeds: [embed] });
+    } catch (error) {
+        console.log('Leave error: ', error);
+    }
+});
+
+client.login(process.env.TOKEN);
+                                                            
