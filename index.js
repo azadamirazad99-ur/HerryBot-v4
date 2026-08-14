@@ -87,7 +87,7 @@ client.on('interactionCreate', async interaction => {
                 const channel = await guild.channels.create({
                     name: `ticket-${interaction.user.username}`,
                     type: ChannelType.GuildText,
-                    parent: categoryId || null,
+                    parent: null,
                     permissionOverwrites: permissionOverwrites,
                 });
 
