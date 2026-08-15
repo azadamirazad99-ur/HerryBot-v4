@@ -223,7 +223,7 @@ client.on('guildMemberAdd', async (member) => {
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Security System' });
 
-        channel.send({ content: ` **WELCOME IN HERRYHACKS:** ${member}`, embeds: [embed] });
+        channel.send({ content: ` **WELCOME TO HERRYHACKS SERVER:** ${member}`, embeds: [embed] });
     }
 
     try {
