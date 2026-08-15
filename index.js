@@ -154,7 +154,7 @@ client.on('messageCreate', async message => {
     const command = args.shift().toLowerCase();
     const content = message.content;
 
-    if (command === 'kick') {
+    if (command === '.kick') {
         if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ No permission.');
         const target = message.mentions.members.first();
         if (!target) return message.reply('❌ Mention a member!');
@@ -162,7 +162,7 @@ client.on('messageCreate', async message => {
         try { await target.kick(reason); message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
     }
 
-    if (command === 'ban') {
+    if (command === '.ban') {
         if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
         const target = message.mentions.members.first();
         if (!target) return message.reply('❌ Mention a member!');
@@ -170,7 +170,7 @@ client.on('messageCreate', async message => {
         try { await target.ban({ reason }); message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
     }
 
-    if (command === 'unban') {
+    if (command === '.unban') {
         if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
         const userId = args[0];
         if (!userId) return message.reply('❌ Provide a valid ID!');
@@ -207,7 +207,7 @@ client.on('messageCreate', async message => {
         message.channel.send({ embeds: [embed] });
     }
 
-    if (content === '!grandhackyt') message.channel.send('🔴 Official: https://www.youtube.com/@grandhacks-l7j');
+    if (content === '!HerryHacksyt') message.channel.send('🔴 Official: https://www.youtube.com/@grandhacks-l7j');
     if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\`.`);
 });
 
@@ -223,7 +223,7 @@ client.on('guildMemberAdd', async (member) => {
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Security System' });
 
-        channel.send({ content: `⚠️ **WARNING ALERT:** ${member}`, embeds: [embed] });
+        channel.send({ content: ` **WELCOME IN HERRYHACKS:** ${member}`, embeds: [embed] });
     }
 
     try {
