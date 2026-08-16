@@ -5,8 +5,7 @@
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const axios = require('axios');
-const { getSystemPrompt } = require('./prompt');
+const axios = require('axios'); // OpenRouter ke liye zarori hai
 
 const client = new Client({
     intents: [
@@ -149,12 +148,22 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // AI MENTION SYSTEM (Jab bot ko mention kar ke question puchenge)
+    // ==========================================
+    // OPENROUTER AI SYSTEM (DIRECT IN INDEX.JS)
+    // ==========================================
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(`<@!${client.user.id}>`, '').replace(`<@${client.user.id}>`, '').trim();
-            const SYSTEM_PROMPT = await getSystemPrompt();
+
+            // Direct AI System Prompt
+            const SYSTEM_PROMPT = `
+You are HerryHacks Bot, the official security & support AI for HerryHacks Grand RP Community.
+Tone: Direct, Strict, Short, and Authoritative.
+Rule 1: Remind users to follow server rules and leave other Grand RP cheat/hack servers to avoid being banned.
+Rule 2: Speak in Roman Urdu mixed with simple English.
+Rule 3: Keep responses under 3 lines.
+            `;
 
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
                 model: 'deepseek/deepseek-chat:free',
@@ -173,7 +182,7 @@ client.on('messageCreate', async message => {
             await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
         } catch (error) {
             console.error("AI Error:", error);
-            await message.reply("❌ AI Response Error. Please check API Key!");
+            await message.reply("❌ AI Response Error. Railway variables me OPENROUTER_API_KEY check karo!");
         }
         return;
     }
@@ -305,4 +314,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                
+                                                    
