@@ -1,4 +1,3 @@
-
 // ==========================================
 // GRANDHACKS BOT - FULL COMPLETE INDEX (FIXED)
 // ==========================================
@@ -6,6 +5,8 @@
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
+const axios = require('axios');
+const { getSystemPrompt } = require('./prompt');
 
 const client = new Client({
     intents: [
@@ -148,67 +149,111 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    if (!message.content.startsWith('!')) return;
+    // AI MENTION SYSTEM (Jab bot ko mention kar ke question puchenge)
+    if (message.mentions.has(client.user)) {
+        try {
+            await message.channel.sendTyping();
+            const userQuery = message.content.replace(`<@!${client.user.id}>`, '').replace(`<@${client.user.id}>`, '').trim();
+            const SYSTEM_PROMPT = await getSystemPrompt();
 
-    const args = message.content.slice(1).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
-    const content = message.content;
+            const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+                model: 'deepseek/deepseek-chat:free',
+                messages: [
+                    { role: 'system', content: SYSTEM_PROMPT },
+                    { role: 'user', content: userQuery }
+                ]
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-    if (command === '.kick') {
-        if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ No permission.');
-        const target = message.mentions.members.first();
-        if (!target) return message.reply('❌ Mention a member!');
-        const reason = args.slice(1).join(' ') || 'No reason provided';
-        try { await target.kick(reason); message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
+            const replyText = response.data.choices[0].message.content;
+            await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
+        } catch (error) {
+            console.error("AI Error:", error);
+            await message.reply("❌ AI Response Error. Please check API Key!");
+        }
+        return;
     }
 
-    if (command === '.ban') {
-        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
-        const target = message.mentions.members.first();
-        if (!target) return message.reply('❌ Mention a member!');
-        const reason = args.slice(1).join(' ') || 'No reason provided';
-        try { await target.ban({ reason }); message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
+    const content = message.content.trim();
+
+    // DOT PREMISES COMMANDS (.kick, .ban, .unban)
+    if (content.startsWith('.')) {
+        const args = content.slice(1).trim().split(/ +/);
+        const command = args.shift().toLowerCase();
+
+        if (command === 'kick') {
+            if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ No permission.');
+            const target = message.mentions.members.first();
+            if (!target) return message.reply('❌ Mention a member!');
+            const reason = args.slice(1).join(' ') || 'No reason provided';
+            try { await target.kick(reason); message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
+        }
+
+        if (command === 'ban') {
+            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
+            const target = message.mentions.members.first();
+            if (!target) return message.reply('❌ Mention a member!');
+            const reason = args.slice(1).join(' ') || 'No reason provided';
+            try { await target.ban({ reason }); message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
+        }
+
+        if (command === 'unban') {
+            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
+            const userId = args[0];
+            if (!userId) return message.reply('❌ Provide a valid ID!');
+            const reason = args.slice(1).join(' ') || 'No reason provided';
+            try { await message.guild.members.unban(userId, reason); message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
+        }
     }
 
-    if (command === '.unban') {
-        if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
-        const userId = args[0];
-        if (!userId) return message.reply('❌ Provide a valid ID!');
-        const reason = args.slice(1).join(' ') || 'No reason provided';
-        try { await message.guild.members.unban(userId, reason); message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed.'); }
-    }
+    // EXCLAMATION COMMANDS (!timeout, !rto, !clear, !say, !avatar, !pfp, !HerryHacksyt, !ping)
+    if (content.startsWith('!')) {
+        const args = content.slice(1).trim().split(/ +/);
+        const command = args.shift().toLowerCase();
 
-    if (command === 'timeout' || command === 'mute') {
-        if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
-        const target = message.mentions.members.first();
-        const minutes = parseInt(args[1]);
-        if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user <minutes>`');
-        const reason = args.slice(2).join(' ') || 'No reason provided';
-        try { await target.timeout(minutes * 60 * 1000, reason); message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** min.`); } catch (e) { message.channel.send('❌ Failed.'); }
-    }
+        if (command === 'timeout' || command === 'mute') {
+            if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
+            const target = message.mentions.members.first();
+            const minutes = parseInt(args[1]);
+            if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user <minutes>`');
+            const reason = args.slice(2).join(' ') || 'No reason provided';
+            try { await target.timeout(minutes * 60 * 1000, reason); message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** min.`); } catch (e) { message.channel.send('❌ Failed.'); }
+        }
 
-    if (command === 'clear') {
-        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
-        const amount = parseInt(args[0]);
-        if (!amount || amount < 1 || amount > 100) return message.reply('❌ Specify 1-100.');
-        try { message.delete(); const deleted = await message.channel.bulkDelete(amount, true); const r = await message.channel.send(`🧹 Cleared **${deleted.size}** msgs.`); setTimeout(() => r.delete(), 4000); } catch (e) { message.channel.send('❌ Failed.'); }
-    }
+        if (command === 'rto') {
+            if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
+            const target = message.mentions.members.first();
+            if (!target) return message.reply('❌ Mention a member!');
+            try { await target.timeout(null); message.channel.send(`🔊 Removed timeout from **${target.user.tag}**.`); } catch (e) { message.channel.send('❌ Failed to remove timeout.'); }
+        }
 
-    if (command === 'say') {
-        if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
-        const sayMessage = args.join(' ');
-        if (!sayMessage) return message.reply('❌ Provide a message.');
-        message.delete(); message.channel.send(sayMessage);
-    }
+        if (command === 'clear') {
+            if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
+            const amount = parseInt(args[0]);
+            if (!amount || amount < 1 || amount > 100) return message.reply('❌ Specify 1-100.');
+            try { message.delete(); const deleted = await message.channel.bulkDelete(amount, true); const r = await message.channel.send(`🧹 Cleared **${deleted.size}** msgs.`); setTimeout(() => r.delete(), 4000); } catch (e) { message.channel.send('❌ Failed.'); }
+        }
 
-    if (command === 'avatar' || command === 'pfp') {
-        const target = message.mentions.users.first() || message.author;
-        const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
-        message.channel.send({ embeds: [embed] });
-    }
+        if (command === 'say') {
+            if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
+            const sayMessage = args.join(' ');
+            if (!sayMessage) return message.reply('❌ Provide a message.');
+            message.delete(); message.channel.send(sayMessage);
+        }
 
-    if (content === '!HerryHacksyt') message.channel.send('🔴 Official: https://www.youtube.com/@grandhacks-l7j');
-    if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\`.`);
+        if (command === 'avatar' || command === 'pfp') {
+            const target = message.mentions.users.first() || message.author;
+            const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
+            message.channel.send({ embeds: [embed] });
+        }
+
+        if (content === '!HerryHacksyt') message.channel.send('🔴 Official: https://www.youtube.com/@grandhacks-l7j');
+        if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\`.`);
+    }
 });
 
 // Welcome Event (Server Embed + Threatening DM Alert)
@@ -260,4 +305,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-        
+                
