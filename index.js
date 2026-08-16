@@ -1,5 +1,5 @@
 // ==========================================
-// GRANDHACKS BOT - FULL COMPLETE INDEX (FIXED)
+// HERRYHACKS BOT - FULL COMPLETE INDEX
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -36,7 +36,7 @@ if (fs.existsSync(commandsPath)) {
 }
 
 client.once('ready', async () => {
-    console.log(`🤖 Logged in successfully as ${client.user.tag}! GrandHacks system online.`);
+    console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks system online.`);
 
     if (!process.env.TOKEN || !process.env.CLIENT_ID) {
         console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
@@ -57,7 +57,7 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket Button & Clean System Handler
+// Ticket Button System
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
@@ -143,33 +143,29 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Prefix Commands Handling & AI System
+// Message Handling & AI Assistant
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (AUTO-ROUTER FREE FIX)
+    // OPENROUTER AI SYSTEM (CLEAN & DIRECT)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(`<@!${client.user.id}>`, '').replace(`<@${client.user.id}>`, '').trim();
 
-            const SYSTEM_PROMPT = `
-You are HerryHacks Bot, the official security & support AI for HerryHacks Grand RP Community.
-Tone: Direct, Strict, Short, and Authoritative.
-Rule 1: Remind users to follow server rules and leave other Grand RP cheat/hack servers to avoid being banned.
-Rule 2: Speak in Roman Urdu mixed with simple English.
-Rule 3: Keep responses under 3 lines.
-            `;
+            const ownerId = process.env.OWNER_ID;
+            const isOwner = message.author.id === ownerId;
+
+            const SYSTEM_PROMPT = `You are HerryBot, the main assistant for HerryHacks. You help members fix Lua scripts, teleport features, mods, and code issues. Speak in English if asked in English, or in friendly Roman Urdu if asked in Desi language. ${isOwner ? "Always address the user as 'Boss Herry' or 'Sir'." : "Be friendly and helpful to members."} Keep replies short and direct.`;
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
 
             if (!apiKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` missing hai Railway variables me!");
+                return message.reply("❌ `OPENROUTER_API_KEY` missing hai variables me!");
             }
 
-            // 'openrouter/auto' automatically routes to the best active free model
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
                 model: 'openrouter/auto',
                 messages: [
@@ -181,7 +177,7 @@ Rule 3: Keep responses under 3 lines.
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
                     'HTTP-Referer': 'https://railway.app',
-                    'X-Title': 'GrandHacks Bot'
+                    'X-Title': 'HerryHacks Bot'
                 }
             });
 
@@ -189,19 +185,18 @@ Rule 3: Keep responses under 3 lines.
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ AI se empty response aaya.");
+                await message.reply("❌ AI se response nahi aaya.");
             }
         } catch (error) {
-            const errorMsg = error.response?.data?.error?.message || error.message;
-            console.error("AI Error Details:", error.response?.data || error);
-            await message.reply(`❌ AI Response Error: \`${errorMsg}\``);
+            console.error("AI Error Details:", error.response?.data || error.message);
+            await message.reply("❌ Error processing request.");
         }
         return;
     }
 
     const content = message.content.trim();
 
-    // DOT PREMISES COMMANDS
+    // DOT COMMANDS (.kick, .ban, .unban)
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -231,7 +226,7 @@ Rule 3: Keep responses under 3 lines.
         }
     }
 
-    // EXCLAMATION COMMANDS
+    // EXCLAMATION COMMANDS (!timeout, !rto, !clear, !say, !avatar, !pfp, !HerryHacksyt, !ping)
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -282,20 +277,14 @@ client.on('guildMemberAdd', async (member) => {
     const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
     if (channel) {
         const embed = new EmbedBuilder()
-            .setColor('#ff0000')
+            .setColor('#00ffcc')
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
-            .setDescription(`Aapka swagat hai ${member}!\n\n**Rules:**\n1. Leave all other Grand RP hack servers immediately! If you don't leave, u will be banned from our server. We have a custom bot that will detect u, if found u will be ban! 🛑`)
+            .setDescription(`Swagat hai ${member}!\n\nScript ya modding problem ke liye bot ko mention karein.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: 'HerryHacks Security System' });
+            .setFooter({ text: 'HerryHacks Community System' });
 
-        channel.send({ content: ` **WELCOME TO HERRYHACKS SERVER:** ${member}`, embeds: [embed] });
-    }
-
-    try {
-        await member.send(`🚨 **WARNING FROM HERRYHACKS** 🚨\n\n**Rules:**\n1. Leave all other Grand RP hack servers immediately! If you don't leave, u will be banned from our server. We have a custom bot that will detect u, if found u will be ban! 🛑`);
-    } catch (error) {
-        console.log(`Could not send DM to ${member.user.tag}`);
+        channel.send({ content: ` **WELCOME:** ${member}`, embeds: [embed] });
     }
 });
 
@@ -317,13 +306,13 @@ client.on('guildMemberRemove', async (member) => {
     const embed = new EmbedBuilder()
         .setColor('#ff4d4d')
         .setTitle('🚪 Player Left')
-        .setDescription(`**${member.user.tag}** Leaved The Server\n\nGood Bye 👋`)
+        .setDescription(`**${member.user.tag}** left the server. Good Bye 👋`)
         .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}`, inline: true })
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-        .setFooter({ text: 'HerryHacks Security System' });
+        .setFooter({ text: 'HerryHacks Community System' });
 
     channel.send({ embeds: [embed] });
 });
 
 client.login(process.env.TOKEN);
-                
+        
