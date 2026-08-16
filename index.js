@@ -1,4 +1,3 @@
-
 // ==========================================
 // GRANDHACKS BOT - FULL COMPLETE INDEX (FIXED)
 // ==========================================
@@ -149,7 +148,7 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (UPDATED TO FREE MODEL)
+    // OPENROUTER AI SYSTEM (AUTO-ROUTER FREE FIX)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -170,8 +169,9 @@ Rule 3: Keep responses under 3 lines.
                 return message.reply("❌ `OPENROUTER_API_KEY` missing hai Railway variables me!");
             }
 
+            // 'openrouter/auto' automatically routes to the best active free model
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: 'google/gemma-2-9b-it:free',
+                model: 'openrouter/auto',
                 messages: [
                     { role: 'system', content: SYSTEM_PROMPT },
                     { role: 'user', content: userQuery || 'Hello' }
