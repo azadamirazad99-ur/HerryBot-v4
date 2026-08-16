@@ -1,3 +1,4 @@
+
 // ==========================================
 // GRANDHACKS BOT - FULL COMPLETE INDEX (FIXED)
 // ==========================================
@@ -5,7 +6,7 @@
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const axios = require('axios'); // OpenRouter ke liye zarori hai
+const axios = require('axios');
 
 const client = new Client({
     intents: [
@@ -57,7 +58,7 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket Button & Clean System Handler (Error Free)
+// Ticket Button & Clean System Handler
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
@@ -109,7 +110,6 @@ client.on('interactionCreate', async interaction => {
                         .setStyle(ButtonStyle.Danger)
                 );
 
-                // Safe message sending without breaking role tags
                 await channel.send({ content: `${interaction.user}`, embeds: [embed], components: [row] });
                 await interaction.reply({ content: `✅ Aapka ticket ban gaya hai: ${channel}`, ephemeral: true });
             } catch (error) {
@@ -144,12 +144,12 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Prefix Commands Handling
+// Prefix Commands Handling & AI System
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (UPDATED & STABLE)
+    // OPENROUTER AI SYSTEM (UPDATED TO FREE MODEL)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -171,7 +171,7 @@ Rule 3: Keep responses under 3 lines.
             }
 
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: 'meta-llama/llama-3.3-70b-instruct:free',
+                model: 'google/gemma-2-9b-it:free',
                 messages: [
                     { role: 'system', content: SYSTEM_PROMPT },
                     { role: 'user', content: userQuery || 'Hello' }
@@ -201,7 +201,7 @@ Rule 3: Keep responses under 3 lines.
 
     const content = message.content.trim();
 
-    // DOT PREMISES COMMANDS (.kick, .ban, .unban)
+    // DOT PREMISES COMMANDS
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -231,7 +231,7 @@ Rule 3: Keep responses under 3 lines.
         }
     }
 
-    // EXCLAMATION COMMANDS (!timeout, !rto, !clear, !say, !avatar, !pfp, !HerryHacksyt, !ping)
+    // EXCLAMATION COMMANDS
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -277,7 +277,7 @@ Rule 3: Keep responses under 3 lines.
     }
 });
 
-// Welcome Event (Server Embed + Threatening DM Alert)
+// Welcome Event
 client.on('guildMemberAdd', async (member) => {
     const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
     if (channel) {
@@ -299,7 +299,7 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-// Leave Event (Custom Tag + Good Bye Text + User Avatar Embed)
+// Leave Event
 client.on('guildMemberRemove', async (member) => {
     let channelId = process.env.LEAVE_CHANNEL_ID;
     const configPath = path.join(__dirname, 'config.json');
@@ -326,4 +326,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                              
+                
