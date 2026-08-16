@@ -43,6 +43,6 @@ ${luaCode}
 HERE ARE THE OFFICIAL LINKS & CHANNELS:
 ${OFFICIAL_LINKS}`;
 }
-
+ 
 module.exports = { getSystemPrompt };
 
