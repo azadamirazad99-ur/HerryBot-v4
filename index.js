@@ -149,14 +149,13 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (DIRECT IN INDEX.JS)
+    // OPENROUTER AI SYSTEM (UPDATED & STABLE)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(`<@!${client.user.id}>`, '').replace(`<@${client.user.id}>`, '').trim();
 
-            // Direct AI System Prompt
             const SYSTEM_PROMPT = `
 You are HerryHacks Bot, the official security & support AI for HerryHacks Grand RP Community.
 Tone: Direct, Strict, Short, and Authoritative.
@@ -165,24 +164,37 @@ Rule 2: Speak in Roman Urdu mixed with simple English.
 Rule 3: Keep responses under 3 lines.
             `;
 
+            const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
+
+            if (!apiKey) {
+                return message.reply("❌ `OPENROUTER_API_KEY` missing hai Railway variables me!");
+            }
+
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: 'deepseek/deepseek-chat:free',
+                model: 'meta-llama/llama-3.3-70b-instruct:free',
                 messages: [
                     { role: 'system', content: SYSTEM_PROMPT },
-                    { role: 'user', content: userQuery }
+                    { role: 'user', content: userQuery || 'Hello' }
                 ]
             }, {
                 headers: {
-                    'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://railway.app',
+                    'X-Title': 'GrandHacks Bot'
                 }
             });
 
-            const replyText = response.data.choices[0].message.content;
-            await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
+            const replyText = response.data?.choices?.[0]?.message?.content;
+            if (replyText) {
+                await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
+            } else {
+                await message.reply("❌ AI se empty response aaya.");
+            }
         } catch (error) {
-            console.error("AI Error:", error);
-            await message.reply("❌ AI Response Error. Railway variables me OPENROUTER_API_KEY check karo!");
+            const errorMsg = error.response?.data?.error?.message || error.message;
+            console.error("AI Error Details:", error.response?.data || error);
+            await message.reply(`❌ AI Response Error: \`${errorMsg}\``);
         }
         return;
     }
@@ -314,4 +326,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                                                    
+                              
