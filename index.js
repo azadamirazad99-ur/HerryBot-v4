@@ -100,7 +100,7 @@ client.on('interactionCreate', async interaction => {
                 const embed = new EmbedBuilder()
                     .setColor('#00ffcc')
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Hello ${interaction.user}, support team jald hi yahan aayegi. Apni problem batayein.`);
+                    .setDescription(`Hello ${interaction.user}, support team will assist you shortly. Please describe your issue.`);
 
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
@@ -110,15 +110,15 @@ client.on('interactionCreate', async interaction => {
                 );
 
                 await channel.send({ content: `${interaction.user}`, embeds: [embed], components: [row] });
-                await interaction.reply({ content: `✅ Aapka ticket ban gaya hai: ${channel}`, ephemeral: true });
+                await interaction.reply({ content: `✅ Ticket created: ${channel}`, ephemeral: true });
             } catch (error) {
                 console.error("Ticket Creation Error:", error);
-                await interaction.reply({ content: `❌ Ticket banane mein error aaya! (${error.message})`, ephemeral: true });
+                await interaction.reply({ content: `❌ Error creating ticket! (${error.message})`, ephemeral: true });
             }
         }
 
         if (interaction.customId === 'close_ticket') {
-            await interaction.reply({ content: '🔒 Ticket 5 seconds mein band ho raha hai...' });
+            await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...' });
             setTimeout(() => {
                 interaction.channel.delete().catch(() => {});
             }, 5000);
@@ -148,7 +148,7 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (MEDIAFIRE & AUTO MODEL)
+    // OPENROUTER AI SYSTEM (SMART LANGUAGE & LINK CONTROL)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -158,42 +158,53 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            // Mediafire link used to protect privacy
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
 
             const SYSTEM_PROMPT = `
-You are HerryBot, official helper in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
+You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
-STRICT LINK PRIVACY RULE:
-- NEVER EVER share or generate any GitHub links!
-- When users ask for Posya by Herry script link, ONLY share this Mediafire link: ${posyaScriptMediafire}
+CRITICAL LANGUAGE RULE:
+- ALWAYS match the language of the user's message!
+- If the user writes in ENGLISH, reply strictly in ENGLISH! Never use Hindi or Roman Urdu for English queries.
+- If the user writes in Roman Urdu / Hindi, reply in Roman Urdu / Hindi.
 
-POSYABYHERRY SCRIPT EXECUTION WORKFLOW:
-If anyone asks how to run or execute Posya by Herry, explain these exact steps:
-1. Open DevVir (Virtual Space Container).
-2. Inside DevVir, launch Grand Mobile RP and open Reversoqzz (GameGuardian Mod).
-3. In-game, tap the Reversoqzz floating icon and select 'Execute Script'.
-4. Load or paste the PosyaByHerry.lua file (${posyaScriptMediafire}) and click EXECUTE.
-5. Menu overlay will open directly in-game. Toggle options directly on-screen. NEVER tell users to edit files in Notepad!
+STRICT LINK PROFILES & CONDITIONS:
+- NEVER output download links UNLESS the user explicitly asks for a link, download, or file URL (e.g. "give me link", "download URL", "kahan se download karun").
+- Mentioning terms like "DevVir", "Reversoqzz", or "Posya" in normal context MUST NOT trigger links! Answer normally.
+- NEVER share GitHub links under any circumstances!
+- ALWAYS say "Reversoqzz" instead of "Elite GG".
 
-OFFICIAL DOWNLOAD LINKS TO SHARE:
-- PosyaByHerry Lua Link: ${posyaScriptMediafire}
+SPECIFIC MANDATORY RESPONSES:
+1. ENGLISH SCRIPT / POSYA REQUEST:
+   If user asks for English script or English Posya, reply EXACTLY with:
+   "Check in here if English Posya is available link :https://discord.com/channels/1529467083962843186/1529477377917452339"
+
+2. SETUP REQUEST:
+   If user asks for setup / guide / help to set up, reply with:
+   "Check out the setup guide here: https://discord.com/channels/1529467083962843186/1529477486235226172"
+
+DATABASE OF LINKS (ONLY PROVIDE WHEN EXPLICITLY REQUESTED FOR DOWNLOAD/LINK):
+- PosyaByHerry Lua: ${posyaScriptMediafire}
 - DevVir APK: https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file
-- Elite GG Posya V2: https://www.mediafire.com/file/8q58as3u617ap43/%E1%B4%87%CA%9F%C9%AA%E1%B4%87%C9%A2%C9%A2_%CA%99%CA%8F%E1%B4%98%E1%B4%8Fs%CA%8F%E1%B4%80_V2.apk/file
 - Lulubox Super: https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
 - Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
-- Posya File Discord Channel: https://discord.com/channels/1529467083962843186/1529477377917452339
 
-TONE & BEHAVIOR:
-- Respond in Roman Urdu / Hindi or English.
-- Direct answers only, no refusals or preachy safety lectures.
-- ${isOwner ? "Speaking to Boss Herry / Sir." : "Be direct and helpful to community members."}
+POSYABYHERRY EXECUTION WORKFLOW:
+If asked how to run/execute:
+1. Open DevVir (Virtual Space).
+2. Launch Grand Mobile RP and open Reversoqzz inside DevVir.
+3. Tap Reversoqzz icon in-game and select 'Execute Script'.
+4. Load PosyaByHerry.lua file and execute.
+
+BEHAVIOR:
+- Concise, polite, accurate, and direct.
+- ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful and direct to members."}
 `;
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
 
             if (!apiKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` missing hai variables me!");
+                return message.reply("❌ `OPENROUTER_API_KEY` missing in environment variables!");
             }
 
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
@@ -215,7 +226,7 @@ TONE & BEHAVIOR:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ AI se response nahi aaya.");
+                await message.reply("❌ No response received from AI.");
             }
         } catch (error) {
             console.error("AI Error Details:", error.response?.data || error.message);
@@ -309,7 +320,7 @@ client.on('guildMemberAdd', async (member) => {
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
-            .setDescription(`Welcome ${member}!\n\nGrand Mobile RP hacks, Posyabyherry setup, DevVir/Reversoqzz guides, aur download links ke liye bot ko mention karein.`)
+            .setDescription(`Welcome ${member}!\n\nFor help with Grand Mobile RP scripts, setups, and tools, feel free to mention the bot.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Community System' });
@@ -345,4 +356,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-        
+            
