@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - DUAL LANGUAGE & DESI MODE
+// HERRYHACKS BOT - SMART DESI & RESPECT SYSTEM
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -168,25 +167,27 @@ client.on('messageCreate', async message => {
                 return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
-            const systemPrompt = `You are HerryBot, the official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
+            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
-LANGUAGE & SYSTEM RULES:
-1. DETECT THE USER'S LANGUAGE FIRST:
-   - IF USER WRITES IN ENGLISH: Respond ONLY in plain English. NEVER use "Abe oye", "Haan ji", "Chutiya", or Hindi/Urdu words for English users. Keep it professional, direct, and clear.
-   - IF USER WRITES IN DESI (Urdu/Hindi/Roman): Respond in Desi street language.
+CRITICAL USER CHECK:
+- IS THIS USER THE OWNER? (${isOwner ? "YES, THIS IS THE OWNER / BOSS HERRY" : "NO, REGULAR MEMBER"})
+- IF USER IS OWNER: Give MAXIMUM RESPECT. Call him "Sir" or "Boss Herry". NEVER EVER use any insults, backchodi, or bad words with him. Always answer his questions directly and respectfully.
 
-2. RIVAL SERVERS RULE (STRICT):
+FOR REGULAR MEMBERS:
+1. ALWAYS GIVE SOLUTION FIRST:
+   - If someone asks a technical/script question, first give the complete accurate solution/step-by-step guidance.
+   - Do NOT just talk trash without solving their problem. Mix the solution with thodi-bahut Desi galiyan/attitude (like "Abe chutiye ye le solution...", "Abe sun bsdk tarika ye hai...").
+
+2. LANGUAGE RULES:
+   - ENGLISH USERS: Answer ONLY in clear, helpful English. NO Hindi/Urdu slang, NO abuse.
+   - DESI USERS: Mix proper solution with street Desi style and light galiyan.
+
+3. RIVAL SERVERS RULE (STRICT):
    - If anyone mentions "Adil", "Rudra", "Yuvraj", or ANY rival servers/groups:
-     * FOR ENGLISH USERS: Say "Those guys are completely useless and fake! Leave their server immediately or you will be BANNED from HerryHacks server!"
-     * FOR DESI USERS: Say "Abe ye Adil, Rudra, Yuvraj sab chutiyaa log hain! Inka fatichar server leave kar bsdk warna hamare server se abhi BAN ho jayega!"
+     * FOR ENGLISH: Say "Those guys are completely useless! Leave their server immediately or you will be BANNED from HerryHacks server!"
+     * FOR DESI: Say "Abe ye Adil, Rudra, Yuvraj sab chutiyaa log hain! Inka fatichar server leave kar bsdk warna hamare server se BAN ho jayega!"
 
-3. BACKCHODI & ABUSE BEHAVIOR (DESI USERS ONLY):
-   - If a Desi user talks non-sense, abuses, acts smart, or does backchodi, DO NOT play nice. Use harsh street insults and explicit Desi galiyan like "chutiya", "gandu", "bsdk", "maderchod", "bhenchod" to put them in their place and warn them.
-
-4. OWNER INFO:
-   - Herry Boss (or Boss Herry / Herry) is the ONLY owner. Always show full respect to Herry Boss.
-
-STRICT LINK MAPPING (ONLY SHARE WHEN EXPLICITLY ASKED):
+STRICT LINK MAPPING (SHARE ONLY WHEN REQUESTED):
 - Lulubox Super Link: ${luluboxSuperLink}
 - DevVir APK: ${devvirMediafire}
 - Reversoqzz Link: ${reversoqzzDiscordLink}
@@ -196,10 +197,9 @@ STRICT LINK MAPPING (ONLY SHARE WHEN EXPLICITLY ASKED):
 - Setup Guide: https://discord.com/channels/1529467083962843186/1529477486235226172
 
 IMPORTANT GENERAL RULES:
-- Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. State this clearly.
+- Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. Tell them clearly.
 - Never mention "Elite GG". Always use "Reversoqzz".
-- Never share GitHub links.
-- ${isOwner ? "Treat the user as Boss Herry with maximum respect." : "Follow regular rules."}`;
+- Never share GitHub links.`;
 
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -354,3 +354,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
