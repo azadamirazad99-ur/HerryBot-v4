@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - FULL COMPLETE INDEX
+// HERRYHACKS BOT - GRAND MOBILE RP SPECIALIZED INDEX
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -148,7 +148,7 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (CLEAN & DIRECT)
+    // OPENROUTER AI SYSTEM (GRAND MOBILE RP ONLY)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -158,7 +158,16 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            const SYSTEM_PROMPT = `You are HerryBot, the main assistant for HerryHacks. You help members fix Lua scripts, teleport features, mods, and code issues. Speak in English if asked in English, or in friendly Roman Urdu if asked in Desi language. ${isOwner ? "Always address the user as 'Boss Herry' or 'Sir'." : "Be friendly and helpful to members."} Keep replies short and direct.`;
+            const SYSTEM_PROMPT = `
+You are HerryBot, the official assistant dedicated ONLY to Grand Mobile RP and HerryHacks server.
+CRITICAL RULES:
+1. STRICTLY talk only about Grand Mobile RP. If the user asks about Roblox, Free Fire, or any other game, reject politely and say you only support Grand Mobile RP.
+2. DO NOT output long programming code blocks or raw scripts. Instead, provide text guidance, options, and direct solutions for Grand Mobile RP Lua script features (teleport, auto-farm, features usage).
+3. If users ask for Russian Lua script help/translation, translate Russian text to Urdu/English and explain what the script options do.
+4. If users ask for cheat/hack links or downloads, direct them to our server's download channels.
+5. Speak in English if asked in English, or in friendly Roman Urdu if asked in Desi language.
+${isOwner ? "6. ALWAYS address the user as 'Boss Herry' or 'Sir'." : "6. Be helpful and direct with members."}
+            `;
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
 
@@ -279,7 +288,7 @@ client.on('guildMemberAdd', async (member) => {
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
-            .setDescription(`Swagat hai ${member}!\n\nScript ya modding problem ke liye bot ko mention karein.`)
+            .setDescription(`Swagat hai ${member}!\n\nGrand Mobile RP scripts, Russian translation, ya support ke liye bot ko mention karein.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Community System' });
@@ -315,4 +324,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-        
+                                                   
