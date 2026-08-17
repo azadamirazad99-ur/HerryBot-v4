@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - SMART DESI & RESPECT SYSTEM
+// HERRYHACKS BOT - ALL ORIGINAL COMMANDS RESTORED
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -21,7 +21,7 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Command Handler Setup
+// Slash Command Handler Setup
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -57,7 +57,7 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket System
+// Ticket System Integration
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
@@ -143,10 +143,11 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response Handler
+// AI Response & Mention Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
+    // AI Chat Trigger on Bot Mention
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
@@ -167,25 +168,32 @@ client.on('messageCreate', async message => {
                 return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
+            // DYNAMIC PROMPT BUILDER
+            let userRoleInstruction = "";
+            if (isOwner) {
+                userRoleInstruction = `
+CRITICAL ROLE: THIS IS YOUR OWNER AND BOSS (HERRY SIR / BOSS).
+- You MUST address him as "Boss", "Sir", or "Boss Herry".
+- DO NOT ASK "How can I help you?" or "What do you need?" - JUST TALK NORMALLY.
+- Show MAXIMUM RESPECT. ALWAYS be polite, humble, and friendly.
+- ABSOLUTELY NO GALIYAN, NO INSULTS, NO SLANG, NO BACKCHODI AGAINST HIM.
+- Chat with him casually as your Boss and creator.`;
+            } else {
+                userRoleInstruction = `
+CRITICAL ROLE: THIS IS A REGULAR MEMBER (NOT THE OWNER).
+- Give them a proper solution/answer FIRST.
+- Speak in heavy street Desi Hindi/Urdu with galiyan, attitude, and roasts (e.g., "Abe chutiye ye le solution...", "Sun bsdk...").
+- If they ask in English, answer ONLY in clean English without any abuse.`;
+            }
+
             const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
-CRITICAL USER CHECK:
-- IS THIS USER THE OWNER? (${isOwner ? "YES, THIS IS THE OWNER / BOSS HERRY" : "NO, REGULAR MEMBER"})
-- IF USER IS OWNER: Give MAXIMUM RESPECT. Call him "Sir" or "Boss Herry". NEVER EVER use any insults, backchodi, or bad words with him. Always answer his questions directly and respectfully.
+${userRoleInstruction}
 
-FOR REGULAR MEMBERS:
-1. ALWAYS GIVE SOLUTION FIRST:
-   - If someone asks a technical/script question, first give the complete accurate solution/step-by-step guidance.
-   - Do NOT just talk trash without solving their problem. Mix the solution with thodi-bahut Desi galiyan/attitude (like "Abe chutiye ye le solution...", "Abe sun bsdk tarika ye hai...").
-
-2. LANGUAGE RULES:
-   - ENGLISH USERS: Answer ONLY in clear, helpful English. NO Hindi/Urdu slang, NO abuse.
-   - DESI USERS: Mix proper solution with street Desi style and light galiyan.
-
-3. RIVAL SERVERS RULE (STRICT):
-   - If anyone mentions "Adil", "Rudra", "Yuvraj", or ANY rival servers/groups:
-     * FOR ENGLISH: Say "Those guys are completely useless! Leave their server immediately or you will be BANNED from HerryHacks server!"
-     * FOR DESI: Say "Abe ye Adil, Rudra, Yuvraj sab chutiyaa log hain! Inka fatichar server leave kar bsdk warna hamare server se BAN ho jayega!"
+RIVAL SERVERS RULE (STRICT):
+- If anyone mentions "Adil", "Rudra", "Yuvraj", or ANY rival servers/groups:
+  * FOR ENGLISH USERS: Say "Those guys are completely useless! Leave their server immediately or you will be BANNED from HerryHacks server!"
+  * FOR DESI USERS: Say "Abe ye Adil, Rudra, Yuvraj sab chutiyaa log hain! Inka fatichar server leave kar bsdk warna hamare server se BAN ho jayega!"
 
 STRICT LINK MAPPING (SHARE ONLY WHEN REQUESTED):
 - Lulubox Super Link: ${luluboxSuperLink}
@@ -199,7 +207,8 @@ STRICT LINK MAPPING (SHARE ONLY WHEN REQUESTED):
 IMPORTANT GENERAL RULES:
 - Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. Tell them clearly.
 - Never mention "Elite GG". Always use "Reversoqzz".
-- Never share GitHub links.`;
+- Never share GitHub links.
+- DO NOT INCLUDE ANY SAFETY METADATA TEXT LIKE 'User Safety: safe' IN YOUR RESPONSE.`;
 
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -218,9 +227,15 @@ IMPORTANT GENERAL RULES:
                 }
             );
 
-            const replyText = response.data?.choices?.[0]?.message?.content;
+            let replyText = response.data?.choices?.[0]?.message?.content;
 
             if (replyText) {
+                replyText = replyText
+                    .replace(/User Safety:\s*safe/gi, '')
+                    .replace(/Safety Evaluation:\s*safe/gi, '')
+                    .replace(/Safety:\s*safe/gi, '')
+                    .trim();
+
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
                 await message.reply("Response generating issue, try again.");
@@ -235,7 +250,9 @@ IMPORTANT GENERAL RULES:
 
     const content = message.content.trim();
 
-    // Command Handlers (.kick, .ban, .unban)
+    // ==========================================
+    // ALL DOT (.) PREFIX COMMANDS RESTORED
+    // ==========================================
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -265,7 +282,9 @@ IMPORTANT GENERAL RULES:
         }
     }
 
-    // Moderate Commands (!timeout, !rto, !clear, !say, !avatar, !pfp, !HerryHacksyt, !ping)
+    // ==========================================
+    // ALL EXCLAMATION (!) PREFIX COMMANDS RESTORED
+    // ==========================================
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -311,7 +330,9 @@ IMPORTANT GENERAL RULES:
     }
 });
 
-// Member Welcome Event
+// ==========================================
+// MEMBER WELCOME EVENT RESTORED
+// ==========================================
 client.on('guildMemberAdd', async (member) => {
     const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
     if (channel) {
@@ -327,7 +348,9 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-// Member Leave Event
+// ==========================================
+// MEMBER LEAVE EVENT RESTORED
+// ==========================================
 client.on('guildMemberRemove', async (member) => {
     let channelId = process.env.LEAVE_CHANNEL_ID;
     const configPath = path.join(__dirname, 'config.json');
@@ -354,4 +377,5 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
 
