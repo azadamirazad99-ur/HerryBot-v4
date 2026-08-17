@@ -1,8 +1,10 @@
 // ==========================================
 // HERRYHACKS BOT - FULL COMPLETE INDEX.JS
+// WITH FREE GOOGLE GEMINI VISION SUPPORT
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('node:fs');
 const path = require('node:path');
 const axios = require('axios');
@@ -56,6 +58,17 @@ client.once('ready', async () => {
         console.error("Slash Command Error:", error);
     }
 });
+
+// Helper function to convert Image URL to Inline Data for Gemini
+async function urlToGenerativePart(url, mimeType) {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    return {
+        inlineData: {
+            data: Buffer.from(response.data).toString("base64"),
+            mimeType
+        },
+    };
+}
 
 // Ticket Button System
 client.on('interactionCreate', async interaction => {
@@ -143,13 +156,10 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Message Handling & AI Assistant
+// Message Handling & FREE GEMINI VISION AI
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // ==========================================
-    // OPENROUTER AI SYSTEM (EXACT LINKS & DISTINCTIONS)
-    // ==========================================
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
@@ -162,8 +172,17 @@ client.on('messageCreate', async message => {
             const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
             const reversoqzzDiscordLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
 
-            const SYSTEM_PROMPT = `
+            const geminiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
+            if (!geminiKey) {
+                return message.reply("❌ `GEMINI_API_KEY` missing in environment variables!");
+            }
+
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({ 
+                model: "gemini-1.5-flash",
+                systemInstruction: `
 You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
+You can view and analyze photos attached by users.
 
 CRITICAL STRICT LINK MAPPING:
 1. DEV VIR REQUEST:
@@ -176,11 +195,11 @@ CRITICAL STRICT LINK MAPPING:
 
 3. ENGLISH SCRIPT REQUEST:
    Reply EXACTLY:
-   "There Is not available Butt soon will available check here For update If English posya Is available:https://discord.com/channels/1529467083962843186/1529477377917452339"
+   "Check in here if English Posya is available link :https://discord.com/channels/1529467083962843186/1529477377917452339"
 
 4. SETUP REQUEST:
    Reply EXACTLY:
-   "Check out the setup guide here all Video are available : https://discord.com/channels/1529467083962843186/1529477486235226172"
+   "Check out the setup guide here: https://discord.com/channels/1529467083962843186/1529477486235226172"
 
 CRITICAL RULE - MONEY HACK / GC HACK:
 - Money Hack, Unlimited Money, and Grand Coins (GC) Hack ARE NOT AVAILABLE!
@@ -193,48 +212,38 @@ GENERAL RULES:
 - MATCH LANGUAGE! English query -> 100% English reply. Roman Urdu/Hindi query -> Roman Urdu/Hindi reply.
 - NEVER share GitHub links under any circumstances.
 
-DATABASE OF VALID LINKS:
-- DevVir Virtual Space: ${devvirMediafire}
-- Reversoqzz Channel: ${reversoqzzDiscordLink}
-- PosyaByHerry Lua Script: ${posyaScriptMediafire}
-- Lulubox Super: https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
-- Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
-
 BEHAVIOR:
 - Concise, clear, direct, and polite.
 - ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}
-`;
-
-            const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
-
-            if (!apiKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` missing in environment variables!");
-            }
-
-            const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: 'openrouter/auto',
-                messages: [
-                    { role: 'system', content: SYSTEM_PROMPT },
-                    { role: 'user', content: userQuery || 'Hello' }
-                ]
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://railway.app',
-                    'X-Title': 'HerryHacks Bot'
-                }
+`
             });
 
-            const replyText = response.data?.choices?.[0]?.message?.content;
+            const promptParts = [];
+            if (userQuery) promptParts.push(userQuery);
+
+            // Handle Attached Image
+            if (message.attachments.size > 0) {
+                const attachment = message.attachments.first();
+                if (attachment.contentType && attachment.contentType.startsWith('image/')) {
+                    const imagePart = await urlToGenerativePart(attachment.url, attachment.contentType);
+                    promptParts.push(imagePart);
+                }
+            }
+
+            if (promptParts.length === 0) promptParts.push("Hello");
+
+            const result = await model.generateContent(promptParts);
+            const replyText = result.response.text();
+
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ No response received from AI.");
+                await message.reply("❌ No response generated.");
             }
+
         } catch (error) {
-            console.error("AI Error Details:", error.response?.data || error.message);
-            await message.reply("❌ Error processing request.");
+            console.error("Gemini AI Error:", error);
+            await message.reply("❌ Error processing request/image.");
         }
         return;
     }
@@ -360,4 +369,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                            
+            
