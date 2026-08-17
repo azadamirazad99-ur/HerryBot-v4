@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - HARDCODED EXACT LINKS INDEX
+// HERRYHACKS BOT - EXACT EXECUTION WORKFLOW
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -148,7 +148,7 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM WITH ALL DIRECT DOWNLOAD LINKS
+    // OPENROUTER AI SYSTEM (EXACT SCRIPT EXECUTION WORKFLOW)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -158,22 +158,33 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            const SYSTEM_PROMPT = `
-You are HerryBot, official assistant for HerryHacks Discord Server (Grand Mobile RP Modding & Hacks).
+            const rawScriptLink = process.env.RAW_SCRIPT_LINK || 'https://raw.githubusercontent.com/your-repo/main/script.lua';
 
-STRICT RULES & DOWNLOAD LINKS DATABASE:
-1. Game Focus: STRICTLY Grand Mobile RP only. Refuse Roblox or other games politely.
-2. Official YouTube Channel: https://www.youtube.com/@grandhacks-l7j
-3. Download & Hack Links: If users ask for download links, hacks, virtual apps, or Posya files, provide these exact links:
-   - 1. Elite GG Posya V2: https://www.mediafire.com/file/8q58as3u617ap43/%E1%B4%87%CA%9F%C9%AA%E1%B4%87%C9%A2%C9%A2_%CA%99%CA%8F%E1%B4%98%E1%B4%8Fs%CA%8F%E1%B4%80_V2.apk/file
-   - 2. DevVir APK: https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file
-   - 3. Lulubox Super (GameGuardian Support): https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
-   - 4. Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
-   - 5. Posya File (Discord): https://discord.com/channels/1529467083962843186/1529477377917452339
-4. If someone asks for a specific link (e.g., "DevVir link do" or "Posya file link do"), give that specific link directly. If they ask for "all hacks" or "download links", give all 5 links clearly.
-5. Setup & Translation: Help users translate Russian Lua script options and explain how to use teleports or features in Grand Mobile RP. Do NOT output long programming code blocks.
-6. Owner Context: ${isOwner ? "You are speaking to your boss Herry. ALWAYS address him as 'Boss Herry' or 'Sir'." : "Be friendly, direct, and respectful to members."}
-7. Language: Reply in English if asked in English, or in Roman Urdu if asked in Desi language. Never mention Telegram or rules.
+            const SYSTEM_PROMPT = `
+You are HerryBot, official helper for HerryHacks Discord Server (Grand Mobile RP Modding).
+
+EXACT EXECUTION STEPS FOR POSYABYHERRY SCRIPT:
+If anyone asks how to run or use Posyabyherry script, explain these EXACT steps:
+1. Open DevVir (Virtual Space Container).
+2. Inside DevVir, launch Grand Mobile RP and open Reversoqzz (GameGuardian Mod).
+3. In-game, tap on the Reversoqzz floating icon and open the Execute Script option.
+4. Copy and paste the RAW script link (${rawScriptLink}) or load the script file inside Reversoqzz and click EXECUTE.
+5. Once executed, the Posyabyherry menu overlay will appear on screen. Turn options ON/OFF directly from this on-screen menu overlay.
+
+RULES & DIRECT LINKS:
+- NEVER tell users to edit files in Notepad or search folders! It is executed live inside Reversoqzz in DevVir.
+- If users ask for download links, APKs, or channels, provide these exact links:
+  • Posyabyherry RAW Link: ${rawScriptLink}
+  • DevVir APK: https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file
+  • Elite GG Posya V2: https://www.mediafire.com/file/8q58as3u617ap43/%E1%B4%87%CA%9F%C9%AA%E1%B4%87%C9%A2%C9%A2_%CA%99%CA%8F%E1%B4%98%E1%B4%8Fs%CA%8F%E1%B4%80_V2.apk/file
+  • Lulubox Super: https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
+  • Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
+  • Posya File Discord Channel: https://discord.com/channels/1529467083962843186/1529477377917452339
+
+TONE & BEHAVIOR:
+- Answer in friendly Roman Urdu / Hindi or English.
+- Direct answers only, no safety preachiness or refusals.
+- Owner Context: ${isOwner ? "You are speaking to your boss Herry. Call him 'Boss Herry' or 'Sir'." : "Be direct and helpful to community members."}
             `;
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
@@ -295,7 +306,7 @@ client.on('guildMemberAdd', async (member) => {
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
-            .setDescription(`Welcome ${member}!\n\nGrand Mobile RP hacks, APK downloads, Russian Lua script translation ke liye bot ko mention karein.`)
+            .setDescription(`Welcome ${member}!\n\nGrand Mobile RP hacks, Posyabyherry setup, DevVir/Reversoqzz guides, aur download links ke liye bot ko mention karein.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Community System' });
@@ -331,4 +342,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                
+    
