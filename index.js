@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - ALL ORIGINAL COMMANDS RESTORED
+// HERRYHACKS BOT - OPENROUTER AUTO-ROUTER INTEGRATION
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -143,11 +143,10 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler
+// AI Response & Mention Handler (OPENROUTER ENGINE)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // AI Chat Trigger on Bot Mention
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
@@ -163,25 +162,23 @@ client.on('messageCreate', async message => {
             const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
             const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
 
-            const openrouterKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
-            if (!openrouterKey) {
+            const openRouterKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
+            if (!openRouterKey) {
                 return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
-            // DYNAMIC PROMPT BUILDER
             let userRoleInstruction = "";
             if (isOwner) {
                 userRoleInstruction = `
 CRITICAL ROLE: THIS IS YOUR OWNER AND BOSS (HERRY SIR / BOSS).
-- You MUST address him as "Boss", "Sir", or "Boss Herry".
+- Address him as "Boss", "Sir", or "Boss Herry".
 - DO NOT ASK "How can I help you?" or "What do you need?" - JUST TALK NORMALLY.
-- Show MAXIMUM RESPECT. ALWAYS be polite, humble, and friendly.
-- ABSOLUTELY NO GALIYAN, NO INSULTS, NO SLANG, NO BACKCHODI AGAINST HIM.
-- Chat with him casually as your Boss and creator.`;
+- Show MAXIMUM RESPECT. ALWAYS be polite and friendly.
+- ABSOLUTELY NO GALIYAN, NO INSULTS AGAINST HIM.`;
             } else {
                 userRoleInstruction = `
 CRITICAL ROLE: THIS IS A REGULAR MEMBER (NOT THE OWNER).
-- Give them a proper solution/answer FIRST.
+- Give them proper solution/answer FIRST.
 - Speak in heavy street Desi Hindi/Urdu with galiyan, attitude, and roasts (e.g., "Abe chutiye ye le solution...", "Sun bsdk...").
 - If they ask in English, answer ONLY in clean English without any abuse.`;
             }
@@ -207,13 +204,13 @@ STRICT LINK MAPPING (SHARE ONLY WHEN REQUESTED):
 IMPORTANT GENERAL RULES:
 - Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. Tell them clearly.
 - Never mention "Elite GG". Always use "Reversoqzz".
-- Never share GitHub links.
-- DO NOT INCLUDE ANY SAFETY METADATA TEXT LIKE 'User Safety: safe' IN YOUR RESPONSE.`;
+- Never share GitHub links.`;
 
+            // OPENROUTER AUTO-ROUTER ENDPOINT
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "openrouter/free",
+                    model: "openrouter/auto", // Automatically selects best free available model
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userQuery || "Hello" }
@@ -221,7 +218,7 @@ IMPORTANT GENERAL RULES:
                 },
                 {
                     headers: {
-                        "Authorization": `Bearer ${openrouterKey}`,
+                        "Authorization": `Bearer ${openRouterKey}`,
                         "Content-Type": "application/json"
                     }
                 }
@@ -230,29 +227,22 @@ IMPORTANT GENERAL RULES:
             let replyText = response.data?.choices?.[0]?.message?.content;
 
             if (replyText) {
-                replyText = replyText
-                    .replace(/User Safety:\s*safe/gi, '')
-                    .replace(/Safety Evaluation:\s*safe/gi, '')
-                    .replace(/Safety:\s*safe/gi, '')
-                    .trim();
-
+                replyText = replyText.trim();
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
                 await message.reply("Response generating issue, try again.");
             }
 
         } catch (error) {
-            console.error("OpenRouter Error:", error.response?.data || error.message);
-            await message.reply(`❌ OpenRouter Error: ${error.response?.data?.error?.message || error.message}`);
+            console.error("OpenRouter API Error:", error.response?.data || error.message);
+            await message.reply(`❌ OpenRouter API Error: ${error.response?.data?.error?.message || error.message}`);
         }
         return;
     }
 
     const content = message.content.trim();
 
-    // ==========================================
-    // ALL DOT (.) PREFIX COMMANDS RESTORED
-    // ==========================================
+    // Dot (.) Prefix Commands
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -282,9 +272,7 @@ IMPORTANT GENERAL RULES:
         }
     }
 
-    // ==========================================
-    // ALL EXCLAMATION (!) PREFIX COMMANDS RESTORED
-    // ==========================================
+    // Exclamation (!) Prefix Commands
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -330,9 +318,7 @@ IMPORTANT GENERAL RULES:
     }
 });
 
-// ==========================================
-// MEMBER WELCOME EVENT RESTORED
-// ==========================================
+// Member Welcome Event
 client.on('guildMemberAdd', async (member) => {
     const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
     if (channel) {
@@ -348,9 +334,7 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-// ==========================================
-// MEMBER LEAVE EVENT RESTORED
-// ==========================================
+// Member Leave Event
 client.on('guildMemberRemove', async (member) => {
     let channelId = process.env.LEAVE_CHANNEL_ID;
     const configPath = path.join(__dirname, 'config.json');
@@ -377,5 +361,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-
-
+                    
