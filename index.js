@@ -176,11 +176,11 @@ CRITICAL STRICT LINK MAPPING:
 
 3. ENGLISH SCRIPT REQUEST:
    Reply EXACTLY:
-   "Check in here if English Posya is available link :https://discord.com/channels/1529467083962843186/1529477377917452339"
+   "There Is not available Butt soon will available check here For update If English posya Is available:https://discord.com/channels/1529467083962843186/1529477377917452339"
 
 4. SETUP REQUEST:
    Reply EXACTLY:
-   "Check out the setup guide here: https://discord.com/channels/1529467083962843186/1529477486235226172"
+   "Check out the setup guide here all Video are available : https://discord.com/channels/1529467083962843186/1529477486235226172"
 
 CRITICAL RULE - MONEY HACK / GC HACK:
 - Money Hack, Unlimited Money, and Grand Coins (GC) Hack ARE NOT AVAILABLE!
