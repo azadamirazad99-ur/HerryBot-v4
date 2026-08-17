@@ -1,3 +1,4 @@
+
 // ==========================================
 // HERRYHACKS BOT - FULL COMPLETE INDEX.JS
 // WITH FREE GOOGLE GEMINI VISION SUPPORT
@@ -177,13 +178,12 @@ client.on('messageCreate', async message => {
                 return message.reply("❌ `GEMINI_API_KEY` missing in environment variables!");
             }
 
-            // Force API Version v1 to avoid deprecated v1beta endpoints
             const genAI = new GoogleGenerativeAI(geminiKey);
             
-            const model = genAI.getGenerativeModel(
-                { 
-                    model: "gemini-1.5-flash",
-                    systemInstruction: `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts). You can view and analyze photos attached by users.
+            // Using FREE gemini-2.0-flash model
+            const model = genAI.getGenerativeModel({ 
+                model: "gemini-2.0-flash",
+                systemInstruction: `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts). You can view and analyze photos attached by users.
 
 CRITICAL STRICT LINK MAPPING:
 1. DEV VIR REQUEST: Give THIS EXACT Mediafire link: ${devvirMediafire}
@@ -201,9 +201,7 @@ GENERAL RULES:
 - MATCH LANGUAGE! English -> English, Roman Urdu -> Roman Urdu.
 - NEVER share GitHub links.
 - ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}`
-                },
-                { apiVersion: 'v1' }
-            );
+            });
 
             const promptParts = [];
 
@@ -356,4 +354,3 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                    
