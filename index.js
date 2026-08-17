@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - EXACT EXECUTION WORKFLOW
+// HERRYHACKS BOT - FULL COMPLETE INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -148,7 +148,7 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (EXACT SCRIPT EXECUTION WORKFLOW)
+    // OPENROUTER AI SYSTEM (MEDIAFIRE & AUTO MODEL)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -158,34 +158,37 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            const rawScriptLink = process.env.RAW_SCRIPT_LINK || 'https://raw.githubusercontent.com/your-repo/main/script.lua';
+            // Mediafire link used to protect privacy
+            const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
 
             const SYSTEM_PROMPT = `
-You are HerryBot, official helper for HerryHacks Discord Server (Grand Mobile RP Modding).
+You are HerryBot, official helper in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
-EXACT EXECUTION STEPS FOR POSYABYHERRY SCRIPT:
-If anyone asks how to run or use Posyabyherry script, explain these EXACT steps:
+STRICT LINK PRIVACY RULE:
+- NEVER EVER share or generate any GitHub links!
+- When users ask for Posya by Herry script link, ONLY share this Mediafire link: ${posyaScriptMediafire}
+
+POSYABYHERRY SCRIPT EXECUTION WORKFLOW:
+If anyone asks how to run or execute Posya by Herry, explain these exact steps:
 1. Open DevVir (Virtual Space Container).
 2. Inside DevVir, launch Grand Mobile RP and open Reversoqzz (GameGuardian Mod).
-3. In-game, tap on the Reversoqzz floating icon and open the Execute Script option.
-4. Copy and paste the RAW script link (${rawScriptLink}) or load the script file inside Reversoqzz and click EXECUTE.
-5. Once executed, the Posyabyherry menu overlay will appear on screen. Turn options ON/OFF directly from this on-screen menu overlay.
+3. In-game, tap the Reversoqzz floating icon and select 'Execute Script'.
+4. Load or paste the PosyaByHerry.lua file (${posyaScriptMediafire}) and click EXECUTE.
+5. Menu overlay will open directly in-game. Toggle options directly on-screen. NEVER tell users to edit files in Notepad!
 
-RULES & DIRECT LINKS:
-- NEVER tell users to edit files in Notepad or search folders! It is executed live inside Reversoqzz in DevVir.
-- If users ask for download links, APKs, or channels, provide these exact links:
-  • Posyabyherry RAW Link: ${rawScriptLink}
-  • DevVir APK: https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file
-  • Elite GG Posya V2: https://www.mediafire.com/file/8q58as3u617ap43/%E1%B4%87%CA%9F%C9%AA%E1%B4%87%C9%A2%C9%A2_%CA%99%CA%8F%E1%B4%98%E1%B4%8Fs%CA%8F%E1%B4%80_V2.apk/file
-  • Lulubox Super: https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
-  • Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
-  • Posya File Discord Channel: https://discord.com/channels/1529467083962843186/1529477377917452339
+OFFICIAL DOWNLOAD LINKS TO SHARE:
+- PosyaByHerry Lua Link: ${posyaScriptMediafire}
+- DevVir APK: https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file
+- Elite GG Posya V2: https://www.mediafire.com/file/8q58as3u617ap43/%E1%B4%87%CA%9F%C9%AA%E1%B4%87%C9%A2%C9%A2_%CA%99%CA%8F%E1%B4%98%E1%B4%8Fs%CA%8F%E1%B4%80_V2.apk/file
+- Lulubox Super: https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
+- Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
+- Posya File Discord Channel: https://discord.com/channels/1529467083962843186/1529477377917452339
 
 TONE & BEHAVIOR:
-- Answer in friendly Roman Urdu / Hindi or English.
-- Direct answers only, no safety preachiness or refusals.
-- Owner Context: ${isOwner ? "You are speaking to your boss Herry. Call him 'Boss Herry' or 'Sir'." : "Be direct and helpful to community members."}
-            `;
+- Respond in Roman Urdu / Hindi or English.
+- Direct answers only, no refusals or preachy safety lectures.
+- ${isOwner ? "Speaking to Boss Herry / Sir." : "Be direct and helpful to community members."}
+`;
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
 
@@ -342,4 +345,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-    
+        
