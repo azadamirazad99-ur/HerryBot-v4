@@ -181,7 +181,7 @@ client.on('messageCreate', async message => {
             const genAI = new GoogleGenerativeAI(geminiKey);
             
             const model = genAI.getGenerativeModel({ 
-                model: "gemini-1.5-flash",
+                model: "gemini-2.5-flash",
                 systemInstruction: `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts). You can view and analyze photos attached by users.
 
 CRITICAL STRICT LINK MAPPING:
@@ -353,4 +353,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                                    
+                    
