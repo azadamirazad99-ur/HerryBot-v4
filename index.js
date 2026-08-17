@@ -160,7 +160,6 @@ client.on('messageCreate', async message => {
 
             // Mediafire & Script Links
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
-            const posyaRawGithubLink = 'https://github.com/urdushahzaib111-ctrl/HerryBot-v4/raw/refs/heads/main/PosyaByHerry.lua';
             const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
             const luluboxSuperLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
             const reversoqzzDiscordLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
@@ -198,10 +197,14 @@ CRITICAL ROLE: THIS IS A REGULAR MEMBER (NOT THE OWNER).
 
 ${userRoleInstruction}
 
-POSYA SCRIPT & TELEPORTATION INSTRUCTION (STRICT):
-- If any user asks questions about "Posya by Herry script", needs help with teleportation/teleporting, or asks for the Lua script raw code:
-  * Tell them: "If you have any question from Posya by herry script or need Help to teleport check here: ${posyaRawGithubLink}"
-  * Also share the Mediafire link if requested: ${posyaScriptMediafire}
+POSYA SCRIPT & TELEPORTATION GUIDE (STRICT INSTRUCTION):
+- DO NOT SEND ANY GITHUB LINKS TO THE USER.
+- If a user asks about "Posya by Herry script", options in Posya, or needs help with teleportation/teleporting:
+  1. Clearly explain the features and options directly in the message:
+     * Teleport Menu: Custom coordinates teleport, waypoints/map marker teleport, speed teleport.
+     * Game Options: Fast teleportation to key RP locations, jobs, and safezones.
+     * Usage Guide: Open script menu -> Select 'Teleport' option -> Pick Map Marker/Coordinates or pre-saved locations.
+  2. If they ask for downloading the file, ONLY share the Mediafire link: ${posyaScriptMediafire}
 
 RIVAL SERVERS RULE (STRICT):
 - If anyone mentions "Adil", "Rudra", "Yuvraj", or ANY rival servers/groups:
@@ -212,16 +215,15 @@ STRICT LINK MAPPING (SHARE ONLY WHEN REQUESTED):
 - Lulubox Super Link: ${luluboxSuperLink}
 - DevVir APK: ${devvirMediafire}
 - Reversoqzz Link: ${reversoqzzDiscordLink}
-- Posya/English Script Mediafire: ${posyaScriptMediafire}
-- Posya Raw Lua Link: ${posyaRawGithubLink}
+- Posya Mediafire Link: ${posyaScriptMediafire}
 - YouTube Channel: ${herryHacksYoutube}
 - Discord Server Link: ${officialDiscordServer}
-- Setup Guide: https://discord.com/channels/1529467083962843186/1529477486235226172
+- Setup Guide: https://discord.com/channels/1529467083962843186/1529477377917452339
 
 IMPORTANT GENERAL RULES:
 - Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. Tell them clearly.
 - Never mention "Elite GG". Always use "Reversoqzz".
-- Do not share any other GitHub links except the Posya Raw Lua link (${posyaRawGithubLink}).`;
+- NEVER share GitHub links or raw URLs containing user profiles.`;
 
             // OPENROUTER AUTO-ROUTER ENDPOINT
             const response = await axios.post(
