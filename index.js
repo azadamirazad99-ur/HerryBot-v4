@@ -1,4 +1,3 @@
-
 // ==========================================
 // HERRYHACKS BOT - COMPLETE INDEX SYSTEM
 // ==========================================
@@ -144,15 +143,26 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler
+// AI Response & Mention Handler (OPENROUTER ENGINE)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // Mention AI Response
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
+
+            const ownerId = process.env.OWNER_ID;
+            const isOwner = message.author.id === ownerId;
+
+            // Official Links Mapping
+            const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
+            const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
+            const luluboxSuperLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
+            const reversoqzzDiscordLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
+            const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
+            const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
+            const setupGuideLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
 
             // Fetch Posya Lua Script content
             const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
@@ -169,23 +179,55 @@ client.on('messageCreate', async message => {
                 return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
-            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server.
+            let roleInstructions = "";
+            if (isOwner) {
+                roleInstructions = `
+YOUR INTERACTION ROLE:
+- The person talking to you is YOUR OWNER & BOSS (Herry).
+- Show MAXIMUM RESPECT. Address him as "Boss" or "Sir".
+- Be extremely polite, direct, and helpful. NO GALIYAN OR INSULTS TO HIM.`;
+            } else {
+                roleInstructions = `
+YOUR INTERACTION ROLE:
+- The person talking to you is a REGULAR MEMBER.
+- Speak in heavy street Desi Hindi/Urdu with attitude, roasts, and galiyan. Be rude yet give them the solution.
+- If they ask in clean English, reply in clean English without abuse.`;
+            }
 
-STRICT RULES:
-- DO NOT TAG THE USER (NO <@user_id>).
-- DO NOT MENTION THE USER'S NAME OR DISCORD USERNAME.
-- DO NOT USE GREETINGS (NO "Hey", "Hello", "Welcome", "Boss").
-- JUMP DIRECTLY INTO THE ANSWER.
-- Answer in clear Desi Hindi/Urdu or English depending on user prompt.
+            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
-SCRIPT CONTENT TO ANALYZE:
+${roleInstructions}
+
+CRITICAL FORMATTING & TAGGING RULES:
+1. DO NOT TAG THE USER (DO NOT USE <@user_id>).
+2. DO NOT MENTION OR REPEAT THE USER'S DISCORD USERNAME.
+3. DO NOT USE GREETINGS (No "Hey", "Hello", "Welcome").
+4. JUMP DIRECTLY INTO THE ANSWER.
+
+OFFICIAL LINKS (SHARE ONLY WHEN REQUESTED BY USER):
+- DevVir APK: ${devvirMediafire}
+- Posya Lua Script (Mediafire): ${posyaScriptMediafire}
+- Lulubox Super Link: ${luluboxSuperLink}
+- Reversoqzz Link: ${reversoqzzDiscordLink}
+- YouTube Channel: ${herryHacksYoutube}
+- Official Discord Server: ${officialDiscordServer}
+- Setup Guide: ${setupGuideLink}
+
+POSYA SCRIPT ANALYSIS INSTRUCTIONS:
+Below is the Lua script source code:
 --------------------------------------------------
 ${scriptContent}
 --------------------------------------------------
+- Read the Lua code carefully to answer questions about options, sub-menus, Aimbot, Teleportation, Car options, or Character modifications.
+- DO NOT invent fake links (like T.me links). Only share the official links listed above.
+- If an option isn't in the script, state clearly that it doesn't exist in the script.
 
-INSTRUCTIONS FOR POSYA SCRIPT INQUIRIES:
-- Read the Lua code carefully. The script contains multiple sub-menus and options like Aimbot, Teleportation, Vehicles, Character, and other utilities.
-- If the user asks where an option is or what options exist inside Posya script, look up the Lua code above and explain the exact sub-menus and feature names directly.`;
+RIVAL SERVERS RULE:
+- If anyone mentions "Adil", "Rudra", "Yuvraj", or any rival servers, tell them clearly to leave those fake servers immediately or risk getting banned from HerryHacks.
+
+GENERAL GAME RULES:
+- Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. Tell them clearly.
+- Never mention "Elite GG", always refer as "Reversoqzz".`;
 
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -193,7 +235,7 @@ INSTRUCTIONS FOR POSYA SCRIPT INQUIRIES:
                     model: "openrouter/auto",
                     messages: [
                         { role: "system", content: systemPrompt },
-                        { role: "user", content: userQuery || "List script options" }
+                        { role: "user", content: userQuery || "Hello" }
                     ]
                 },
                 {
