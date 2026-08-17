@@ -1,6 +1,6 @@
 
 // ==========================================
-// HERRYHACKS BOT - DESI & ACCURATE AI
+// HERRYHACKS BOT - DUAL LANGUAGE & DESI MODE
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -37,7 +37,7 @@ if (fs.existsSync(commandsPath)) {
 }
 
 client.once('ready', async () => {
-    console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Desi Bot online.`);
+    console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot online.`);
 
     if (!process.env.TOKEN || !process.env.CLIENT_ID) {
         console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
@@ -58,7 +58,7 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket Button System
+// Ticket System
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
@@ -101,7 +101,7 @@ client.on('interactionCreate', async interaction => {
                 const embed = new EmbedBuilder()
                     .setColor('#00ffcc')
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Abe ${interaction.user}, ticket ban gaya hai. Apni baat bata yahan, staff jaldi aayega.`);
+                    .setDescription(`Welcome ${interaction.user}, your ticket has been created. State your issue and staff will assist you.`);
 
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
@@ -119,7 +119,7 @@ client.on('interactionCreate', async interaction => {
         }
 
         if (interaction.customId === 'close_ticket') {
-            await interaction.reply({ content: '🔒 Ticket 5 second me band ho raha hai...' });
+            await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...' });
             setTimeout(() => {
                 interaction.channel.delete().catch(() => {});
             }, 5000);
@@ -144,7 +144,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Message Handling & OPENROUTER DESI AI
+// AI Response Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -156,7 +156,6 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            // Updated Links
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
             const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
             const luluboxSuperLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
@@ -169,34 +168,38 @@ client.on('messageCreate', async message => {
                 return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
-            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
+            const systemPrompt = `You are HerryBot, the official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
-PERSONALITY & TONEOF VOICE:
-- Talk in pure Desi, informal street language (Urdu/Hindi mix). Use words like "Abe oye", "Haan ji", "Suno", "Bhai", etc.
-- If someone asks normal questions, give short and straight answers in Desi style.
+LANGUAGE & SYSTEM RULES:
+1. DETECT THE USER'S LANGUAGE FIRST:
+   - IF USER WRITES IN ENGLISH: Respond ONLY in plain English. NEVER use "Abe oye", "Haan ji", "Chutiya", or Hindi/Urdu words for English users. Keep it professional, direct, and clear.
+   - IF USER WRITES IN DESI (Urdu/Hindi/Roman): Respond in Desi street language.
 
-RIVAL/OTHER SERVERS RULE (STRICT):
-- If anyone mentions "Adil", "Rudra", "Yuvraj", or ANY of their servers/groups:
-  * SAY EXACTLY: "Ye sab chutiyaa log hain! Unka server leave karo warna hamare server se BAN ho jaoge!"
-  * Adapt to language: If asked in English, say "These guys are useless! Leave their server or you will be BANNED from our server!"
+2. RIVAL SERVERS RULE (STRICT):
+   - If anyone mentions "Adil", "Rudra", "Yuvraj", or ANY rival servers/groups:
+     * FOR ENGLISH USERS: Say "Those guys are completely useless and fake! Leave their server immediately or you will be BANNED from HerryHacks server!"
+     * FOR DESI USERS: Say "Abe ye Adil, Rudra, Yuvraj sab chutiyaa log hain! Inka fatichar server leave kar bsdk warna hamare server se abhi BAN ho jayega!"
 
-OWNER INFO:
-- Herry Boss (or Boss Herry / Herry) is the ONLY owner. If anyone asks, tell them Herry Boss is the owner.
+3. BACKCHODI & ABUSE BEHAVIOR (DESI USERS ONLY):
+   - If a Desi user talks non-sense, abuses, acts smart, or does backchodi, DO NOT play nice. Use harsh street insults and explicit Desi galiyan like "chutiya", "gandu", "bsdk", "maderchod", "bhenchod" to put them in their place and warn them.
 
-STRICT LINK MAPPING (ONLY SHARE WHEN ASKED FOR LINK/DOWNLOAD/WHERE IS IT):
-1. LULUBOX SUPER LINK: Share THIS EXACT link: ${luluboxSuperLink}
-2. DEV VIR REQUEST: Share THIS EXACT link: ${devvirMediafire}
-3. REVERSOQZZ REQUEST: Share THIS EXACT link: ${reversoqzzDiscordLink}
-4. ENGLISH SCRIPT / POSYA REQUEST: Share THIS EXACT link: ${posyaScriptMediafire}
-5. YOUTUBE CHANNEL REQUEST: Share THIS EXACT YouTube channel: ${herryHacksYoutube}
-6. DISCORD SERVER LINK REQUEST: Share THIS EXACT Invite: ${officialDiscordServer}
-7. SETUP GUIDE REQUEST: Give THIS EXACT link: https://discord.com/channels/1529467083962843186/1529477486235226172
+4. OWNER INFO:
+   - Herry Boss (or Boss Herry / Herry) is the ONLY owner. Always show full respect to Herry Boss.
 
-CRITICAL RULES:
-- Money Hack, Unlimited Money, and Grand Coins (GC) Hack DO NOT EXIST in Grand Mobile RP. Tell them clearly.
-- Never say "Elite GG". ALWAYS say "Reversoqzz".
-- NEVER share GitHub links.
-- ${isOwner ? "Addressing your owner/creator Boss Herry with full respect and calling him Sir/Boss." : "Treating regular members in pure Desi style."}`;
+STRICT LINK MAPPING (ONLY SHARE WHEN EXPLICITLY ASKED):
+- Lulubox Super Link: ${luluboxSuperLink}
+- DevVir APK: ${devvirMediafire}
+- Reversoqzz Link: ${reversoqzzDiscordLink}
+- Posya/English Script: ${posyaScriptMediafire}
+- YouTube Channel: ${herryHacksYoutube}
+- Discord Server Link: ${officialDiscordServer}
+- Setup Guide: https://discord.com/channels/1529467083962843186/1529477486235226172
+
+IMPORTANT GENERAL RULES:
+- Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. State this clearly.
+- Never mention "Elite GG". Always use "Reversoqzz".
+- Never share GitHub links.
+- ${isOwner ? "Treat the user as Boss Herry with maximum respect." : "Follow regular rules."}`;
 
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -204,7 +207,7 @@ CRITICAL RULES:
                     model: "openrouter/free",
                     messages: [
                         { role: "system", content: systemPrompt },
-                        { role: "user", content: userQuery || "Abe sun" }
+                        { role: "user", content: userQuery || "Hello" }
                     ]
                 },
                 {
@@ -220,7 +223,7 @@ CRITICAL RULES:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Abe response nahi aa raha, dobara bol!");
+                await message.reply("Response generating issue, try again.");
             }
 
         } catch (error) {
@@ -232,90 +235,90 @@ CRITICAL RULES:
 
     const content = message.content.trim();
 
-    // DOT COMMANDS (.kick, .ban, .unban)
+    // Command Handlers (.kick, .ban, .unban)
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 
         if (command === 'kick') {
-            if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ Kick karne ki permission nahi hai.');
+            if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ No permission to kick members.');
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Mention toh kar kisko kick karna hai!');
+            if (!target) return message.reply('❌ Please mention a member to kick.');
             const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { await target.kick(reason); message.channel.send(`👢 Kick kar diya **${target.user.tag}** ko. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Kick nahi ho paya.'); }
+            try { await target.kick(reason); message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to kick user.'); }
         }
 
         if (command === 'ban') {
-            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ Ban karne ki permission nahi hai.');
+            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission to ban members.');
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Mention kar kisko ban karna hai!');
+            if (!target) return message.reply('❌ Please mention a member to ban.');
             const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { await target.ban({ reason }); message.channel.send(`🔨 Ban kar diya **${target.user.tag}** ko. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Ban nahi ho paya.'); }
+            try { await target.ban({ reason }); message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to ban user.'); }
         }
 
         if (command === 'unban') {
-            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ Permission nahi hai.');
+            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission to unban members.');
             const userId = args[0];
-            if (!userId) return message.reply('❌ Sahi User ID de!');
+            if (!userId) return message.reply('❌ Please provide a valid User ID.');
             const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { await message.guild.members.unban(userId, reason); message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Unban nahi hua.'); }
+            try { await message.guild.members.unban(userId, reason); message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to unban user.'); }
         }
     }
 
-    // EXCLAMATION COMMANDS (!timeout, !rto, !clear, !say, !avatar, !pfp, !HerryHacksyt, !ping)
+    // Moderate Commands (!timeout, !rto, !clear, !say, !avatar, !pfp, !HerryHacksyt, !ping)
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 
         if (command === 'timeout' || command === 'mute') {
-            if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ Permission nahi hai.');
+            if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
             const target = message.mentions.members.first();
             const minutes = parseInt(args[1]);
-            if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Sahi se likh: `!timeout @user <minutes>`');
+            if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user <minutes>`');
             const reason = args.slice(2).join(' ') || 'No reason provided';
-            try { await target.timeout(minutes * 60 * 1000, reason); message.channel.send(`🔇 Timeout de diya **${target.user.tag}** ko **${minutes}** minute ke liye.`); } catch (e) { message.channel.send('❌ Mute nahi ho paya.'); }
+            try { await target.timeout(minutes * 60 * 1000, reason); message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.`); } catch (e) { message.channel.send('❌ Failed to apply timeout.'); }
         }
 
         if (command === 'rto') {
-            if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ Permission nahi hai.');
+            if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Kiska timeout hatana hai?');
-            try { await target.timeout(null); message.channel.send(`🔊 Timeout hata diya **${target.user.tag}** ka.`); } catch (e) { message.channel.send('❌ Timeout nahi hata.'); }
+            if (!target) return message.reply('❌ Mention a user to remove timeout.');
+            try { await target.timeout(null); message.channel.send(`🔊 Removed timeout for **${target.user.tag}**.`); } catch (e) { message.channel.send('❌ Failed to remove timeout.'); }
         }
 
         if (command === 'clear') {
-            if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ Clear karne ki permission nahi hai.');
+            if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
             const amount = parseInt(args[0]);
-            if (!amount || amount < 1 || amount > 100) return message.reply('❌ 1 se 100 ke beech number de!');
-            try { message.delete(); const deleted = await message.channel.bulkDelete(amount, true); const r = await message.channel.send(`🧹 Clear kar diye **${deleted.size}** msgs.`); setTimeout(() => r.delete(), 4000); } catch (e) { message.channel.send('❌ Clear nahi hua.'); }
+            if (!amount || amount < 1 || amount > 100) return message.reply('❌ Enter a number between 1 and 100.');
+            try { message.delete(); const deleted = await message.channel.bulkDelete(amount, true); const r = await message.channel.send(`🧹 Cleared **${deleted.size}** messages.`); setTimeout(() => r.delete(), 4000); } catch (e) { message.channel.send('❌ Failed to clear messages.'); }
         }
 
         if (command === 'say') {
-            if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ Permission nahi hai.');
+            if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
             const sayMessage = args.join(' ');
-            if (!sayMessage) return message.reply('❌ Kuch message toh likh!');
+            if (!sayMessage) return message.reply('❌ Provide a message to say.');
             message.delete(); message.channel.send(sayMessage);
         }
 
         if (command === 'avatar' || command === 'pfp') {
             const target = message.mentions.users.first() || message.author;
-            const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username} ki photo`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
+            const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
             message.channel.send({ embeds: [embed] });
         }
 
         if (content === '!HerryHacksyt') message.channel.send('🔴 Official YouTube Channel: https://www.youtube.com/@herryhacks-1');
-        if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\`. Bot bilkul tight chal raha hai!`);
+        if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\``);
     }
 });
 
-// Welcome Event
+// Member Welcome Event
 client.on('guildMemberAdd', async (member) => {
     const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
     if (channel) {
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
-            .setDescription(`Aao ${member}!\n\nGrand Mobile RP ke scripts aur tools ke liye bot se pooch lena.`)
+            .setDescription(`Welcome ${member}!\n\nMention the bot for Grand Mobile RP scripts and tools information.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Community System' });
@@ -324,7 +327,7 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-// Leave Event
+// Member Leave Event
 client.on('guildMemberRemove', async (member) => {
     let channelId = process.env.LEAVE_CHANNEL_ID;
     const configPath = path.join(__dirname, 'config.json');
@@ -341,9 +344,9 @@ client.on('guildMemberRemove', async (member) => {
 
     const embed = new EmbedBuilder()
         .setColor('#ff4d4d')
-        .setTitle('🚪 Player Left')
-        .setDescription(`**${member.user.tag}** server chhod kar chala gaya 👋`)
-        .addFields({ name: '📊 Baaki Bandey', value: `${member.guild.memberCount}`, inline: true })
+        .setTitle('🚪 Member Left')
+        .setDescription(`**${member.user.tag}** has left the server 👋`)
+        .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}`, inline: true })
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
         .setFooter({ text: 'HerryHacks Community System' });
 
