@@ -1,6 +1,6 @@
 // ==========================================
-// HERRYHACKS BOT - FULL COMPLETE INDEX.JS
-// WITH OPENROUTER FREE GEMINI/AI SUPPORT
+// HERRYHACKS BOT - FULL ORIGINAL INDEX.JS
+// WITH OPENROUTER/FREE MODEL
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -144,7 +144,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Message Handling & OPENROUTER FREE AI
+// Message Handling & OPENROUTER/FREE AI
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -162,7 +162,7 @@ client.on('messageCreate', async message => {
 
             const openrouterKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
             if (!openrouterKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway environment variables!");
+                return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
             const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
@@ -184,33 +184,14 @@ GENERAL RULES:
 - NEVER share GitHub links.
 - ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}`;
 
-            const messagesPayload = [
-                { role: "system", content: systemPrompt }
-            ];
-
-            // Image handling for OpenRouter
-            if (message.attachments.size > 0) {
-                const attachment = message.attachments.first();
-                if (attachment.contentType && attachment.contentType.startsWith('image/')) {
-                    messagesPayload.push({
-                        role: "user",
-                        content: [
-                            { type: "text", text: userQuery || "What is in this image?" },
-                            { type: "image_url", image_url: { url: attachment.url } }
-                        ]
-                    });
-                } else {
-                    messagesPayload.push({ role: "user", content: userQuery || "Hello" });
-                }
-            } else {
-                messagesPayload.push({ role: "user", content: userQuery || "Hello" });
-            }
-
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "google/gemini-2.0-flash-exp:free",
-                    messages: messagesPayload
+                    model: "openrouter/free",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userQuery || "Hello" }
+                    ]
                 },
                 {
                     headers: {
