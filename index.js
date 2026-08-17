@@ -1,11 +1,9 @@
-
 // ==========================================
 // HERRYHACKS BOT - FULL COMPLETE INDEX.JS
-// WITH FREE GOOGLE GEMINI VISION SUPPORT
+// WITH OPENROUTER FREE GEMINI/AI SUPPORT
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('node:fs');
 const path = require('node:path');
 const axios = require('axios');
@@ -59,17 +57,6 @@ client.once('ready', async () => {
         console.error("Slash Command Error:", error);
     }
 });
-
-// Helper function to convert Image URL to Inline Data for Gemini
-async function urlToGenerativePart(url, mimeType) {
-    const response = await axios.get(url, { responseType: 'arraybuffer' });
-    return {
-        inlineData: {
-            data: Buffer.from(response.data).toString("base64"),
-            mimeType
-        },
-    };
-}
 
 // Ticket Button System
 client.on('interactionCreate', async interaction => {
@@ -157,7 +144,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Message Handling & FREE GEMINI VISION AI
+// Message Handling & OPENROUTER FREE AI
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -173,17 +160,12 @@ client.on('messageCreate', async message => {
             const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
             const reversoqzzDiscordLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
 
-            const geminiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
-            if (!geminiKey) {
-                return message.reply("❌ `GEMINI_API_KEY` missing in environment variables!");
+            const openrouterKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
+            if (!openrouterKey) {
+                return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway environment variables!");
             }
 
-            const genAI = new GoogleGenerativeAI(geminiKey);
-            
-            // Using FREE gemini-2.0-flash model
-            const model = genAI.getGenerativeModel({ 
-                model: "gemini-2.0-flash",
-                systemInstruction: `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts). You can view and analyze photos attached by users.
+            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
 CRITICAL STRICT LINK MAPPING:
 1. DEV VIR REQUEST: Give THIS EXACT Mediafire link: ${devvirMediafire}
@@ -200,35 +182,55 @@ GENERAL RULES:
 - Provide links ONLY when user explicitly asks for "link", "download", or "kahan hai".
 - MATCH LANGUAGE! English -> English, Roman Urdu -> Roman Urdu.
 - NEVER share GitHub links.
-- ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}`
-            });
+- ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}`;
 
-            const promptParts = [];
+            const messagesPayload = [
+                { role: "system", content: systemPrompt }
+            ];
 
-            // Handle Attached Image
+            // Image handling for OpenRouter
             if (message.attachments.size > 0) {
                 const attachment = message.attachments.first();
                 if (attachment.contentType && attachment.contentType.startsWith('image/')) {
-                    const imagePart = await urlToGenerativePart(attachment.url, attachment.contentType);
-                    promptParts.push(imagePart);
+                    messagesPayload.push({
+                        role: "user",
+                        content: [
+                            { type: "text", text: userQuery || "What is in this image?" },
+                            { type: "image_url", image_url: { url: attachment.url } }
+                        ]
+                    });
+                } else {
+                    messagesPayload.push({ role: "user", content: userQuery || "Hello" });
                 }
+            } else {
+                messagesPayload.push({ role: "user", content: userQuery || "Hello" });
             }
 
-            promptParts.push(userQuery || "Hello");
+            const response = await axios.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                {
+                    model: "google/gemini-2.0-flash-exp:free",
+                    messages: messagesPayload
+                },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${openrouterKey}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
 
-            const result = await model.generateContent(promptParts);
-            const response = await result.response;
-            const replyText = response.text();
+            const replyText = response.data?.choices?.[0]?.message?.content;
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ No response generated.");
+                await message.reply("❌ No response received from OpenRouter.");
             }
 
         } catch (error) {
-            console.error("Gemini AI Full Error:", error);
-            await message.reply(`❌ Error: ${error.message || "Failed to process request."}`);
+            console.error("OpenRouter Error:", error.response?.data || error.message);
+            await message.reply(`❌ OpenRouter Error: ${error.response?.data?.error?.message || error.message}`);
         }
         return;
     }
@@ -354,3 +356,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
