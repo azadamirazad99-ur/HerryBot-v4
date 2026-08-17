@@ -1,6 +1,6 @@
 
 // ==========================================
-// HERRYHACKS BOT - OPENROUTER AUTO-ROUTER INTEGRATION
+// HERRYHACKS BOT - COMPLETE INDEX SYSTEM
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -144,95 +144,56 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (OPENROUTER ENGINE)
+// AI Response & Mention Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
+    // Mention AI Response
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
-            const userQuery = message.content.replace(`<@!${client.user.id}>`, '').replace(`<@${client.user.id}>`, '').trim();
+            const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-            const ownerId = process.env.OWNER_ID;
-            const isOwner = message.author.id === ownerId;
-            const username = message.author.username;
-            const userTag = `<@${message.author.id}>`;
-
-            // Mediafire & Script Links
-            const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
-            const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
-            const luluboxSuperLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
-            const reversoqzzDiscordLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
-            const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
-            const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
+            // Fetch Posya Lua Script content
+            const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
+            let scriptContent = "";
+            try {
+                const response = await axios.get(scriptUrl);
+                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 15000) : "Script content unavailable";
+            } catch (e) {
+                scriptContent = "Could not load Posya script file.";
+            }
 
             const openRouterKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
             if (!openRouterKey) {
                 return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
-            let userRoleInstruction = "";
-            if (isOwner) {
-                userRoleInstruction = `
-CRITICAL ROLE: THIS IS YOUR OWNER AND BOSS.
-- User Discord Tag: ${userTag}
-- User Name: ${username}
-- Always start your reply by tagging him: "${userTag}" or addressing as "Boss ${username}".
-- Address him as "Boss", "Sir", or "Boss Herry".
-- DO NOT ASK "How can I help you?" or "What do you need?" - JUST TALK NORMALLY.
-- Show MAXIMUM RESPECT. ALWAYS be polite and friendly.
-- ABSOLUTELY NO GALIYAN, NO INSULTS AGAINST HIM.`;
-            } else {
-                userRoleInstruction = `
-CRITICAL ROLE: THIS IS A REGULAR MEMBER (NOT THE OWNER).
-- User Discord Tag: ${userTag}
-- User Name: ${username}
-- ALWAYS address or tag the user in response using "${userTag}" or their name "${username}".
-- Give them proper solution/answer FIRST.
-- Speak in heavy street Desi Hindi/Urdu with galiyan, attitude, and roasts (e.g., "${userTag} Abe chutiye ye le solution...", "Sun bsdk ${username}...").
-- If they ask in English, answer ONLY in clean English using their tag ${userTag} without any abuse.`;
-            }
+            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server.
 
-            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
+STRICT RULES:
+- DO NOT TAG THE USER (NO <@user_id>).
+- DO NOT MENTION THE USER'S NAME OR DISCORD USERNAME.
+- DO NOT USE GREETINGS (NO "Hey", "Hello", "Welcome", "Boss").
+- JUMP DIRECTLY INTO THE ANSWER.
+- Answer in clear Desi Hindi/Urdu or English depending on user prompt.
 
-${userRoleInstruction}
+SCRIPT CONTENT TO ANALYZE:
+--------------------------------------------------
+${scriptContent}
+--------------------------------------------------
 
-POSYA SCRIPT & TELEPORTATION GUIDE (STRICT INSTRUCTION):
-- DO NOT SEND ANY GITHUB LINKS TO THE USER.
-- If a user asks about "Posya by Herry script", options in Posya, or needs help with teleportation/teleporting:
-  1. Clearly explain the features and options directly in the message:
-     * Teleport Menu: Custom coordinates teleport, waypoints/map marker teleport, speed teleport.
-     * Game Options: Fast teleportation to key RP locations, jobs, and safezones.
-     * Usage Guide: Open script menu -> Select 'Teleport' option -> Pick Map Marker/Coordinates or pre-saved locations.
-  2. If they ask for downloading the file, ONLY share the Mediafire link: ${posyaScriptMediafire}
+INSTRUCTIONS FOR POSYA SCRIPT INQUIRIES:
+- Read the Lua code carefully. The script contains multiple sub-menus and options like Aimbot, Teleportation, Vehicles, Character, and other utilities.
+- If the user asks where an option is or what options exist inside Posya script, look up the Lua code above and explain the exact sub-menus and feature names directly.`;
 
-RIVAL SERVERS RULE (STRICT):
-- If anyone mentions "Adil", "Rudra", "Yuvraj", or ANY rival servers/groups:
-  * FOR ENGLISH USERS: Say "${userTag} Those guys are completely useless! Leave their server immediately or you will be BANNED from HerryHacks server!"
-  * FOR DESI USERS: Say "Abe ${username} ye Adil, Rudra, Yuvraj sab chutiyaa log hain! Inka fatichar server leave kar bsdk warna hamare server se BAN ho jayega!"
-
-STRICT LINK MAPPING (SHARE ONLY WHEN REQUESTED):
-- Lulubox Super Link: ${luluboxSuperLink}
-- DevVir APK: ${devvirMediafire}
-- Reversoqzz Link: ${reversoqzzDiscordLink}
-- Posya Mediafire Link: ${posyaScriptMediafire}
-- YouTube Channel: ${herryHacksYoutube}
-- Discord Server Link: ${officialDiscordServer}
-- Setup Guide: https://discord.com/channels/1529467083962843186/1529477377917452339
-
-IMPORTANT GENERAL RULES:
-- Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. Tell them clearly.
-- Never mention "Elite GG". Always use "Reversoqzz".
-- NEVER share GitHub links or raw URLs containing user profiles.`;
-
-            // OPENROUTER AUTO-ROUTER ENDPOINT
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "openrouter/auto", // Automatically selects best free available model
+                    model: "openrouter/auto",
                     messages: [
                         { role: "system", content: systemPrompt },
-                        { role: "user", content: userQuery || "Hello" }
+                        { role: "user", content: userQuery || "List script options" }
                     ]
                 },
                 {
@@ -254,7 +215,7 @@ IMPORTANT GENERAL RULES:
 
         } catch (error) {
             console.error("OpenRouter API Error:", error.response?.data || error.message);
-            await message.reply(`❌ OpenRouter API Error: ${error.response?.data?.error?.message || error.message}`);
+            await message.reply(`❌ Error processing request.`);
         }
         return;
     }
