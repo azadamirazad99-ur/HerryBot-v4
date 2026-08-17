@@ -1,3 +1,4 @@
+
 // ==========================================
 // HERRYHACKS BOT - FULL COMPLETE INDEX.JS
 // WITH FREE GOOGLE GEMINI VISION SUPPORT
@@ -178,48 +179,30 @@ client.on('messageCreate', async message => {
             }
 
             const genAI = new GoogleGenerativeAI(geminiKey);
+            
             const model = genAI.getGenerativeModel({ 
                 model: "gemini-1.5-flash",
-                systemInstruction: `
-You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
-You can view and analyze photos attached by users.
+                systemInstruction: `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts). You can view and analyze photos attached by users.
 
 CRITICAL STRICT LINK MAPPING:
-1. DEV VIR REQUEST:
-   If user asks for DevVir link/download, give THIS EXACT Mediafire link:
-   ${devvirMediafire}
-
-2. REVERSOQZZ REQUEST:
-   If user asks for Reversoqzz link/download, reply EXACTLY with:
-   "Reversoqzz link is here: ${reversoqzzDiscordLink}"
-
-3. ENGLISH SCRIPT REQUEST:
-   Reply EXACTLY:
-   "Check in here if English Posya is available link :https://discord.com/channels/1529467083962843186/1529477377917452339"
-
-4. SETUP REQUEST:
-   Reply EXACTLY:
-   "Check out the setup guide here: https://discord.com/channels/1529467083962843186/1529477486235226172"
+1. DEV VIR REQUEST: Give THIS EXACT Mediafire link: ${devvirMediafire}
+2. REVERSOQZZ REQUEST: Reply EXACTLY with: "Reversoqzz link is here: ${reversoqzzDiscordLink}"
+3. ENGLISH SCRIPT REQUEST: Reply EXACTLY: "Check in here if English Posya is available link :https://discord.com/channels/1529467083962843186/1529477377917452339"
+4. SETUP REQUEST: Reply EXACTLY: "Check out the setup guide here: https://discord.com/channels/1529467083962843186/1529477486235226172"
 
 CRITICAL RULE - MONEY HACK / GC HACK:
 - Money Hack, Unlimited Money, and Grand Coins (GC) Hack ARE NOT AVAILABLE!
-- If user asks for Money/GC Hack or "give money", say: "Money Hack and GC Hack are NOT AVAILABLE in Grand Mobile RP."
-- DO NOT provide any links when user asks for Money/GC Hack!
+- Say: "Money Hack and GC Hack are NOT AVAILABLE in Grand Mobile RP."
 
 GENERAL RULES:
 - Never say "Elite GG". ALWAYS say "Reversoqzz".
 - Provide links ONLY when user explicitly asks for "link", "download", or "kahan hai".
-- MATCH LANGUAGE! English query -> 100% English reply. Roman Urdu/Hindi query -> Roman Urdu/Hindi reply.
-- NEVER share GitHub links under any circumstances.
-
-BEHAVIOR:
-- Concise, clear, direct, and polite.
-- ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}
-`
+- MATCH LANGUAGE! English -> English, Roman Urdu -> Roman Urdu.
+- NEVER share GitHub links.
+- ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}`
             });
 
             const promptParts = [];
-            if (userQuery) promptParts.push(userQuery);
 
             // Handle Attached Image
             if (message.attachments.size > 0) {
@@ -230,10 +213,11 @@ BEHAVIOR:
                 }
             }
 
-            if (promptParts.length === 0) promptParts.push("Hello");
+            promptParts.push(userQuery || "Hello");
 
             const result = await model.generateContent(promptParts);
-            const replyText = result.response.text();
+            const response = await result.response;
+            const replyText = response.text();
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
@@ -242,8 +226,8 @@ BEHAVIOR:
             }
 
         } catch (error) {
-            console.error("Gemini AI Error:", error);
-            await message.reply("❌ Error processing request/image.");
+            console.error("Gemini AI Full Error:", error);
+            await message.reply(`❌ Error: ${error.message || "Failed to process request."}`);
         }
         return;
     }
@@ -369,4 +353,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-            
+                                    
