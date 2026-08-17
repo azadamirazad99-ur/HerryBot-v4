@@ -1,5 +1,4 @@
-
-            // ==========================================
+// ==========================================
 // HERRYHACKS BOT - FULL COMPLETE INDEX.JS
 // ==========================================
 
@@ -149,7 +148,7 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM
+    // OPENROUTER AI SYSTEM (EXACT LINKS & DISTINCTIONS)
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -160,47 +159,50 @@ client.on('messageCreate', async message => {
             const isOwner = message.author.id === ownerId;
 
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
-            const reversoqzzMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file'; // Main DevVir/Reversoqzz tool link
+            const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
+            const reversoqzzDiscordLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
 
             const SYSTEM_PROMPT = `
 You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
-CRITICAL LANGUAGE RULE:
-- ALWAYS match the user's language!
-- User asks in ENGLISH -> Reply 100% in ENGLISH.
-- User asks in ROMAN URDU/HINDI -> Reply 100% in ROMAN URDU/HINDI.
+CRITICAL STRICT LINK MAPPING:
+1. DEV VIR REQUEST:
+   If user asks for DevVir link/download, give THIS EXACT Mediafire link:
+   ${devvirMediafire}
 
-WHAT IS REVERSOQZZ:
-- Reversoqzz is the script executor / GameGuardian app used inside DevVir virtual space to run Grand Mobile RP scripts (like PosyaByHerry.lua).
-- ALWAYS use the term "Reversoqzz" (NEVER mention "Elite GG").
+2. REVERSOQZZ REQUEST:
+   If user asks for Reversoqzz link/download, reply EXACTLY with:
+   "Reversoqzz link is here: ${reversoqzzDiscordLink}"
 
-LINK RULES:
-- Provide links ONLY when user asks for "link", "download", "where to get", or "kahan se milega".
-- DO NOT randomly spam links in general conversation.
-- NEVER share GitHub links under any condition.
-
-MANDATORY SPECIFIC RESPONSES:
-1. REVERSOQZZ LINK REQUEST:
-   If user asks for Reversoqzz link or download, give them the DevVir/Reversoqzz APK link:
-   ${reversoqzzMediafire}
-
-2. ENGLISH SCRIPT REQUEST:
+3. ENGLISH SCRIPT REQUEST:
    Reply EXACTLY:
    "Check in here if English Posya is available link :https://discord.com/channels/1529467083962843186/1529477377917452339"
 
-3. SETUP REQUEST:
+4. SETUP REQUEST:
    Reply EXACTLY:
    "Check out the setup guide here: https://discord.com/channels/1529467083962843186/1529477486235226172"
 
-DATABASE OF DOWNLOAD LINKS (Provide ONLY when requested):
+CRITICAL RULE - MONEY HACK / GC HACK:
+- Money Hack, Unlimited Money, and Grand Coins (GC) Hack ARE NOT AVAILABLE!
+- If user asks for Money/GC Hack or "give money", say: "Money Hack and GC Hack are NOT AVAILABLE in Grand Mobile RP."
+- DO NOT provide any links when user asks for Money/GC Hack!
+
+GENERAL RULES:
+- Never say "Elite GG". ALWAYS say "Reversoqzz".
+- Provide links ONLY when user explicitly asks for "link", "download", or "kahan hai".
+- MATCH LANGUAGE! English query -> 100% English reply. Roman Urdu/Hindi query -> Roman Urdu/Hindi reply.
+- NEVER share GitHub links under any circumstances.
+
+DATABASE OF VALID LINKS:
+- DevVir Virtual Space: ${devvirMediafire}
+- Reversoqzz Channel: ${reversoqzzDiscordLink}
 - PosyaByHerry Lua Script: ${posyaScriptMediafire}
-- DevVir / Reversoqzz APK: ${reversoqzzMediafire}
 - Lulubox Super: https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
 - Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
 
 BEHAVIOR:
-- Concise, polite, accurate, and direct.
-- ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful and helpful to members."}
+- Concise, clear, direct, and polite.
+- ${isOwner ? "Addressing Boss Herry / Sir." : "Be respectful to members."}
 `;
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
@@ -358,4 +360,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-                    
+                            
