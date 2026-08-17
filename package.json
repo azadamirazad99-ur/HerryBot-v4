@@ -1,15 +1,14 @@
 {
-  "name": "herryhacks-discord-bot",
+  "name": "herryhacks-bot",
   "version": "1.0.0",
-  "description": "Official HerryHacks Discord Assistant Bot with Free Gemini Vision AI",
+  "description": "Discord Bot with OpenRouter AI Integration for HerryHacks",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
     "axios": "^1.7.9",
-    "discord.js": "^14.16.3"
+    "discord.js": "^14.18.0"
   },
   "engines": {
     "node": ">=18.0.0"
