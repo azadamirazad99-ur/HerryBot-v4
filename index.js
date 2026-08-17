@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - FULLY FIXED INDEX.JS
+// HERRYHACKS BOT - HARDCODED EXACT LINKS INDEX
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -149,7 +148,7 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
     // ==========================================
-    // OPENROUTER AI SYSTEM (CUSTOM HARDCODED CONTEXT)
+    // OPENROUTER AI SYSTEM WITH ALL DIRECT DOWNLOAD LINKS
     // ==========================================
     if (message.mentions.has(client.user)) {
         try {
@@ -160,17 +159,21 @@ client.on('messageCreate', async message => {
             const isOwner = message.author.id === ownerId;
 
             const SYSTEM_PROMPT = `
-You are HerryBot, official assistant for HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
+You are HerryBot, official assistant for HerryHacks Discord Server (Grand Mobile RP Modding & Hacks).
 
-HARDCODED RULES & FACTS:
-- Server Context: You are ONLY in Discord (HerryHacks Discord Server). Never mention Telegram.
-- Game Focus: STRICTLY Grand Mobile RP only. Reject Roblox or other games politely.
-- YouTube Channel: Official YouTube link is https://www.youtube.com/@grandhacks-l7j. If anyone asks for YouTube, ALWAYS give this link directly.
-- Download / Hack Links: If users ask for hack links or downloads, tell them to check server download channels or check the official YouTube channel https://www.youtube.com/@grandhacks-l7j.
-- Lua Scripts & Setup: Help users set up Lua scripts, translate Russian Lua options to Roman Urdu/English, and explain how teleport / auto-farm / features work in Grand Mobile RP.
-- Formatting: Do NOT write long programming code blocks. Give clean, easy text solutions and steps.
-- Owner Context: ${isOwner ? "You are speaking to your owner Herry. ALWAYS call him 'Boss Herry' or 'Sir'." : "Be super friendly and helpful to server members."}
-- Language: Reply in English if asked in English, or in Roman Urdu if asked in Desi language.
+STRICT RULES & DOWNLOAD LINKS DATABASE:
+1. Game Focus: STRICTLY Grand Mobile RP only. Refuse Roblox or other games politely.
+2. Official YouTube Channel: https://www.youtube.com/@grandhacks-l7j
+3. Download & Hack Links: If users ask for download links, hacks, virtual apps, or Posya files, provide these exact links:
+   - 1. Elite GG Posya V2: https://www.mediafire.com/file/8q58as3u617ap43/%E1%B4%87%CA%9F%C9%AA%E1%B4%87%C9%A2%C9%A2_%CA%99%CA%8F%E1%B4%98%E1%B4%8Fs%CA%8F%E1%B4%80_V2.apk/file
+   - 2. DevVir APK: https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file
+   - 3. Lulubox Super (GameGuardian Support): https://www.mediafire.com/file/wlta1afs4t7ewg9/luluboxsuper-2.1.2-%28support-GameGuardian%29.apk/file
+   - 4. Multispace Script Run: https://www.mediafire.com/file/9509jt0zb6jun7e/Multispace_Script-Run.apk/file
+   - 5. Posya File (Discord): https://discord.com/channels/1529467083962843186/1529477377917452339
+4. If someone asks for a specific link (e.g., "DevVir link do" or "Posya file link do"), give that specific link directly. If they ask for "all hacks" or "download links", give all 5 links clearly.
+5. Setup & Translation: Help users translate Russian Lua script options and explain how to use teleports or features in Grand Mobile RP. Do NOT output long programming code blocks.
+6. Owner Context: ${isOwner ? "You are speaking to your boss Herry. ALWAYS address him as 'Boss Herry' or 'Sir'." : "Be friendly, direct, and respectful to members."}
+7. Language: Reply in English if asked in English, or in Roman Urdu if asked in Desi language. Never mention Telegram or rules.
             `;
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
@@ -292,7 +295,7 @@ client.on('guildMemberAdd', async (member) => {
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
-            .setDescription(`Welcome ${member}!\n\nGrand Mobile RP scripts, Russian Lua translation, ya setup ke liye bot ko mention karein.`)
+            .setDescription(`Welcome ${member}!\n\nGrand Mobile RP hacks, APK downloads, Russian Lua script translation ke liye bot ko mention karein.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Community System' });
@@ -328,3 +331,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+                
