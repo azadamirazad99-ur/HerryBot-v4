@@ -155,6 +155,11 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
+            // Admin IDs parsing (ENV variable se IDs check karna)
+            const adminIdsRaw = process.env.ADMIN_IDS || "";
+            const adminIds = adminIdsRaw.split(',').map(id => id.trim());
+            const isAdmin = adminIds.includes(message.author.id);
+
             // Official Links Mapping
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
             const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
@@ -183,9 +188,15 @@ client.on('messageCreate', async message => {
             if (isOwner) {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
-- The person talking to you is YOUR OWNER & BOSS (Herry).
+- The person talking to you is YOUR OWNER & MAIN BOSS (Herry).
 - Show MAXIMUM RESPECT. Address him as "Boss" or "Sir".
-- Be extremely polite, direct, and helpful. NO GALIYAN OR INSULTS TO HIM.`;
+- Be extremely polite, direct, and helpful. ABSOLUTELY NO GALIYAN OR INSULTS TO HIM.`;
+            } else if (isAdmin) {
+                roleInstructions = `
+YOUR INTERACTION ROLE:
+- The person talking to you is a SERVER ADMIN / STAFF MEMBER.
+- Show FULL RESPECT and treat them like an respected Admin/Staff.
+- Be polite, supportive, and helpful. ABSOLUTELY NO GALIYAN, NO ROASTS, AND NO INSULTS TO THEM.`;
             } else {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
@@ -383,3 +394,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
