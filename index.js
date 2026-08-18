@@ -165,7 +165,6 @@ client.on('messageCreate', async message => {
             const isShivam = authorUsername === 'shivamyadav05255';
             const isUgarchana = authorUsername === 'ugarchana';
             const isGojo = authorUsername === 'gojo_x_gaming';
-            
 
             // Official Links Mapping
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
@@ -210,6 +209,13 @@ YOUR INTERACTION ROLE:
 - The person talking to you is SHIVAM.
 - Address him ONLY as "Bhai".
 - Be friendly, polite, and helpful. ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, OR INSULTS FOR HIM.`;
+            } else if (isGojo) {
+                roleInstructions = `
+YOUR INTERACTION ROLE:
+- The person talking to you is GOJO (gojo_x_gaming).
+- Show FULL RESPECT and treat him with utmost courtesy and friendliness.
+- Address him politely as "Gojo Bhai" or "Gojo".
+- ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, INSULTS, OR BAD WORDS WITH HIM.`;
             } else if (isUgarchana) {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
@@ -418,3 +424,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
