@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - ORIGINAL COMPLETE CODE
+// HERRYHACKS BOT - COMPLETE OPENROUTER AUTO-ROUTER
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -39,8 +38,10 @@ if (fs.existsSync(commandsPath)) {
 client.once('ready', async () => {
     console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot online.`);
 
+    // Handles variable name 'TOKEN' or 'DISCORD_TOKEN'
     const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
-    const clientId = process.env.CLIENT_ID;
+    // Handles variable name 'CLIENT_ID' or 'CLIENT ID'
+    const clientId = process.env.CLIENT_ID || process.env['CLIENT ID'];
 
     if (!botToken || !clientId) {
         console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
@@ -147,7 +148,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (FREE GOOGLE GEMINI)
+// AI Response & Mention Handler (OPENROUTER MULTI-MODEL FALLBACK ENGINE)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -194,15 +195,15 @@ client.on('messageCreate', async message => {
             const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
             let scriptContent = "";
             try {
-                const response = await axios.get(scriptUrl, { timeout: 5000 });
+                const response = await axios.get(scriptUrl, { timeout: 4000 });
                 scriptContent = typeof response.data === 'string' ? response.data.substring(0, 6000) : "Script content unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
             }
 
-            const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
-            if (!geminiApiKey) {
-                return message.reply("❌ `GEMINI_API_KEY` Railway variables me missing hai! Google AI Studio se free key lekar add karein.");
+            const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
+            if (!openRouterApiKey) {
+                return message.reply("❌ `OPENROUTER_API_KEY` Railway Variables me missing hai!");
             }
 
             let roleInstructions = "";
@@ -270,35 +271,56 @@ RIVAL SERVERS RULE:
 GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+            // Priority Free Models Checklist
+            const freeModels = [
+                "google/gemini-2.0-flash-lite-001:free",
+                "meta-llama/llama-3.3-70b-instruct:free",
+                "mistralai/mistral-7b-instruct:free",
+                "openrouter/auto"
+            ];
 
-            const response = await axios.post(
-                geminiUrl,
-                {
-                    contents: [
+            let replyText = null;
+
+            for (const model of freeModels) {
+                try {
+                    const response = await axios.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
                         {
-                            role: "user",
-                            parts: [{ text: `${systemPrompt}\n\nUser Question: ${userQuery || "Hello"}` }]
+                            model: model,
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userQuery || "Hello" }
+                            ]
+                        },
+                        {
+                            headers: {
+                                "Authorization": `Bearer ${openRouterApiKey}`,
+                                "HTTP-Referer": "https://discord.com",
+                                "X-Title": "HerryHacks Bot",
+                                "Content-Type": "application/json"
+                            },
+                            timeout: 8000
                         }
-                    ]
-                },
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 10000
-                }
-            );
+                    );
 
-            if (response.data && response.data.candidates && response.data.candidates[0]?.content?.parts[0]?.text) {
-                const replyText = response.data.candidates[0].content.parts[0].text.trim();
+                    if (response.data?.choices?.[0]?.message?.content) {
+                        replyText = response.data.choices[0].content.trim();
+                        break;
+                    }
+                } catch (err) {
+                    console.log(`⚠️ Model ${model} busy/failed. Trying next free model...`);
+                }
+            }
+
+            if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ API Response empty hai. Please try again.");
+                await message.reply("❌ Sare free OpenRouter models abhi busy hain. Kuch der baad dubara try karein.");
             }
 
         } catch (error) {
-            console.error("Gemini API Error:", error.response?.data || error.message);
-            const errDetail = error.response?.data?.error?.message || error.message;
-            await message.reply(`❌ API Issue: \`${errDetail}\``);
+            console.error("OpenRouter Error:", error.message);
+            await message.reply(`❌ System Issue: \`${error.message}\``);
         }
         return;
     }
@@ -440,3 +462,4 @@ client.on('guildMemberRemove', async (member) => {
 
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
