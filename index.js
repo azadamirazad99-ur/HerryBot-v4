@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - POOLSIDE LAGUNA S 2.1 (FREE)
+// HERRYHACKS BOT - OPENROUTER AUTO (FREE MODEL ROUTER)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -143,7 +143,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (POOLSIDE LAGUNA S 2.1)
+// AI Response & Mention Handler (OPENROUTER AUTO FREE ROUTER)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -286,7 +286,7 @@ GENERAL GAME & MONEY/GC HACK RULES:
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "poolside/laguna-s-2.1:free",
+                    model: "openrouter/auto",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userQuery || "Hello" }
