@@ -155,10 +155,13 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            // Admin IDs parsing (ENV variable se IDs check karna)
+            // Admin IDs parsing
             const adminIdsRaw = process.env.ADMIN_IDS || "";
             const adminIds = adminIdsRaw.split(',').map(id => id.trim());
             const isAdmin = adminIds.includes(message.author.id);
+
+            // Special VIP User Check (Shivam)
+            const isShivam = message.author.username.toLowerCase() === 'shivamyadav05255';
 
             // Official Links Mapping
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
@@ -197,6 +200,12 @@ YOUR INTERACTION ROLE:
 - The person talking to you is a SERVER ADMIN / STAFF MEMBER.
 - Show FULL RESPECT and treat them like an respected Admin/Staff.
 - Be polite, supportive, and helpful. ABSOLUTELY NO GALIYAN, NO ROASTS, AND NO INSULTS TO THEM.`;
+            } else if (isShivam) {
+                roleInstructions = `
+YOUR INTERACTION ROLE:
+- The person talking to you is SHIVAM.
+- Address him ONLY as "Bhai".
+- Be friendly, polite, and helpful. ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, OR INSULTS FOR HIM.`;
             } else {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
@@ -211,7 +220,7 @@ ${roleInstructions}
 
 CRITICAL FORMATTING & TAGGING RULES:
 1. DO NOT TAG THE USER (DO NOT USE <@user_id>).
-2. DO NOT MENTION OR REPEAT THE USER'S DISCORD USERNAME.
+2. DO NOT MENTION OR REPEAT THE USER'S DISCORD USERNAME (Unless addressing Shivam as "Bhai").
 3. DO NOT USE GREETINGS (No "Hey", "Hello", "Welcome").
 4. JUMP DIRECTLY INTO THE ANSWER.
 
@@ -347,7 +356,7 @@ GENERAL GAME RULES:
         }
 
         if (content === '!HerryHacksyt') message.channel.send('🔴 Official YouTube Channel: https://www.youtube.com/@herryhacks-1');
-        if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\``);
+        if (content === '!ping') message.channel.send(`📯 Pong! \`${client.ws.ping}ms\``);
     }
 });
 
@@ -394,4 +403,3 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-
