@@ -155,10 +155,16 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            // Admin IDs parsing
+            // Admin Check (Checks Admin IDs, Staff Role, and Server Administrator Permissions)
             const adminIdsRaw = process.env.ADMIN_IDS || "";
             const adminIds = adminIdsRaw.split(',').map(id => id.trim());
-            const isAdmin = adminIds.includes(message.author.id);
+            const staffRoleId = process.env.STAFF_ROLE_ID;
+
+            const hasAdminId = adminIds.includes(message.author.id);
+            const hasAdminPermission = message.member ? message.member.permissions.has(PermissionFlagsBits.Administrator) : false;
+            const hasStaffRole = (staffRoleId && message.member) ? message.member.roles.cache.has(staffRoleId) : false;
+
+            const isAdmin = hasAdminId || hasAdminPermission || hasStaffRole;
 
             // Special VIP Users Check
             const authorUsername = message.author.username.toLowerCase();
@@ -201,8 +207,8 @@ YOUR INTERACTION ROLE:
                 roleInstructions = `
 YOUR INTERACTION ROLE:
 - The person talking to you is a SERVER ADMIN / STAFF MEMBER.
-- Show FULL RESPECT and treat them like a respected Admin/Staff.
-- Be polite, supportive, and helpful. ABSOLUTELY NO GALIYAN, NO ROASTS, AND NO INSULTS TO THEM.`;
+- Show FULL RESPECT and treat them like a highly respected Admin/Staff member.
+- Be polite, supportive, direct, and helpful. ABSOLUTELY NO GALIYAN, NO ROASTS, AND NO INSULTS TO THEM.`;
             } else if (isShivam) {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
@@ -262,8 +268,9 @@ ${scriptContent}
 RIVAL SERVERS RULE:
 - If anyone mentions "Adil", "Rudra", "Yuvraj", or any rival servers, tell them clearly to leave those fake servers immediately or risk getting banned from HerryHacks.
 
-GENERAL GAME RULES:
-- Unlimited Money / Grand Coins (GC) hacks DO NOT EXIST in Grand Mobile RP. Tell them clearly.
+GENERAL GAME & MONEY/GC HACK RULES:
+- If anyone asks for Unlimited Money, Money Hack, GC Hack, or Grand Coins Hack:
+  Tell them clearly: "Herry Sir ne bataya tha ke Grand Mobile RP ne Money aur GC ko Private Web aur Private Folders mein rakha hai, isliye hum unhe edit nahi kar sakte. Yeh hacks exist nahi karte."
 - Never mention "Elite GG", always refer as "Reversoqzz".`;
 
             const response = await axios.post(
@@ -424,4 +431,3 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-
