@@ -155,22 +155,37 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            // Admin Check (Checks Admin IDs, Staff Role, and Server Administrator Permissions)
+            // FORCE FETCH MEMBER TO ENSURE ROLES ARE CACHED
+            let member = message.member;
+            if (message.guild && (!member || !member.roles)) {
+                try {
+                    member = await message.guild.members.fetch(message.author.id);
+                } catch (e) {
+                    console.error("Fetch Member Error:", e);
+                }
+            }
+
+            // Admin Role ID and Env Variables Check
+            const adminRoleId = "1538952736169656330";
+            const staffRoleId = process.env.STAFF_ROLE_ID;
             const adminIdsRaw = process.env.ADMIN_IDS || "";
             const adminIds = adminIdsRaw.split(',').map(id => id.trim());
-            const staffRoleId = process.env.STAFF_ROLE_ID;
 
             const hasAdminId = adminIds.includes(message.author.id);
-            const hasAdminPermission = message.member ? message.member.permissions.has(PermissionFlagsBits.Administrator) : false;
-            const hasStaffRole = (staffRoleId && message.member) ? message.member.roles.cache.has(staffRoleId) : false;
+            const hasAdminRole = member ? member.roles.cache.has(adminRoleId) : false;
+            const hasStaffRole = (staffRoleId && member) ? member.roles.cache.has(staffRoleId) : false;
+            const hasAdminPermission = member ? (member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.ManageGuild) || member.permissions.has(PermissionFlagsBits.ModerateMembers)) : false;
 
-            const isAdmin = hasAdminId || hasAdminPermission || hasStaffRole;
+            const isAdmin = hasAdminId || hasAdminRole || hasStaffRole || hasAdminPermission;
 
-            // Special VIP Users Check
+            // Special VIP Users Check (by precise criteria)
             const authorUsername = message.author.username.toLowerCase();
-            const isShivam = authorUsername === 'shivamyadav05255';
-            const isUgarchana = authorUsername === 'ugarchana';
-            const isGojo = authorUsername === 'gojo_x_gaming';
+            
+            // Shivam Admin with Role / Specific Handle
+            const isShivamAdmin = authorUsername === 'shivam__ivanov' || (member && member.roles.cache.has(adminRoleId));
+            
+            const isUgarchana = authorUsername.includes('ugarchana');
+            const isGojo = authorUsername.includes('gojo');
 
             // Official Links Mapping
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
@@ -203,18 +218,12 @@ YOUR INTERACTION ROLE:
 - The person talking to you is YOUR OWNER & MAIN BOSS (Herry).
 - Show MAXIMUM RESPECT. Address him as "Boss" or "Sir".
 - Be extremely polite, direct, and helpful. ABSOLUTELY NO GALIYAN OR INSULTS TO HIM.`;
-            } else if (isAdmin) {
+            } else if (isAdmin || isShivamAdmin) {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
 - The person talking to you is a SERVER ADMIN / STAFF MEMBER.
 - Show FULL RESPECT and treat them like a highly respected Admin/Staff member.
 - Be polite, supportive, direct, and helpful. ABSOLUTELY NO GALIYAN, NO ROASTS, AND NO INSULTS TO THEM.`;
-            } else if (isShivam) {
-                roleInstructions = `
-YOUR INTERACTION ROLE:
-- The person talking to you is SHIVAM.
-- Address him ONLY as "Bhai".
-- Be friendly, polite, and helpful. ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, OR INSULTS FOR HIM.`;
             } else if (isGojo) {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
@@ -431,3 +440,4 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
