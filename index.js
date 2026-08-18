@@ -332,7 +332,12 @@ GENERAL GAME & MONEY/GC HACK RULES:
             const target = message.mentions.members.first();
             if (!target) return message.reply('❌ Please mention a member to kick.');
             const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { await target.kick(reason); message.channel.send(``👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to kick user.'); }
+            try { 
+                await target.kick(reason); 
+                message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
+            } catch (e) { 
+                message.channel.send('❌ Failed to kick user.'); 
+            }
         }
 
         if (command === 'ban') {
@@ -340,7 +345,12 @@ GENERAL GAME & MONEY/GC HACK RULES:
             const target = message.mentions.members.first();
             if (!target) return message.reply('❌ Please mention a member to ban.');
             const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { await target.ban({ reason }); message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to ban user.'); }
+            try { 
+                await target.ban({ reason }); 
+                message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); 
+            } catch (e) { 
+                message.channel.send('❌ Failed to ban user.'); 
+            }
         }
 
         if (command === 'unban') {
@@ -348,7 +358,12 @@ GENERAL GAME & MONEY/GC HACK RULES:
             const userId = args[0];
             if (!userId) return message.reply('❌ Please provide a valid User ID.');
             const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { await message.guild.members.unban(userId, reason); message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to unban user.'); }
+            try { 
+                await message.guild.members.unban(userId, reason); 
+                message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); 
+            } catch (e) { 
+                message.channel.send('❌ Failed to unban user.'); 
+            }
         }
     }
 
