@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - NVIDIA NEMOTRON 3 ULTRA
+// HERRYHACKS BOT - GOOGLE GEMMA 4 31B
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -143,7 +143,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (NVIDIA NEMOTRON 3 ULTRA)
+// AI Response & Mention Handler (GOOGLE GEMMA 4 31B)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -286,7 +286,7 @@ GENERAL GAME & MONEY/GC HACK RULES:
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "nvidia/nemotron-3-ultra-550b-a55b:free",
+                    model: "google/gemma-4-31b-it",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userQuery || "Hello" }
