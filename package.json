@@ -1,7 +1,7 @@
 {
   "name": "herryhacks-bot",
   "version": "1.0.0",
-  "description": "Discord Bot with OpenRouter AI Integration for HerryHacks",
+  "description": "Official HerryHacks Discord Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -14,4 +14,3 @@
     "node": ">=18.0.0"
   }
 }
-
