@@ -178,8 +178,8 @@ client.on('messageCreate', async message => {
             const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
             let scriptContent = "";
             try {
-                const response = await axios.get(scriptUrl, { timeout: 5000 });
-                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 6000) : "Script content unavailable";
+                const response = await axios.get(scriptUrl);
+                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 15000) : "Script content unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
             }
@@ -261,7 +261,7 @@ GENERAL GAME RULES:
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "meta-llama/llama-3.3-70b-instruct:free",
+                    model: "openrouter/auto",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userQuery || "Hello" }
@@ -271,8 +271,7 @@ GENERAL GAME RULES:
                     headers: {
                         "Authorization": `Bearer ${openRouterKey}`,
                         "Content-Type": "application/json"
-                    },
-                    timeout: 15000
+                    }
                 }
             );
 
@@ -286,9 +285,8 @@ GENERAL GAME RULES:
             }
 
         } catch (error) {
-            const errorDetails = error.response?.data ? JSON.stringify(error.response.data) : error.message;
-            console.error("OpenRouter API Error Details:", errorDetails);
-            await message.reply(`❌ API Error: \`${error.response?.status || 'Unknown'}\` - OpenRouter Key ya Model check karein.`);
+            console.error("OpenRouter API Error:", error.response?.data || error.message);
+            await message.reply(`❌ Error processing request.`);
         }
         return;
     }
