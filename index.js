@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - 100% FREE OPENROUTER AI (NO COOLDOWN & ZERO COST)
+// HERRYHACKS BOT - OPENROUTER FREE MODELS FIX
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -143,7 +143,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (OPENROUTER TOP FREE MODELS - AUTO FALLBACK)
+// AI Response & Mention Handler (OPENROUTER UPDATED FREE MODELS)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -198,7 +198,7 @@ client.on('messageCreate', async message => {
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
             if (!apiKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
+                return message.reply("❌ `OPENROUTER_API_KEY` Railway variable missing hai! OpenRouter se key lekar Railway me paste karein.");
             }
 
             let roleInstructions = "";
@@ -266,12 +266,13 @@ RIVAL SERVERS RULE:
 GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            // OpenRouter Top Always-Free Models Priority Chain
+            // Updated Active Free Models on OpenRouter
             const freeModels = [
-                "google/gemini-2.0-flash-lite-preview-02-05:free",
+                "google/gemini-2.0-flash-001:free",
+                "deepseek/deepseek-r1:free",
                 "meta-llama/llama-3.3-70b-instruct:free",
+                "qwen/qwen-2.5-72b-instruct:free",
                 "google/gemini-flash-1.5-8b:free",
-                "qwen/qwen-2.5-coder-32b-instruct:free",
                 "mistralai/mistral-7b-instruct:free"
             ];
 
@@ -291,8 +292,8 @@ GENERAL GAME RULES:
                         {
                             headers: {
                                 "Authorization": `Bearer ${apiKey}`,
-                                "HTTP-Referer": "https://discord.gg/C3aVx49GW",
-                                "X-Title": "HerryHacks Discord Bot",
+                                "HTTP-Referer": "https://discord.com",
+                                "X-Title": "HerryHacks Bot",
                                 "Content-Type": "application/json"
                             },
                             timeout: 12000
@@ -304,14 +305,15 @@ GENERAL GAME RULES:
                         break;
                     }
                 } catch (err) {
-                    console.log(`⚠️ Model [${modelName}] failed/busy. Trying next free backup...`);
+                    const errorDetail = err.response?.data?.error?.message || err.message;
+                    console.error(`❌ OpenRouter Model [${modelName}] failed: ${errorDetail}`);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ OpenRouter server par temporary heavy load hai. Ek baar firse mention karein!");
+                await message.reply("❌ OpenRouter key expired ho gayi hai ya key me issue hai. Firse OpenRouter.ai par nayi key banakar Railway Variables me update karein.");
             }
 
         } catch (error) {
