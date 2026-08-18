@@ -1,5 +1,6 @@
+
 // ==========================================
-// HERRYHACKS BOT - OPENROUTER FREE MODELS FIX
+// HERRYHACKS BOT - AUTO-FALLBACK FREE OPENROUTER AI
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -143,7 +144,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (OPENROUTER UPDATED FREE MODELS)
+// AI Response & Mention Handler (FREE OPENROUTER AUTO FALLBACK)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -198,7 +199,7 @@ client.on('messageCreate', async message => {
 
             const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
             if (!apiKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` Railway variable missing hai! OpenRouter se key lekar Railway me paste karein.");
+                return message.reply("❌ `OPENROUTER_API_KEY` Railway variables me missing hai!");
             }
 
             let roleInstructions = "";
@@ -266,12 +267,11 @@ RIVAL SERVERS RULE:
 GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            // Updated Active Free Models on OpenRouter
+            // Active Free Models Array for Reliability
             const freeModels = [
-                "google/gemini-2.0-flash-001:free",
-                "deepseek/deepseek-r1:free",
+                "google/gemini-2.0-flash-exp:free",
                 "meta-llama/llama-3.3-70b-instruct:free",
-                "qwen/qwen-2.5-72b-instruct:free",
+                "qwen/qwen-2.5-coder-32b-instruct:free",
                 "google/gemini-flash-1.5-8b:free",
                 "mistralai/mistral-7b-instruct:free"
             ];
@@ -302,22 +302,22 @@ GENERAL GAME RULES:
 
                     if (response.data && response.data.choices && response.data.choices[0]?.message?.content) {
                         replyText = response.data.choices[0].message.content.trim();
+                        console.log(`✅ Request served by model: ${modelName}`);
                         break;
                     }
                 } catch (err) {
-                    const errorDetail = err.response?.data?.error?.message || err.message;
-                    console.error(`❌ OpenRouter Model [${modelName}] failed: ${errorDetail}`);
+                    console.log(`⚠️ Model [${modelName}] failed. Reason: ${err.response?.data?.error?.message || err.message}`);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ OpenRouter key expired ho gayi hai ya key me issue hai. Firse OpenRouter.ai par nayi key banakar Railway Variables me update karein.");
+                await message.reply("⚠️ Sabhi OpenRouter free models abhi high traffic me hain. Kripya 10-20 seconds baad dubara try karein!");
             }
 
         } catch (error) {
-            console.error("OpenRouter System Error:", error);
+            console.error("OpenRouter Execution Error:", error);
             await message.reply(`❌ API Issue: \`${error.message || 'Unknown Error'}\``);
         }
         return;
