@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - AUTO-FALLBACK FREE OPENROUTER AI
+// HERRYHACKS BOT - DIRECT GEMINI 2.0 FLASH (FREE)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -144,7 +143,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (FREE OPENROUTER AUTO FALLBACK)
+// AI Response & Mention Handler (DIRECT GEMINI API - NO OPENROUTER ISSUES)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -197,9 +196,9 @@ client.on('messageCreate', async message => {
                 scriptContent = "Could not load Posya script file.";
             }
 
-            const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
-            if (!apiKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` Railway variables me missing hai!");
+            const geminiApiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
+            if (!geminiApiKey) {
+                return message.reply("❌ `GEMINI_API_KEY` Railway variables me missing hai! Google AI Studio se free key lekar set karein.");
             }
 
             let roleInstructions = "";
@@ -267,57 +266,30 @@ RIVAL SERVERS RULE:
 GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            // Active Free Models Array for Reliability
-            const freeModels = [
-                "google/gemini-2.0-flash-exp:free",
-                "meta-llama/llama-3.3-70b-instruct:free",
-                "qwen/qwen-2.5-coder-32b-instruct:free",
-                "google/gemini-flash-1.5-8b:free",
-                "mistralai/mistral-7b-instruct:free"
-            ];
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
 
-            let replyText = null;
-
-            for (const modelName of freeModels) {
-                try {
-                    const response = await axios.post(
-                        "https://openrouter.ai/api/v1/chat/completions",
+            const response = await axios.post(
+                geminiUrl,
+                {
+                    contents: [
                         {
-                            model: modelName,
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: userQuery || "Hello" }
-                            ]
-                        },
-                        {
-                            headers: {
-                                "Authorization": `Bearer ${apiKey}`,
-                                "HTTP-Referer": "https://discord.com",
-                                "X-Title": "HerryHacks Bot",
-                                "Content-Type": "application/json"
-                            },
-                            timeout: 12000
+                            role: "user",
+                            parts: [{ text: `${systemPrompt}\n\nUser Question: ${userQuery || "Hello"}` }]
                         }
-                    );
+                    ]
+                },
+                { timeout: 12000 }
+            );
 
-                    if (response.data && response.data.choices && response.data.choices[0]?.message?.content) {
-                        replyText = response.data.choices[0].message.content.trim();
-                        console.log(`✅ Request served by model: ${modelName}`);
-                        break;
-                    }
-                } catch (err) {
-                    console.log(`⚠️ Model [${modelName}] failed. Reason: ${err.response?.data?.error?.message || err.message}`);
-                }
-            }
-
-            if (replyText) {
+            if (response.data && response.data.candidates && response.data.candidates[0]?.content?.parts[0]?.text) {
+                const replyText = response.data.candidates[0].content.parts[0].text.trim();
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("⚠️ Sabhi OpenRouter free models abhi high traffic me hain. Kripya 10-20 seconds baad dubara try karein!");
+                await message.reply("❌ API Response error. Please try again!");
             }
 
         } catch (error) {
-            console.error("OpenRouter Execution Error:", error);
+            console.error("Gemini API Error:", error.response?.data || error.message);
             await message.reply(`❌ API Issue: \`${error.message || 'Unknown Error'}\``);
         }
         return;
