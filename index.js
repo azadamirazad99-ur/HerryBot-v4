@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - GOOGLE GEMINI (FREE MODEL)
+// HERRYHACKS BOT - 100% FREE OPENROUTER AI (NO COOLDOWN & ZERO COST)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -143,7 +143,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (GOOGLE GEMINI FREE)
+// AI Response & Mention Handler (OPENROUTER TOP FREE MODELS - AUTO FALLBACK)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -155,7 +155,6 @@ client.on('messageCreate', async message => {
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
-            // FORCE FETCH MEMBER TO ENSURE ROLES ARE CACHED
             let member = message.member;
             if (message.guild && (!member || !member.roles)) {
                 try {
@@ -165,7 +164,6 @@ client.on('messageCreate', async message => {
                 }
             }
 
-            // Admin Role ID and Env Variables Check
             const adminRoleId = "1538952736169656330";
             const staffRoleId = process.env.STAFF_ROLE_ID;
             const adminIdsRaw = process.env.ADMIN_IDS || "";
@@ -178,20 +176,17 @@ client.on('messageCreate', async message => {
 
             const isAdmin = hasAdminId || hasAdminRole || hasStaffRole || hasAdminPermission;
 
-            // Special VIP Users Check
             const authorUsername = message.author.username.toLowerCase();
             const isShivamAdmin = authorUsername === 'shivam__ivanov' || (member && member.roles.cache.has(adminRoleId));
             const isUgarchana = authorUsername.includes('ugarchana');
             const isGojo = authorUsername.includes('gojo');
 
-            // Discord Channel Redirect Links
             const grandHacksDownloadChannel = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
             const setupGuideChannel = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
             
             const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
             const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
 
-            // Fetch Posya Lua Script content
             const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
             let scriptContent = "";
             try {
@@ -201,8 +196,8 @@ client.on('messageCreate', async message => {
                 scriptContent = "Could not load Posya script file.";
             }
 
-            const openRouterKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
-            if (!openRouterKey) {
+            const apiKey = process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.trim() : '';
+            if (!apiKey) {
                 return message.reply("❌ `OPENROUTER_API_KEY` missing in Railway variables!");
             }
 
@@ -247,75 +242,81 @@ ${roleInstructions}
 
 STRICT LANGUAGE MATCHING RULE:
 - ALWAYS match the language of the user's input!
-- IF THE USER ASKS IN ENGLISH (e.g. "How to download?", "Give me link", "Is money hack real?"): YOU MUST REPLY IN 100% PURE ENGLISH. NEVER USE HINDI/URDU/ROMAN HINDI FOR ENGLISH USERS.
-- IF THE USER ASKS IN HINDI/URDU/ROMAN HINDI: Reply in Hindi/Urdu as per your interaction role above.
+- IF THE USER ASKS IN ENGLISH: Reply in 100% PURE ENGLISH.
+- IF THE USER ASKS IN HINDI/URDU: Reply in Hindi/Urdu as per role.
 
 CRITICAL FORMATTING & TAGGING RULES:
 1. DO NOT TAG THE USER (DO NOT USE <@user_id>).
 2. DO NOT MENTION OR REPEAT THE USER'S DISCORD USERNAME.
-3. DO NOT USE GREETINGS (No "Hey", "Hello", "Welcome").
+3. DO NOT USE GREETINGS.
 4. JUMP DIRECTLY INTO THE ANSWER.
 
 DOWNLOAD & SETUP LINK RULES (STRICT):
-- IF USER ASKS FOR DOWNLOAD LINKS (Lulubox, Reversoqzz, DevVir APK, Posya Lua Script, or any Hack/Mod download link):
-  PROVIDE ONLY THIS DISCORD CHANNEL LINK: ${grandHacksDownloadChannel}
-  DO NOT PROVIDE DIRECT MEDIAFIRE LINKS OR ANY EXTERNAL LINKS. Tell them to download from the official Discord download channel.
-- IF USER ASKS FOR SETUP GUIDE / TUTORIAL:
-  PROVIDE THIS LINK: ${setupGuideChannel}
-- OTHER LINKS:
-  - YouTube Channel: ${herryHacksYoutube}
-  - Official Discord Server: ${officialDiscordServer}
+- DOWNLOAD LINKS: ${grandHacksDownloadChannel}
+- SETUP GUIDE: ${setupGuideChannel}
+- YouTube Channel: ${herryHacksYoutube}
+- Discord Server: ${officialDiscordServer}
 
 POSYA SCRIPT ANALYSIS INSTRUCTIONS:
-Below is the Lua script source code:
---------------------------------------------------
 ${scriptContent}
---------------------------------------------------
-- Read the Lua code carefully to answer questions about options, sub-menus, Aimbot, Teleportation, Car options, or Character modifications.
-- DO NOT invent fake links (like T.me links). Only share the official links listed above.
-- If an option isn't in the script, state clearly that it doesn't exist in the script.
 
 RIVAL SERVERS RULE:
-- If anyone mentions "Adil", "Rudra", "Yuvraj", or any rival servers, tell them clearly to leave those fake servers immediately or risk getting banned from HerryHacks.
+- If anyone mentions "Adil", "Rudra", "Yuvraj", tell them to leave those fake servers or risk getting banned.
 
-GENERAL GAME & MONEY/GC HACK RULES:
-- If anyone asks for Unlimited Money, Money Hack, GC Hack, or Grand Coins Hack:
-  Tell them clearly: "Herry Sir stated that Grand Mobile RP stores Money and GC in Private Web and Private Folders, so we cannot edit them. These hacks do not exist." (Translate to Hindi/Urdu if user asks in Hindi/Urdu).
-- Never mention "Elite GG", always refer as "Reversoqzz".`;
+GENERAL GAME RULES:
+- Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            const response = await axios.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                {
-                    model: "google/gemini-2.0-flash-exp:free",
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userQuery || "Hello" }
-                    ]
-                },
-                {
-                    headers: {
-                        "Authorization": `Bearer ${openRouterKey}`,
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "https://discord.gg/C3aVx49GW",
-                        "X-Title": "HerryHacks Discord Bot"
-                    },
-                    timeout: 20000
+            // OpenRouter Top Always-Free Models Priority Chain
+            const freeModels = [
+                "google/gemini-2.0-flash-lite-preview-02-05:free",
+                "meta-llama/llama-3.3-70b-instruct:free",
+                "google/gemini-flash-1.5-8b:free",
+                "qwen/qwen-2.5-coder-32b-instruct:free",
+                "mistralai/mistral-7b-instruct:free"
+            ];
+
+            let replyText = null;
+
+            for (const modelName of freeModels) {
+                try {
+                    const response = await axios.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        {
+                            model: modelName,
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userQuery || "Hello" }
+                            ]
+                        },
+                        {
+                            headers: {
+                                "Authorization": `Bearer ${apiKey}`,
+                                "HTTP-Referer": "https://discord.gg/C3aVx49GW",
+                                "X-Title": "HerryHacks Discord Bot",
+                                "Content-Type": "application/json"
+                            },
+                            timeout: 12000
+                        }
+                    );
+
+                    if (response.data && response.data.choices && response.data.choices[0]?.message?.content) {
+                        replyText = response.data.choices[0].message.content.trim();
+                        break;
+                    }
+                } catch (err) {
+                    console.log(`⚠️ Model [${modelName}] failed/busy. Trying next free backup...`);
                 }
-            );
-
-            let replyText = response.data?.choices?.[0]?.message?.content;
+            }
 
             if (replyText) {
-                replyText = replyText.trim();
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Response generating issue, try again.");
+                await message.reply("❌ OpenRouter server par temporary heavy load hai. Ek baar firse mention karein!");
             }
 
         } catch (error) {
-            const errorDetails = error.response?.data ? JSON.stringify(error.response.data) : error.message;
-            console.error("OpenRouter API Error Details:", errorDetails);
-            await message.reply(`❌ API Error: \`${error.response?.status || 'Unknown'}\` - Railway logs check karein.`);
+            console.error("OpenRouter System Error:", error);
+            await message.reply(`❌ API Issue: \`${error.message || 'Unknown Error'}\``);
         }
         return;
     }
