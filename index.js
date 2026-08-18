@@ -1,5 +1,6 @@
+
 // ==========================================
-// HERRYHACKS BOT - DIRECT GEMINI 2.0 FLASH (FREE)
+// HERRYHACKS BOT - ORIGINAL COMPLETE CODE
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -38,17 +39,20 @@ if (fs.existsSync(commandsPath)) {
 client.once('ready', async () => {
     console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot online.`);
 
-    if (!process.env.TOKEN || !process.env.CLIENT_ID) {
+    const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
+    const clientId = process.env.CLIENT_ID;
+
+    if (!botToken || !clientId) {
         console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
         return;
     }
 
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+    const rest = new REST({ version: '10' }).setToken(botToken);
 
     try {
         console.log('🔄 Refreshing application (/) commands...');
         await rest.put(
-            Routes.applicationCommands(process.env.CLIENT_ID),
+            Routes.applicationCommands(clientId),
             { body: commands },
         );
         console.log('✅ Successfully reloaded application (/) commands.');
@@ -143,7 +147,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (DIRECT GEMINI API - NO OPENROUTER ISSUES)
+// AI Response & Mention Handler (FREE GOOGLE GEMINI)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -196,9 +200,9 @@ client.on('messageCreate', async message => {
                 scriptContent = "Could not load Posya script file.";
             }
 
-            const geminiApiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
+            const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
             if (!geminiApiKey) {
-                return message.reply("❌ `GEMINI_API_KEY` Railway variables me missing hai! Google AI Studio se free key lekar set karein.");
+                return message.reply("❌ `GEMINI_API_KEY` Railway variables me missing hai! Google AI Studio se free key lekar add karein.");
             }
 
             let roleInstructions = "";
@@ -266,7 +270,7 @@ RIVAL SERVERS RULE:
 GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
 
             const response = await axios.post(
                 geminiUrl,
@@ -278,19 +282,23 @@ GENERAL GAME RULES:
                         }
                     ]
                 },
-                { timeout: 12000 }
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 10000
+                }
             );
 
             if (response.data && response.data.candidates && response.data.candidates[0]?.content?.parts[0]?.text) {
                 const replyText = response.data.candidates[0].content.parts[0].text.trim();
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ API Response error. Please try again!");
+                await message.reply("❌ API Response empty hai. Please try again.");
             }
 
         } catch (error) {
             console.error("Gemini API Error:", error.response?.data || error.message);
-            await message.reply(`❌ API Issue: \`${error.message || 'Unknown Error'}\``);
+            const errDetail = error.response?.data?.error?.message || error.message;
+            await message.reply(`❌ API Issue: \`${errDetail}\``);
         }
         return;
     }
@@ -430,4 +438,5 @@ client.on('guildMemberRemove', async (member) => {
     channel.send({ embeds: [embed] });
 });
 
-client.login(process.env.TOKEN);
+const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
+client.login(botToken);
