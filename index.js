@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - Z-AI / GLM-5.2 (FREE)
+// HERRYHACKS BOT - GOOGLE GEMINI (FREE MODEL)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -143,7 +143,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (Z-AI GLM 5.2 FREE)
+// AI Response & Mention Handler (GOOGLE GEMINI FREE)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -286,7 +286,7 @@ GENERAL GAME & MONEY/GC HACK RULES:
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "z-ai/glm-5.2:free",
+                    model: "google/gemini-2.0-flash-exp:free",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userQuery || "Hello" }
@@ -332,7 +332,7 @@ GENERAL GAME & MONEY/GC HACK RULES:
             const target = message.mentions.members.first();
             if (!target) return message.reply('❌ Please mention a member to kick.');
             const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { await target.kick(reason); message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to kick user.'); }
+            try { await target.kick(reason); message.channel.send(``👢 Kicked **${target.user.tag}**. Reason: ${reason}`); } catch (e) { message.channel.send('❌ Failed to kick user.'); }
         }
 
         if (command === 'ban') {
