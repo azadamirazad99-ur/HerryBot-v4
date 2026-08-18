@@ -164,6 +164,8 @@ client.on('messageCreate', async message => {
             const authorUsername = message.author.username.toLowerCase();
             const isShivam = authorUsername === 'shivamyadav05255';
             const isUgarchana = authorUsername === 'ugarchana';
+            const isGojo = authorUsername === 'gojo_x_gaming';
+            
 
             // Official Links Mapping
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
