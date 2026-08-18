@@ -178,23 +178,18 @@ client.on('messageCreate', async message => {
 
             const isAdmin = hasAdminId || hasAdminRole || hasStaffRole || hasAdminPermission;
 
-            // Special VIP Users Check (by precise criteria)
+            // Special VIP Users Check
             const authorUsername = message.author.username.toLowerCase();
-            
-            // Shivam Admin with Role / Specific Handle
             const isShivamAdmin = authorUsername === 'shivam__ivanov' || (member && member.roles.cache.has(adminRoleId));
-            
             const isUgarchana = authorUsername.includes('ugarchana');
             const isGojo = authorUsername.includes('gojo');
 
-            // Official Links Mapping
-            const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
-            const devvirMediafire = 'https://www.mediafire.com/file/kg47z7a6bovgek6/DevVir.apk/file';
-            const luluboxSuperLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
-            const reversoqzzDiscordLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
+            // Discord Channel Redirect Links
+            const grandHacksDownloadChannel = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
+            const setupGuideChannel = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
+            
             const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
             const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
-            const setupGuideLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
 
             // Fetch Posya Lua Script content
             const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
@@ -242,13 +237,18 @@ YOUR INTERACTION ROLE:
                 roleInstructions = `
 YOUR INTERACTION ROLE:
 - The person talking to you is a REGULAR MEMBER.
-- Speak in heavy street Desi Hindi/Urdu with attitude, roasts, and galiyan. Be rude yet give them the solution.
-- If they ask in clean English, reply in clean English without abuse.`;
+- If they talk in Hindi/Urdu (or Hinglish): Speak in heavy street Desi Hindi/Urdu with attitude, roasts, and galiyan.
+- If they talk in English: Reply strictly in clean English. Do NOT mix Hindi or abuse in English replies.`;
             }
 
             const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
 
 ${roleInstructions}
+
+STRICT LANGUAGE MATCHING RULE:
+- ALWAYS match the language of the user's input!
+- IF THE USER ASKS IN ENGLISH (e.g. "How to download?", "Give me link", "Is money hack real?"): YOU MUST REPLY IN 100% PURE ENGLISH. NEVER USE HINDI/URDU/ROMAN HINDI FOR ENGLISH USERS.
+- IF THE USER ASKS IN HINDI/URDU/ROMAN HINDI: Reply in Hindi/Urdu as per your interaction role above.
 
 CRITICAL FORMATTING & TAGGING RULES:
 1. DO NOT TAG THE USER (DO NOT USE <@user_id>).
@@ -256,14 +256,15 @@ CRITICAL FORMATTING & TAGGING RULES:
 3. DO NOT USE GREETINGS (No "Hey", "Hello", "Welcome").
 4. JUMP DIRECTLY INTO THE ANSWER.
 
-OFFICIAL LINKS (SHARE ONLY WHEN REQUESTED BY USER):
-- DevVir APK: ${devvirMediafire}
-- Posya Lua Script (Mediafire): ${posyaScriptMediafire}
-- Lulubox Super Link: ${luluboxSuperLink}
-- Reversoqzz Link: ${reversoqzzDiscordLink}
-- YouTube Channel: ${herryHacksYoutube}
-- Official Discord Server: ${officialDiscordServer}
-- Setup Guide: ${setupGuideLink}
+DOWNLOAD & SETUP LINK RULES (STRICT):
+- IF USER ASKS FOR DOWNLOAD LINKS (Lulubox, Reversoqzz, DevVir APK, Posya Lua Script, or any Hack/Mod download link):
+  PROVIDE ONLY THIS DISCORD CHANNEL LINK: ${grandHacksDownloadChannel}
+  DO NOT PROVIDE DIRECT MEDIAFIRE LINKS OR ANY EXTERNAL LINKS. Tell them to download from the official Discord download channel.
+- IF USER ASKS FOR SETUP GUIDE / TUTORIAL:
+  PROVIDE THIS LINK: ${setupGuideChannel}
+- OTHER LINKS:
+  - YouTube Channel: ${herryHacksYoutube}
+  - Official Discord Server: ${officialDiscordServer}
 
 POSYA SCRIPT ANALYSIS INSTRUCTIONS:
 Below is the Lua script source code:
@@ -279,7 +280,7 @@ RIVAL SERVERS RULE:
 
 GENERAL GAME & MONEY/GC HACK RULES:
 - If anyone asks for Unlimited Money, Money Hack, GC Hack, or Grand Coins Hack:
-  Tell them clearly: "Herry Sir ne bataya tha ke Grand Mobile RP ne Money aur GC ko Private Web aur Private Folders mein rakha hai, isliye hum unhe edit nahi kar sakte. Yeh hacks exist nahi karte."
+  Tell them clearly: "Herry Sir stated that Grand Mobile RP stores Money and GC in Private Web and Private Folders, so we cannot edit them. These hacks do not exist." (Translate to Hindi/Urdu if user asks in Hindi/Urdu).
 - Never mention "Elite GG", always refer as "Reversoqzz".`;
 
             const response = await axios.post(
