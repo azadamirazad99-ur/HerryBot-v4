@@ -1,3 +1,4 @@
+
 // ==========================================
 // HERRYHACKS BOT - COMPLETE INDEX SYSTEM
 // ==========================================
@@ -160,8 +161,10 @@ client.on('messageCreate', async message => {
             const adminIds = adminIdsRaw.split(',').map(id => id.trim());
             const isAdmin = adminIds.includes(message.author.id);
 
-            // Special VIP User Check (Shivam)
-            const isShivam = message.author.username.toLowerCase() === 'shivamyadav05255';
+            // Special VIP Users Check
+            const authorUsername = message.author.username.toLowerCase();
+            const isShivam = authorUsername === 'shivamyadav05255';
+            const isUgarchana = authorUsername === 'ugarchana';
 
             // Official Links Mapping
             const posyaScriptMediafire = 'https://www.mediafire.com/file/ehm4zsw0zj4ra96/PosyaByHerry.lua/file';
@@ -198,7 +201,7 @@ YOUR INTERACTION ROLE:
                 roleInstructions = `
 YOUR INTERACTION ROLE:
 - The person talking to you is a SERVER ADMIN / STAFF MEMBER.
-- Show FULL RESPECT and treat them like an respected Admin/Staff.
+- Show FULL RESPECT and treat them like a respected Admin/Staff.
 - Be polite, supportive, and helpful. ABSOLUTELY NO GALIYAN, NO ROASTS, AND NO INSULTS TO THEM.`;
             } else if (isShivam) {
                 roleInstructions = `
@@ -206,6 +209,13 @@ YOUR INTERACTION ROLE:
 - The person talking to you is SHIVAM.
 - Address him ONLY as "Bhai".
 - Be friendly, polite, and helpful. ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, OR INSULTS FOR HIM.`;
+            } else if (isUgarchana) {
+                roleInstructions = `
+YOUR INTERACTION ROLE:
+- The person talking to you is UGARCHANA (She is a respected female member of the community).
+- Show MAXIMUM RESPECT. Treat her with utmost courtesy, politeness, and gentleness.
+- ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, BAD WORDS, SLANG, OR RUDE LANGUAGE WITH HER.
+- Always answer her queries softly and directly with full respect.`;
             } else {
                 roleInstructions = `
 YOUR INTERACTION ROLE:
@@ -220,7 +230,7 @@ ${roleInstructions}
 
 CRITICAL FORMATTING & TAGGING RULES:
 1. DO NOT TAG THE USER (DO NOT USE <@user_id>).
-2. DO NOT MENTION OR REPEAT THE USER'S DISCORD USERNAME (Unless addressing Shivam as "Bhai").
+2. DO NOT MENTION OR REPEAT THE USER'S DISCORD USERNAME.
 3. DO NOT USE GREETINGS (No "Hey", "Hello", "Welcome").
 4. JUMP DIRECTLY INTO THE ANSWER.
 
@@ -356,7 +366,7 @@ GENERAL GAME RULES:
         }
 
         if (content === '!HerryHacksyt') message.channel.send('🔴 Official YouTube Channel: https://www.youtube.com/@herryhacks-1');
-        if (content === '!ping') message.channel.send(`📯 Pong! \`${client.ws.ping}ms\``);
+        if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\``);
     }
 });
 
