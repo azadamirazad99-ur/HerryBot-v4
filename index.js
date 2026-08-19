@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - COMPLETE OPENROUTER STABLE AUTO-ROUTER
+// HERRYHACKS BOT - FULL COMPLETE CODE WITH GROQ ENGINE
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -146,7 +146,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (STABLE OPENROUTER MULTI-MODEL FALLBACK)
+// AI Response & Mention Handler (GROQ + OPENROUTER ENGINE)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -197,11 +197,6 @@ client.on('messageCreate', async message => {
                 scriptContent = typeof response.data === 'string' ? response.data.substring(0, 6000) : "Script content unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
-            }
-
-            const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
-            if (!openRouterApiKey) {
-                return message.reply("❌ `OPENROUTER_API_KEY` Railway Variables me missing hai!");
             }
 
             let roleInstructions = "";
@@ -269,28 +264,47 @@ RIVAL SERVERS RULE:
 GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            // OpenRouter fallback lists (OpenRouter will try models in array order automatically)
-            const modelGroups = [
-                [
-                    "meta-llama/llama-3.3-70b-instruct:free",
-                    "google/gemma-2-9b-it:free",
-                    "qwen/qwen-2.5-coder-32b-instruct:free",
-                    "mistralai/mistral-7b-instruct:free"
-                ],
-                [
-                    "google/gemini-2.0-flash-lite-001:free",
-                    "openrouter/auto"
-                ]
-            ];
+            const groqKey = (process.env.GROQ_API_KEY || '').trim();
+            const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
 
             let replyText = null;
 
-            for (const modelsArray of modelGroups) {
+            // 1. PRIMARY PROVIDER: GROQ API (Fastest & Free)
+            if (groqKey && !replyText) {
                 try {
-                    const response = await axios.post(
+                    const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: userQuery || "Hello" }
+                        ]
+                    }, {
+                        headers: {
+                            "Authorization": `Bearer ${groqKey}`,
+                            "Content-Type": "application/json"
+                        },
+                        timeout: 8000
+                    });
+
+                    if (groqRes.data?.choices?.[0]?.message?.content) {
+                        replyText = groqRes.data.choices[0].message.content.trim();
+                    }
+                } catch (e) {
+                    console.log("⚠️ Groq API failed or busy, switching to OpenRouter:", e.message);
+                }
+            }
+
+            // 2. BACKUP PROVIDER: OPENROUTER API
+            if (openRouterApiKey && !replyText) {
+                try {
+                    const openRouterRes = await axios.post(
                         "https://openrouter.ai/api/v1/chat/completions",
                         {
-                            models: modelsArray,
+                            models: [
+                                "meta-llama/llama-3.3-70b-instruct:free",
+                                "google/gemma-2-9b-it:free",
+                                "openrouter/auto"
+                            ],
                             messages: [
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userQuery || "Hello" }
@@ -299,31 +313,28 @@ GENERAL GAME RULES:
                         {
                             headers: {
                                 "Authorization": `Bearer ${openRouterApiKey}`,
-                                "HTTP-Referer": "https://discord.com",
-                                "X-Title": "HerryHacks Bot",
                                 "Content-Type": "application/json"
                             },
-                            timeout: 10000
+                            timeout: 8000
                         }
                     );
 
-                    if (response.data?.choices?.[0]?.message?.content) {
-                        replyText = response.data.choices[0].message.content.trim();
-                        break;
+                    if (openRouterRes.data?.choices?.[0]?.message?.content) {
+                        replyText = openRouterRes.data.choices[0].message.content.trim();
                     }
-                } catch (err) {
-                    console.log(`⚠️ OpenRouter Group Attempt Failed (${err.message}). Trying backup group...`);
+                } catch (e) {
+                    console.log("⚠️ OpenRouter failed:", e.message);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ Network issue / OpenRouter free models heavily rate limited right now. Try again in 1 minute.");
+                await message.reply("❌ API limit exceeded or busy. Please check Railway `GROQ_API_KEY` variable.");
             }
 
         } catch (error) {
-            console.error("OpenRouter Main Error:", error.message);
+            console.error("Main AI Handler Error:", error.message);
             await message.reply(`❌ System Issue: \`${error.message}\``);
         }
         return;
@@ -466,4 +477,3 @@ client.on('guildMemberRemove', async (member) => {
 
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
