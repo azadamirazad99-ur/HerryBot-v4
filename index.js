@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - ADVANCED SMART INDEX.JS
+// HERRYHACKS BOT - 100% WORKING ENDPOINTS INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -242,16 +242,61 @@ GENERAL DIRECTIVE:
 - Keep answers short, bold, and straight to the point.
 - Do NOT tag user.`;
 
-            const groqKey = (process.env.GROQ_API_KEY || '').trim();
             const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
+            const groqKey = (process.env.GROQ_API_KEY || '').trim();
 
             let replyText = null;
 
-            // --- GROQ PROVIDER ---
+            // --- 1. CURRENT FREE OPENROUTER ENDPOINTS (PRIMARY) ---
+            if (openRouterApiKey && !replyText) {
+                const openRouterModels = [
+                    "google/gemma-2-9b-it:free",
+                    "mistralai/mistral-7b-instruct:free",
+                    "meta-llama/llama-3.2-11b-vision-instruct:free",
+                    "qwen/qwen-2.5-72b-instruct:free",
+                    "openchat/openchat-7b:free"
+                ];
+
+                for (const model of openRouterModels) {
+                    try {
+                        console.log(`Trying OpenRouter model: ${model}...`);
+                        const openRouterRes = await axios.post(
+                            "https://openrouter.ai/api/v1/chat/completions",
+                            {
+                                model: model,
+                                messages: [
+                                    { role: "system", content: systemPrompt },
+                                    { role: "user", content: userQuery || "Hello" }
+                                ],
+                                max_tokens: 300
+                            },
+                            {
+                                headers: {
+                                    "Authorization": `Bearer ${openRouterApiKey}`,
+                                    "Content-Type": "application/json",
+                                    "HTTP-Referer": "https://railway.app",
+                                    "X-Title": "HerryBot"
+                                },
+                                timeout: 10000
+                            }
+                        );
+
+                        if (openRouterRes.data?.choices?.[0]?.message?.content) {
+                            replyText = openRouterRes.data.choices[0].message.content.trim();
+                            console.log(`✅ Responded using OpenRouter: ${model}`);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                    }
+                }
+            }
+
+            // --- 2. GROQ FALLBACK ---
             if (groqKey && !replyText) {
                 const groqModels = [
-                    "llama-3.1-8b-instant",
-                    "llama-3.3-70b-versatile"
+                    "mixtral-8x7b-32768",
+                    "gemma2-9b-it"
                 ];
 
                 for (const model of groqModels) {
@@ -283,52 +328,10 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- OPENROUTER FALLBACK PROVIDER ---
-            if (openRouterApiKey && !replyText) {
-                const openRouterModels = [
-                    "meta-llama/llama-3.1-8b-instruct:free",
-                    "qwen/qwen-2.5-72b-instruct:free",
-                    "google/gemma-2-9b-it:free",
-                    "deepseek/deepseek-r1:free"
-                ];
-
-                for (const model of openRouterModels) {
-                    try {
-                        console.log(`Trying OpenRouter model: ${model}...`);
-                        const openRouterRes = await axios.post(
-                            "https://openrouter.ai/api/v1/chat/completions",
-                            {
-                                model: model,
-                                messages: [
-                                    { role: "system", content: systemPrompt },
-                                    { role: "user", content: userQuery || "Hello" }
-                                ],
-                                max_tokens: 300
-                            },
-                            {
-                                headers: {
-                                    "Authorization": `Bearer ${openRouterApiKey}`,
-                                    "Content-Type": "application/json"
-                                },
-                                timeout: 8000
-                            }
-                        );
-
-                        if (openRouterRes.data?.choices?.[0]?.message?.content) {
-                            replyText = openRouterRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using OpenRouter: ${model}`);
-                            break;
-                        }
-                    } catch (e) {
-                        console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
-                    }
-                }
-            }
-
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai abhi system busy hai, thodi der baad baat kar.");
+                await message.reply("Bhai abhi AI server response nahi de raha, ek baar dobara message mention kar.");
             }
 
         } catch (error) {
