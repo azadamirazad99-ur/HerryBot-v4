@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - 100% WORKING ENDPOINTS INDEX.JS
+// HERRYHACKS BOT - FULLY FIXED INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -247,14 +247,50 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- 1. CURRENT FREE OPENROUTER ENDPOINTS (PRIMARY) ---
+            // --- 1. GROQ ACTIVE 2026 MODELS ---
+            if (groqKey && !replyText) {
+                const groqModels = [
+                    "llama-3.3-70b-versatile",
+                    "llama3-8b-8192",
+                    "gemma2-9b-it"
+                ];
+
+                for (const model of groqModels) {
+                    try {
+                        console.log(`Trying Groq model: ${model}...`);
+                        const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
+                            model: model,
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userQuery || "Hello" }
+                            ],
+                            max_tokens: 300
+                        }, {
+                            headers: {
+                                "Authorization": `Bearer ${groqKey}`,
+                                "Content-Type": "application/json"
+                            },
+                            timeout: 8000
+                        });
+
+                        if (groqRes.data?.choices?.[0]?.message?.content) {
+                            replyText = groqRes.data.choices[0].message.content.trim();
+                            console.log(`✅ Responded using Groq: ${model}`);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log(`⚠️ Groq model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                    }
+                }
+            }
+
+            // --- 2. OPENROUTER AUTO & FREE ENDPOINTS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = [
-                    "google/gemma-2-9b-it:free",
-                    "mistralai/mistral-7b-instruct:free",
-                    "meta-llama/llama-3.2-11b-vision-instruct:free",
-                    "qwen/qwen-2.5-72b-instruct:free",
-                    "openchat/openchat-7b:free"
+                    "openrouter/auto",
+                    "meta-llama/llama-3.3-70b-instruct:free",
+                    "qwen/qwen-2.5-coder-32b-instruct:free",
+                    "deepseek/deepseek-chat:free"
                 ];
 
                 for (const model of openRouterModels) {
@@ -288,42 +324,6 @@ GENERAL DIRECTIVE:
                         }
                     } catch (e) {
                         console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
-                    }
-                }
-            }
-
-            // --- 2. GROQ FALLBACK ---
-            if (groqKey && !replyText) {
-                const groqModels = [
-                    "mixtral-8x7b-32768",
-                    "gemma2-9b-it"
-                ];
-
-                for (const model of groqModels) {
-                    try {
-                        console.log(`Trying Groq model: ${model}...`);
-                        const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
-                            model: model,
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: userQuery || "Hello" }
-                            ],
-                            max_tokens: 300
-                        }, {
-                            headers: {
-                                "Authorization": `Bearer ${groqKey}`,
-                                "Content-Type": "application/json"
-                            },
-                            timeout: 8000
-                        });
-
-                        if (groqRes.data?.choices?.[0]?.message?.content) {
-                            replyText = groqRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using Groq: ${model}`);
-                            break;
-                        }
-                    } catch (e) {
-                        console.log(`⚠️ Groq model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
