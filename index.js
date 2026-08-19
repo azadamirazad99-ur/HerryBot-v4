@@ -1,4 +1,3 @@
-
 // ==========================================
 // HERRYHACKS BOT - FULLY FIXED INDEX.JS
 // ==========================================
@@ -22,7 +21,7 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Slash Command Handler
+// Slash Command Handler Setup
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -194,7 +193,7 @@ client.on('messageCreate', async message => {
             let scriptContent = "";
             try {
                 const response = await axios.get(scriptUrl, { timeout: 4000 });
-                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 800) : "Script unavailable";
+                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 600) : "Script unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
             }
@@ -233,9 +232,10 @@ RULES:
             // --- 1. GROQ ACTIVE MODELS ---
             if (groqKey && !replyText) {
                 const groqModels = [
-                    "llama3-8b-8192",
-                    "llama3-70b-8192",
-                    "llama-3.2-11b-vision-preview"
+                    "openai/gpt-oss-20b",
+                    "openai/gpt-oss-120b",
+                    "qwen/qwen3.6-27b",
+                    "allam-2-7b"
                 ];
 
                 for (const model of groqModels) {
@@ -267,13 +267,12 @@ RULES:
                 }
             }
 
-            // --- 2. OPENROUTER FREE MODELS ---
+            // --- 2. OPENROUTER ACTIVE FREE MODELS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = [
-                    "google/gemma-2-9b-it:free",
-                    "meta-llama/llama-3.2-11b-vision-instruct:free",
-                    "meta-llama/llama-3.1-8b-instruct:free",
-                    "mistralai/mistral-7b-instruct"
+                    "nvidia/nemotron-3.5-lightning:free",
+                    "google/gemma-4-31b-it:free",
+                    "poolside/laguna-s-2.1:free"
                 ];
 
                 for (const model of openRouterModels) {
@@ -483,3 +482,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
