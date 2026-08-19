@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - GROQ & OPENROUTER ONLY
+// HERRYHACKS BOT - FIXED MODELS & TOKEN LIMIT
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -186,7 +186,6 @@ client.on('messageCreate', async message => {
 
             const grandHacksDownloadChannel = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
             const setupGuideChannel = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
-            
             const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
             const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
 
@@ -194,88 +193,48 @@ client.on('messageCreate', async message => {
             let scriptContent = "";
             try {
                 const response = await axios.get(scriptUrl, { timeout: 4000 });
-                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 3000) : "Script unavailable";
+                // Trim script text to keep token count low
+                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 1000) : "Script unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
             }
 
             let roleInstructions = "";
             if (isOwner) {
-                roleInstructions = `
-YOUR INTERACTION ROLE:
-- The person talking to you is YOUR OWNER & MAIN BOSS (Herry).
-- Show MAXIMUM RESPECT. Address him as "Boss" or "Sir".
-- Be extremely polite, direct, and helpful. ABSOLUTELY NO GALIYAN OR INSULTS TO HIM.`;
+                roleInstructions = `YOUR ROLE: User is OWNER (Herry). Show MAX RESPECT. Address as "Boss/Sir". No abuses.`;
             } else if (isAdmin || isShivamAdmin) {
-                roleInstructions = `
-YOUR INTERACTION ROLE:
-- The person talking to you is a SERVER ADMIN / STAFF MEMBER.
-- Show FULL RESPECT and treat them like a highly respected Admin/Staff member.
-- Be polite, supportive, direct, and helpful. ABSOLUTELY NO GALIYAN, NO ROASTS, AND NO INSULTS TO THEM.`;
+                roleInstructions = `YOUR ROLE: User is ADMIN/STAFF. Show FULL RESPECT. No roasts/abuses.`;
             } else if (isGojo) {
-                roleInstructions = `
-YOUR INTERACTION ROLE:
-- The person talking to you is GOJO (gojo_x_gaming).
-- Show FULL RESPECT and treat him with utmost courtesy and friendliness.
-- Address him politely as "Gojo Bhai" or "Gojo".
-- ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, INSULTS, OR BAD WORDS WITH HIM.`;
+                roleInstructions = `YOUR ROLE: User is GOJO. Be polite, address as "Gojo Bhai". No abuses.`;
             } else if (isUgarchana) {
-                roleInstructions = `
-YOUR INTERACTION ROLE:
-- The person talking to you is UGARCHANA (She is a respected female member of the community).
-- Show MAXIMUM RESPECT. Treat her with utmost courtesy, politeness, and gentleness.
-- ABSOLUTELY NEVER USE ANY GALIYAN, ROASTS, BAD WORDS, SLANG, OR RUDE LANGUAGE WITH HER.
-- Always answer her queries softly and directly with full respect.`;
+                roleInstructions = `YOUR ROLE: User is UGARCHANA. Be extremely polite and respectful. No abuses.`;
             } else {
-                roleInstructions = `
-YOUR INTERACTION ROLE:
-- The person talking to you is a REGULAR MEMBER.
-- If they talk in Hindi/Urdu (or Hinglish): Speak in heavy street Desi Hindi/Urdu with attitude, roasts, and galiyan.
-- If they talk in English: Reply strictly in clean English. Do NOT mix Hindi or abuse in English replies.`;
+                roleInstructions = `YOUR ROLE: Regular Member. Reply in heavy street Hindi/Urdu with roasts/attitude if they talk in Hindi/Urdu. If English, reply strictly in pure English.`;
             }
 
-            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding & Scripts).
+            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding).
 
 ${roleInstructions}
 
-STRICT LANGUAGE MATCHING RULE:
-- ALWAYS match the language of the user's input!
-- IF THE USER ASKS IN ENGLISH: Reply in 100% PURE ENGLISH.
-- IF THE USER ASKS IN HINDI/URDU: Reply in Hindi/Urdu as per role.
-
-CRITICAL FORMATTING & TAGGING RULES:
-1. DO NOT TAG THE USER (DO NOT USE <@user_id>).
-2. DO NOT MENTION OR REPEAT THE USER'S DISCORD USERNAME.
-3. DO NOT USE GREETINGS.
-4. JUMP DIRECTLY INTO THE ANSWER.
-
-DOWNLOAD & SETUP LINK RULES (STRICT):
-- DOWNLOAD LINKS: ${grandHacksDownloadChannel}
-- SETUP GUIDE: ${setupGuideChannel}
-- YouTube Channel: ${herryHacksYoutube}
-- Discord Server: ${officialDiscordServer}
-
-POSYA SCRIPT ANALYSIS INSTRUCTIONS:
-${scriptContent}
-
-RIVAL SERVERS RULE:
-- If anyone mentions "Adil", "Rudra", "Yuvraj", tell them to leave those fake servers or risk getting banned.
-
-GENERAL GAME RULES:
-- Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
+RULES:
+1. Always match user language (Pure English if asked in English).
+2. DO NOT tag user or mention user name.
+3. No greetings, jump straight to answer.
+4. Download Links: ${grandHacksDownloadChannel} | Setup Guide: ${setupGuideChannel}
+5. YouTube: ${herryHacksYoutube} | Discord: ${officialDiscordServer}
+6. Posya Script Info: ${scriptContent}
+7. Unlimited Money/GC Hacks do NOT exist in Grand Mobile RP.`;
 
             const groqKey = (process.env.GROQ_API_KEY || '').trim();
             const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
 
             let replyText = null;
 
-            // --- PRIMARY: GROQ UPDATED MODELS ---
+            // --- PRIMARY: GROQ (CURRENT ACTIVE MODEL) ---
             if (groqKey && !replyText) {
                 const groqModels = [
-                    "llama-3.3-70b-specdec",
-                    "llama-3.1-70b-versatile",
-                    "llama3-70b-8192",
-                    "mixtral-8x7b-32768"
+                    "llama-3.3-70b-versatile",
+                    "llama-3.1-8b-instant"
                 ];
 
                 for (const model of groqModels) {
@@ -286,7 +245,8 @@ GENERAL GAME RULES:
                             messages: [
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userQuery || "Hello" }
-                            ]
+                            ],
+                            max_tokens: 500
                         }, {
                             headers: {
                                 "Authorization": `Bearer ${groqKey}`,
@@ -304,19 +264,17 @@ GENERAL GAME RULES:
                         console.log(`⚠️ Groq model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
-            } else if (!groqKey) {
-                console.log("❌ GROQ_API_KEY is missing from environment variables!");
             }
 
-            // --- FALLBACK: OPENROUTER UPDATED MODELS ---
+            // --- FALLBACK: OPENROUTER (CONTROLLED TOKENS) ---
             if (openRouterApiKey && !replyText) {
-                const openRouterFreeModels = [
-                    "meta-llama/llama-3.3-70b-instruct",
-                    "qwen/qwen-2.5-72b-instruct",
-                    "mistralai/mistral-7b-instruct:free"
+                const openRouterModels = [
+                    "meta-llama/llama-3.3-70b-instruct:free",
+                    "mistralai/mistral-7b-instruct:free",
+                    "google/gemma-2-9b-it:free"
                 ];
 
-                for (const model of openRouterFreeModels) {
+                for (const model of openRouterModels) {
                     try {
                         console.log(`Trying OpenRouter model: ${model}...`);
                         const openRouterRes = await axios.post(
@@ -326,7 +284,8 @@ GENERAL GAME RULES:
                                 messages: [
                                     { role: "system", content: systemPrompt },
                                     { role: "user", content: userQuery || "Hello" }
-                                ]
+                                ],
+                                max_tokens: 400
                             },
                             {
                                 headers: {
@@ -346,8 +305,6 @@ GENERAL GAME RULES:
                         console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
-            } else if (!openRouterApiKey && !replyText) {
-                console.log("❌ OPENROUTER_API_KEY is missing from environment variables!");
             }
 
             if (replyText) {
@@ -365,7 +322,7 @@ GENERAL GAME RULES:
 
     const content = message.content.trim();
 
-    // Dot (.) Prefix Commands
+    // Prefix Commands
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -410,7 +367,6 @@ GENERAL GAME RULES:
         }
     }
 
-    // Exclamation (!) Prefix Commands
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -477,7 +433,7 @@ GENERAL GAME RULES:
     }
 });
 
-// Guild Member Welcome & Leave Events
+// Member Events
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
