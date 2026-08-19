@@ -1,22 +1,8 @@
-
 // ==========================================
-// HERRYHACKS BOT - COMPLETE FULL INDEX.JS
-// GROQ LLAMA 3.3 70B VERSATILE PRIMARY + FULL BOT SYSTEM
+// HERRYHACKS BOT - GROQ LLAMA 3.3 70B PRIMARY (100% FREE)
 // ==========================================
 
-const { 
-    Client, 
-    GatewayIntentBits, 
-    Collection, 
-    REST, 
-    Routes, 
-    EmbedBuilder, 
-    PermissionFlagsBits, 
-    ChannelType, 
-    ActionRowBuilder, 
-    ButtonBuilder, 
-    ButtonStyle 
-} = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const axios = require('axios');
@@ -35,9 +21,7 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// ==========================================
-// 1. SLASH COMMANDS LOADER
-// ==========================================
+// Slash Command Handler Setup
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -52,33 +36,31 @@ if (fs.existsSync(commandsPath)) {
 }
 
 client.once('ready', async () => {
-    console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot Online.`);
+    console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot online.`);
 
     const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
     const clientId = process.env.CLIENT_ID || process.env['CLIENT ID'];
 
     if (!botToken || !clientId) {
-        console.error("❌ TOKEN or CLIENT_ID is missing in environment variables!");
+        console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
         return;
     }
 
     const rest = new REST({ version: '10' }).setToken(botToken);
 
     try {
-        console.log('🔄 Reloading global application (/) commands...');
+        console.log('🔄 Refreshing application (/) commands...');
         await rest.put(
             Routes.applicationCommands(clientId),
             { body: commands },
         );
-        console.log('✅ Successfully loaded application (/) commands.');
+        console.log('✅ Successfully reloaded application (/) commands.');
     } catch (error) {
-        console.error("Slash Command Registration Error:", error);
+        console.error("Slash Command Error:", error);
     }
 });
 
-// ==========================================
-// 2. SUPPORT TICKET SYSTEM & SLASH INTERACTION
-// ==========================================
+// Ticket System Integration
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
@@ -155,7 +137,7 @@ client.on('interactionCreate', async interaction => {
     try {
         await command.execute(interaction);
     } catch (error) {
-        console.error("Interaction Execution Error:", error);
+        console.error("Interaction Error:", error);
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp({ content: '❌ Error executing command!', ephemeral: true });
         } else {
@@ -164,13 +146,10 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// ==========================================
-// 3. AI CHATBOT ENGINE + PREFIX COMMANDS
-// ==========================================
+// AI Response & Mention Handler (Groq Llama-3.3-70b-versatile Primary)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // --- AI CHATBOT HANDLER (MENTION BASED) ---
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
@@ -207,6 +186,7 @@ client.on('messageCreate', async message => {
 
             const grandHacksDownloadChannel = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
             const setupGuideChannel = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
+            
             const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
             const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
 
@@ -290,7 +270,7 @@ GENERAL GAME RULES:
 
             let replyText = null;
 
-            // --- 1. GROQ ENGINE (PRIMARY) ---
+            // --- PRIMARY: GROQ LLAMA 3.3 70B VERSATILE ---
             if (groqKey && !replyText) {
                 const groqModels = [
                     "llama-3.3-70b-versatile",
@@ -311,7 +291,7 @@ GENERAL GAME RULES:
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 8000
+                            timeout: 7000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
@@ -320,13 +300,12 @@ GENERAL GAME RULES:
                             break;
                         }
                     } catch (e) {
-                        const errMessage = e.response?.data?.error?.message || e.message;
-                        console.log(`⚠️ Groq model ${model} failed: ${errMessage}`);
+                        console.log(`⚠️ Groq model ${model} failed, switching fallback...`);
                     }
                 }
             }
 
-            // --- 2. GEMINI ENGINE (FALLBACK 1) ---
+            // --- FALLBACK 1: GEMINI FREE TIER ---
             if (geminiKey && !replyText) {
                 try {
                     const geminiRes = await axios.post(
@@ -335,11 +314,11 @@ GENERAL GAME RULES:
                             contents: [
                                 {
                                     role: "user",
-                                    parts: [{ text: `${systemPrompt}\n\nUser Query: ${userQuery || "Hello"}` }]
+                                    parts: [{ text: `${systemPrompt}\n\nUser Query:${userQuery || "Hello"}` }]
                                 }
                             ]
                         },
-                        { timeout: 8000 }
+                        { timeout: 7000 }
                     );
 
                     if (geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -347,11 +326,11 @@ GENERAL GAME RULES:
                         console.log("✅ Responded using Gemini Free API");
                     }
                 } catch (e) {
-                    console.log("⚠️ Gemini API failed, trying OpenRouter...");
+                    console.log("⚠️ Gemini API failed, switching to OpenRouter Free...");
                 }
             }
 
-            // --- 3. OPENROUTER ENGINE (FALLBACK 2) ---
+            // --- FALLBACK 2: OPENROUTER FREE MODELS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterFreeModels = [
                     "meta-llama/llama-3.3-70b-instruct:free",
@@ -374,35 +353,35 @@ GENERAL GAME RULES:
                                 "Authorization": `Bearer ${openRouterApiKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 10000
+                            timeout: 9000
                         }
                     );
 
                     if (openRouterRes.data?.choices?.[0]?.message?.content) {
                         replyText = openRouterRes.data.choices[0].message.content.trim();
-                        console.log("✅ Responded using OpenRouter Free API");
+                        console.log("✅ Responded using OpenRouter Free Tier");
                     }
                 } catch (e) {
-                    console.log("⚠️ OpenRouter Free API failed:", e.message);
+                    console.log("⚠️ OpenRouter Free Tier failed:", e.message);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ API busy or GROQ_API_KEY environment variable missing!");
+                await message.reply("❌ All AI services are busy right now. Please try again in a moment!");
             }
 
         } catch (error) {
             console.error("Main AI Handler Error:", error.message);
-            await message.reply(`❌ System Error: \`${error.message}\``);
+            await message.reply(`❌ System Issue: \`${error.message}\``);
         }
         return;
     }
 
     const content = message.content.trim();
 
-    // --- PREFIX COMMANDS WITH DOT (.) ---
+    // Dot (.) Prefix Commands
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -414,7 +393,7 @@ GENERAL GAME RULES:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await target.kick(reason); 
-                message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
+                message.channel.send(``👢 Kicked **${target.user.tag}**. Reason: ${reason}``); 
             } catch (e) { 
                 message.channel.send('❌ Failed to kick user.'); 
             }
@@ -427,7 +406,7 @@ GENERAL GAME RULES:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await target.ban({ reason }); 
-                message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); 
+                message.channel.send(``🔨 Banned **${target.user.tag}**. Reason: ${reason}``); 
             } catch (e) { 
                 message.channel.send('❌ Failed to ban user.'); 
             }
@@ -440,14 +419,14 @@ GENERAL GAME RULES:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await message.guild.members.unban(userId, reason); 
-                message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); 
+                message.channel.send(``✅ Unbanned ID: \`${userId}\`. Reason: ${reason}``); 
             } catch (e) { 
                 message.channel.send('❌ Failed to unban user.'); 
             }
         }
     }
 
-    // --- PREFIX COMMANDS WITH EXCLAMATION (!) ---
+    // Exclamation (!) Prefix Commands
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -460,7 +439,7 @@ GENERAL GAME RULES:
             const reason = args.slice(2).join(' ') || 'No reason provided';
             try { 
                 await target.timeout(minutes * 60 * 1000, reason); 
-                message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.`); 
+                message.channel.send(``🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.``); 
             } catch (e) { 
                 message.channel.send('❌ Failed to apply timeout.'); 
             }
@@ -472,7 +451,7 @@ GENERAL GAME RULES:
             if (!target) return message.reply('❌ Mention a user to remove timeout.');
             try { 
                 await target.timeout(null); 
-                message.channel.send(`🔊 Removed timeout for **${target.user.tag}**.`); 
+                message.channel.send(``🔊 Removed timeout for **${target.user.tag}**.``); 
             } catch (e) { 
                 message.channel.send('❌ Failed to remove timeout.'); 
             }
@@ -485,7 +464,7 @@ GENERAL GAME RULES:
             try { 
                 message.delete(); 
                 const deleted = await message.channel.bulkDelete(amount, true); 
-                const r = await message.channel.send(`🧹 Cleared **${deleted.size}** messages.`); 
+                const r = await message.channel.send(``🧹 Cleared **${deleted.size}** messages.``); 
                 setTimeout(() => r.delete(), 4000); 
             } catch (e) { 
                 message.channel.send('❌ Failed to clear messages.'); 
@@ -510,13 +489,11 @@ GENERAL GAME RULES:
         }
 
         if (content === '!HerryHacksyt') message.channel.send('🔴 Official YouTube Channel: https://www.youtube.com/@herryhacks-1');
-        if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\``);
+        if (content === '!ping') message.channel.send(``🏓 Pong! \`${client.ws.ping}ms\```);
     }
 });
 
-// ==========================================
-// 4. GUILD MEMBER WELCOME & LEAVE EVENTS
-// ==========================================
+// Guild Member Welcome & Leave Events
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
@@ -561,9 +538,7 @@ client.on('guildMemberRemove', async (member) => {
     channel.send({ embeds: [embed] });
 });
 
-// ==========================================
-// 5. BOT LOGIN
-// ==========================================
+// Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
 
