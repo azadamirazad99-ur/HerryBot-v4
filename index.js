@@ -1,3 +1,4 @@
+
 // ==========================================
 // HERRYHACKS BOT - GROQ LLAMA 3.3 70B PRIMARY (100% FREE)
 // ==========================================
@@ -193,7 +194,7 @@ client.on('messageCreate', async message => {
             const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
             let scriptContent = "";
             try {
-                const response = await axios.get(scriptUrl, { timeout: 3000 });
+                const response = await axios.get(scriptUrl, { timeout: 4000 });
                 scriptContent = typeof response.data === 'string' ? response.data.substring(0, 3000) : "Script unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
@@ -274,12 +275,13 @@ GENERAL GAME RULES:
             if (groqKey && !replyText) {
                 const groqModels = [
                     "llama-3.3-70b-versatile",
-                    "llama3-8b-8192",
+                    "llama-3.1-8b-instant",
                     "gemma2-9b-it"
                 ];
 
                 for (const model of groqModels) {
                     try {
+                        console.log(`Trying Groq model: ${model}...`);
                         const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
                             model: model,
                             messages: [
@@ -291,7 +293,7 @@ GENERAL GAME RULES:
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 7000
+                            timeout: 15000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
@@ -300,14 +302,17 @@ GENERAL GAME RULES:
                             break;
                         }
                     } catch (e) {
-                        console.log(`⚠️ Groq model ${model} failed, switching fallback...`);
+                        console.log(`⚠️ Groq model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
+            } else if (!groqKey) {
+                console.log("❌ GROQ_API_KEY is missing from environment variables!");
             }
 
             // --- FALLBACK 1: GEMINI FREE TIER ---
             if (geminiKey && !replyText) {
                 try {
+                    console.log("Trying Gemini API...");
                     const geminiRes = await axios.post(
                         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
                         {
@@ -318,7 +323,7 @@ GENERAL GAME RULES:
                                 }
                             ]
                         },
-                        { timeout: 7000 }
+                        { timeout: 15000 }
                     );
 
                     if (geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -326,8 +331,10 @@ GENERAL GAME RULES:
                         console.log("✅ Responded using Gemini Free API");
                     }
                 } catch (e) {
-                    console.log("⚠️ Gemini API failed, switching to OpenRouter Free...");
+                    console.log(`⚠️ Gemini API failed: ${e.response?.data?.error?.message || e.message}`);
                 }
+            } else if (!geminiKey && !replyText) {
+                console.log("❌ GEMINI_API_KEY is missing from environment variables!");
             }
 
             // --- FALLBACK 2: OPENROUTER FREE MODELS ---
@@ -339,6 +346,7 @@ GENERAL GAME RULES:
                 ];
 
                 try {
+                    console.log("Trying OpenRouter API...");
                     const openRouterRes = await axios.post(
                         "https://openrouter.ai/api/v1/chat/completions",
                         {
@@ -353,7 +361,7 @@ GENERAL GAME RULES:
                                 "Authorization": `Bearer ${openRouterApiKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 9000
+                            timeout: 20000
                         }
                     );
 
@@ -362,14 +370,16 @@ GENERAL GAME RULES:
                         console.log("✅ Responded using OpenRouter Free Tier");
                     }
                 } catch (e) {
-                    console.log("⚠️ OpenRouter Free Tier failed:", e.message);
+                    console.log(`⚠️ OpenRouter Free Tier failed: ${e.response?.data?.error?.message || e.message}`);
                 }
+            } else if (!openRouterApiKey && !replyText) {
+                console.log("❌ OPENROUTER_API_KEY is missing from environment variables!");
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ All AI services are busy right now. Please try again in a moment!");
+                await message.reply("❌ All AI services are busy right now. Check Railway Logs for API Key details!");
             }
 
         } catch (error) {
@@ -541,4 +551,3 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
