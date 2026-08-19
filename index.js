@@ -1,5 +1,6 @@
+
 // ==========================================
-// HERRYHACKS BOT - FIXED MODELS & TOKEN LIMIT
+// HERRYHACKS BOT - FULLY FIXED INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -21,7 +22,7 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Slash Command Handler Setup
+// Slash Command Handler
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -193,8 +194,7 @@ client.on('messageCreate', async message => {
             let scriptContent = "";
             try {
                 const response = await axios.get(scriptUrl, { timeout: 4000 });
-                // Trim script text to keep token count low
-                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 1000) : "Script unavailable";
+                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 800) : "Script unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
             }
@@ -230,11 +230,12 @@ RULES:
 
             let replyText = null;
 
-            // --- PRIMARY: GROQ (CURRENT ACTIVE MODEL) ---
+            // --- 1. GROQ ACTIVE MODELS ---
             if (groqKey && !replyText) {
                 const groqModels = [
-                    "llama-3.3-70b-versatile",
-                    "llama-3.1-8b-instant"
+                    "llama3-8b-8192",
+                    "llama3-70b-8192",
+                    "llama-3.2-11b-vision-preview"
                 ];
 
                 for (const model of groqModels) {
@@ -246,13 +247,13 @@ RULES:
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userQuery || "Hello" }
                             ],
-                            max_tokens: 500
+                            max_tokens: 300
                         }, {
                             headers: {
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 15000
+                            timeout: 10000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
@@ -266,12 +267,13 @@ RULES:
                 }
             }
 
-            // --- FALLBACK: OPENROUTER (CONTROLLED TOKENS) ---
+            // --- 2. OPENROUTER FREE MODELS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = [
-                    "meta-llama/llama-3.3-70b-instruct:free",
-                    "mistralai/mistral-7b-instruct:free",
-                    "google/gemma-2-9b-it:free"
+                    "google/gemma-2-9b-it:free",
+                    "meta-llama/llama-3.2-11b-vision-instruct:free",
+                    "meta-llama/llama-3.1-8b-instruct:free",
+                    "mistralai/mistral-7b-instruct"
                 ];
 
                 for (const model of openRouterModels) {
@@ -285,14 +287,14 @@ RULES:
                                     { role: "system", content: systemPrompt },
                                     { role: "user", content: userQuery || "Hello" }
                                 ],
-                                max_tokens: 400
+                                max_tokens: 300
                             },
                             {
                                 headers: {
                                     "Authorization": `Bearer ${openRouterApiKey}`,
                                     "Content-Type": "application/json"
                                 },
-                                timeout: 15000
+                                timeout: 10000
                             }
                         );
 
@@ -310,7 +312,7 @@ RULES:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ All AI services are busy right now. Check Railway Logs for details!");
+                await message.reply("❌ AI System temporarily busy. Please try again in a few seconds.");
             }
 
         } catch (error) {
@@ -433,7 +435,7 @@ RULES:
     }
 });
 
-// Member Events
+// Member Join/Leave Events
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
@@ -481,4 +483,3 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
