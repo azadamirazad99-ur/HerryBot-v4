@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - GROQ LLAMA 3.3 70B PRIMARY (100% FREE)
+// HERRYHACKS BOT - GROQ & OPENROUTER ONLY
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -147,7 +146,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (Groq Llama-3.3-70b-versatile Primary)
+// AI Response & Mention Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -266,17 +265,17 @@ GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
             const groqKey = (process.env.GROQ_API_KEY || '').trim();
-            const geminiKey = (process.env.GEMINI_API_KEY || '').trim();
             const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
 
             let replyText = null;
 
-            // --- PRIMARY: GROQ LLAMA 3.3 70B VERSATILE ---
+            // --- PRIMARY: GROQ UPDATED MODELS ---
             if (groqKey && !replyText) {
                 const groqModels = [
-                    "llama-3.3-70b-versatile",
-                    "llama-3.1-8b-instant",
-                    "gemma2-9b-it"
+                    "llama-3.3-70b-specdec",
+                    "llama-3.1-70b-versatile",
+                    "llama3-70b-8192",
+                    "mixtral-8x7b-32768"
                 ];
 
                 for (const model of groqModels) {
@@ -309,68 +308,43 @@ GENERAL GAME RULES:
                 console.log("❌ GROQ_API_KEY is missing from environment variables!");
             }
 
-            // --- FALLBACK 1: GEMINI FREE TIER ---
-            if (geminiKey && !replyText) {
-                try {
-                    console.log("Trying Gemini API...");
-                    const geminiRes = await axios.post(
-                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-                        {
-                            contents: [
-                                {
-                                    role: "user",
-                                    parts: [{ text: `${systemPrompt}\n\nUser Query: ${userQuery || "Hello"}` }]
-                                }
-                            ]
-                        },
-                        { timeout: 15000 }
-                    );
-
-                    if (geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        replyText = geminiRes.data.candidates[0].content.parts[0].text.trim();
-                        console.log("✅ Responded using Gemini Free API");
-                    }
-                } catch (e) {
-                    console.log(`⚠️ Gemini API failed: ${e.response?.data?.error?.message || e.message}`);
-                }
-            } else if (!geminiKey && !replyText) {
-                console.log("❌ GEMINI_API_KEY is missing from environment variables!");
-            }
-
-            // --- FALLBACK 2: OPENROUTER FREE MODELS ---
+            // --- FALLBACK: OPENROUTER UPDATED MODELS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterFreeModels = [
-                    "meta-llama/llama-3.3-70b-instruct:free",
-                    "qwen/qwen-2.5-72b-instruct:free",
-                    "google/gemma-2-9b-it:free"
+                    "meta-llama/llama-3.3-70b-instruct",
+                    "qwen/qwen-2.5-72b-instruct",
+                    "mistralai/mistral-7b-instruct:free"
                 ];
 
-                try {
-                    console.log("Trying OpenRouter API...");
-                    const openRouterRes = await axios.post(
-                        "https://openrouter.ai/api/v1/chat/completions",
-                        {
-                            models: openRouterFreeModels,
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: userQuery || "Hello" }
-                            ]
-                        },
-                        {
-                            headers: {
-                                "Authorization": `Bearer ${openRouterApiKey}`,
-                                "Content-Type": "application/json"
+                for (const model of openRouterFreeModels) {
+                    try {
+                        console.log(`Trying OpenRouter model: ${model}...`);
+                        const openRouterRes = await axios.post(
+                            "https://openrouter.ai/api/v1/chat/completions",
+                            {
+                                model: model,
+                                messages: [
+                                    { role: "system", content: systemPrompt },
+                                    { role: "user", content: userQuery || "Hello" }
+                                ]
                             },
-                            timeout: 20000
-                        }
-                    );
+                            {
+                                headers: {
+                                    "Authorization": `Bearer ${openRouterApiKey}`,
+                                    "Content-Type": "application/json"
+                                },
+                                timeout: 15000
+                            }
+                        );
 
-                    if (openRouterRes.data?.choices?.[0]?.message?.content) {
-                        replyText = openRouterRes.data.choices[0].message.content.trim();
-                        console.log("✅ Responded using OpenRouter Free Tier");
+                        if (openRouterRes.data?.choices?.[0]?.message?.content) {
+                            replyText = openRouterRes.data.choices[0].message.content.trim();
+                            console.log(`✅ Responded using OpenRouter: ${model}`);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
-                } catch (e) {
-                    console.log(`⚠️ OpenRouter Free Tier failed: ${e.response?.data?.error?.message || e.message}`);
                 }
             } else if (!openRouterApiKey && !replyText) {
                 console.log("❌ OPENROUTER_API_KEY is missing from environment variables!");
@@ -379,7 +353,7 @@ GENERAL GAME RULES:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ All AI services are busy right now. Check Railway Logs for API Key details!");
+                await message.reply("❌ All AI services are busy right now. Check Railway Logs for details!");
             }
 
         } catch (error) {
@@ -551,3 +525,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
