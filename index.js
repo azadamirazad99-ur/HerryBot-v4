@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - FULL COMPLETE CODE WITH GROQ ENGINE
+// HERRYHACKS BOT - GROQ LLAMA 3.3 70B PRIMARY (100% FREE)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -146,7 +146,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (GROQ + OPENROUTER ENGINE)
+// AI Response & Mention Handler (Groq Llama-3.3-70b-versatile Primary)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -193,8 +193,8 @@ client.on('messageCreate', async message => {
             const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
             let scriptContent = "";
             try {
-                const response = await axios.get(scriptUrl, { timeout: 4000 });
-                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 6000) : "Script content unavailable";
+                const response = await axios.get(scriptUrl, { timeout: 3000 });
+                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 3000) : "Script unavailable";
             } catch (e) {
                 scriptContent = "Could not load Posya script file.";
             }
@@ -265,46 +265,84 @@ GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
             const groqKey = (process.env.GROQ_API_KEY || '').trim();
+            const geminiKey = (process.env.GEMINI_API_KEY || '').trim();
             const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
 
             let replyText = null;
 
-            // 1. PRIMARY PROVIDER: GROQ API (Fastest & Free)
+            // --- PRIMARY: GROQ LLAMA 3.3 70B VERSATILE ---
             if (groqKey && !replyText) {
-                try {
-                    const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
-                        model: "llama-3.3-70b-versatile",
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: userQuery || "Hello" }
-                        ]
-                    }, {
-                        headers: {
-                            "Authorization": `Bearer ${groqKey}`,
-                            "Content-Type": "application/json"
-                        },
-                        timeout: 8000
-                    });
+                const groqModels = [
+                    "llama-3.3-70b-versatile",
+                    "llama3-8b-8192",
+                    "gemma2-9b-it"
+                ];
 
-                    if (groqRes.data?.choices?.[0]?.message?.content) {
-                        replyText = groqRes.data.choices[0].message.content.trim();
+                for (const model of groqModels) {
+                    try {
+                        const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
+                            model: model,
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userQuery || "Hello" }
+                            ]
+                        }, {
+                            headers: {
+                                "Authorization": `Bearer ${groqKey}`,
+                                "Content-Type": "application/json"
+                            },
+                            timeout: 7000
+                        });
+
+                        if (groqRes.data?.choices?.[0]?.message?.content) {
+                            replyText = groqRes.data.choices[0].message.content.trim();
+                            console.log(`✅ Responded using Groq model: ${model}`);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log(`⚠️ Groq model ${model} failed, switching fallback...`);
                     }
-                } catch (e) {
-                    console.log("⚠️ Groq API failed or busy, switching to OpenRouter:", e.message);
                 }
             }
 
-            // 2. BACKUP PROVIDER: OPENROUTER API
+            // --- FALLBACK 1: GEMINI FREE TIER ---
+            if (geminiKey && !replyText) {
+                try {
+                    const geminiRes = await axios.post(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+                        {
+                            contents: [
+                                {
+                                    role: "user",
+                                    parts: [{ text: `${systemPrompt}\n\nUser Query: ${userQuery || "Hello"}` }]
+                                }
+                            ]
+                        },
+                        { timeout: 7000 }
+                    );
+
+                    if (geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        replyText = geminiRes.data.candidates[0].content.parts[0].text.trim();
+                        console.log("✅ Responded using Gemini Free API");
+                    }
+                } catch (e) {
+                    console.log("⚠️ Gemini API failed, switching to OpenRouter Free...");
+                }
+            }
+
+            // --- FALLBACK 2: OPENROUTER FREE MODELS ---
             if (openRouterApiKey && !replyText) {
+                const openRouterFreeModels = [
+                    "meta-llama/llama-3.3-70b-instruct:free",
+                    "qwen/qwen-2.5-72b-instruct:free",
+                    "google/gemma-2-9b-it:free"
+                ];
+
                 try {
                     const openRouterRes = await axios.post(
                         "https://openrouter.ai/api/v1/chat/completions",
                         {
-                            models: [
-                                "meta-llama/llama-3.3-70b-instruct:free",
-                                "google/gemma-2-9b-it:free",
-                                "openrouter/auto"
-                            ],
+                            models: openRouterFreeModels,
                             messages: [
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userQuery || "Hello" }
@@ -315,22 +353,23 @@ GENERAL GAME RULES:
                                 "Authorization": `Bearer ${openRouterApiKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 8000
+                            timeout: 9000
                         }
                     );
 
                     if (openRouterRes.data?.choices?.[0]?.message?.content) {
                         replyText = openRouterRes.data.choices[0].message.content.trim();
+                        console.log("✅ Responded using OpenRouter Free Tier");
                     }
                 } catch (e) {
-                    console.log("⚠️ OpenRouter failed:", e.message);
+                    console.log("⚠️ OpenRouter Free Tier failed:", e.message);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ API limit exceeded or busy. Please check Railway `GROQ_API_KEY` variable.");
+                await message.reply("❌ All AI services are busy right now. Please try again in a moment!");
             }
 
         } catch (error) {
@@ -445,7 +484,7 @@ client.on('guildMemberAdd', async (member) => {
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: 'HerryHacks Community System' });
 
-        channel.send({ content: ` **WELCOME:** ${member}`, embeds: [embed] });
+        channel.send({ content: `👋 **WELCOME:** ${member}`, embeds: [embed] });
     }
 });
 
@@ -477,3 +516,4 @@ client.on('guildMemberRemove', async (member) => {
 
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
