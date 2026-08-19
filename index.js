@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - COMPLETE OPENROUTER AUTO-ROUTER
+// HERRYHACKS BOT - COMPLETE OPENROUTER STABLE AUTO-ROUTER
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -38,9 +38,7 @@ if (fs.existsSync(commandsPath)) {
 client.once('ready', async () => {
     console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot online.`);
 
-    // Handles variable name 'TOKEN' or 'DISCORD_TOKEN'
     const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
-    // Handles variable name 'CLIENT_ID' or 'CLIENT ID'
     const clientId = process.env.CLIENT_ID || process.env['CLIENT ID'];
 
     if (!botToken || !clientId) {
@@ -148,7 +146,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (OPENROUTER MULTI-MODEL FALLBACK ENGINE)
+// AI Response & Mention Handler (STABLE OPENROUTER MULTI-MODEL FALLBACK)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -271,22 +269,28 @@ RIVAL SERVERS RULE:
 GENERAL GAME RULES:
 - Unlimited Money / GC Hacks do NOT exist in Grand Mobile RP.`;
 
-            // Priority Free Models Checklist
-            const freeModels = [
-                "google/gemini-2.0-flash-lite-001:free",
-                "meta-llama/llama-3.3-70b-instruct:free",
-                "mistralai/mistral-7b-instruct:free",
-                "openrouter/auto"
+            // OpenRouter fallback lists (OpenRouter will try models in array order automatically)
+            const modelGroups = [
+                [
+                    "meta-llama/llama-3.3-70b-instruct:free",
+                    "google/gemma-2-9b-it:free",
+                    "qwen/qwen-2.5-coder-32b-instruct:free",
+                    "mistralai/mistral-7b-instruct:free"
+                ],
+                [
+                    "google/gemini-2.0-flash-lite-001:free",
+                    "openrouter/auto"
+                ]
             ];
 
             let replyText = null;
 
-            for (const model of freeModels) {
+            for (const modelsArray of modelGroups) {
                 try {
                     const response = await axios.post(
                         "https://openrouter.ai/api/v1/chat/completions",
                         {
-                            model: model,
+                            models: modelsArray,
                             messages: [
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userQuery || "Hello" }
@@ -299,27 +303,27 @@ GENERAL GAME RULES:
                                 "X-Title": "HerryHacks Bot",
                                 "Content-Type": "application/json"
                             },
-                            timeout: 8000
+                            timeout: 10000
                         }
                     );
 
                     if (response.data?.choices?.[0]?.message?.content) {
-                        replyText = response.data.choices[0].content.trim();
+                        replyText = response.data.choices[0].message.content.trim();
                         break;
                     }
                 } catch (err) {
-                    console.log(`⚠️ Model ${model} busy/failed. Trying next free model...`);
+                    console.log(`⚠️ OpenRouter Group Attempt Failed (${err.message}). Trying backup group...`);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ Sare free OpenRouter models abhi busy hain. Kuch der baad dubara try karein.");
+                await message.reply("❌ Network issue / OpenRouter free models heavily rate limited right now. Try again in 1 minute.");
             }
 
         } catch (error) {
-            console.error("OpenRouter Error:", error.message);
+            console.error("OpenRouter Main Error:", error.message);
             await message.reply(`❌ System Issue: \`${error.message}\``);
         }
         return;
