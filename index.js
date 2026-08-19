@@ -1,8 +1,22 @@
+
 // ==========================================
-// HERRYHACKS BOT - GROQ LLAMA 3.3 70B PRIMARY (100% FREE)
+// HERRYHACKS BOT - COMPLETE FULL INDEX.JS
+// GROQ LLAMA 3.3 70B VERSATILE PRIMARY + FULL BOT SYSTEM
 // ==========================================
 
-const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { 
+    Client, 
+    GatewayIntentBits, 
+    Collection, 
+    REST, 
+    Routes, 
+    EmbedBuilder, 
+    PermissionFlagsBits, 
+    ChannelType, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle 
+} = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const axios = require('axios');
@@ -21,7 +35,9 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Slash Command Handler Setup
+// ==========================================
+// 1. SLASH COMMANDS LOADER
+// ==========================================
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -36,31 +52,33 @@ if (fs.existsSync(commandsPath)) {
 }
 
 client.once('ready', async () => {
-    console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot online.`);
+    console.log(`🤖 Logged in successfully as ${client.user.tag}! HerryHacks Bot Online.`);
 
     const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
     const clientId = process.env.CLIENT_ID || process.env['CLIENT ID'];
 
     if (!botToken || !clientId) {
-        console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
+        console.error("❌ TOKEN or CLIENT_ID is missing in environment variables!");
         return;
     }
 
     const rest = new REST({ version: '10' }).setToken(botToken);
 
     try {
-        console.log('🔄 Refreshing application (/) commands...');
+        console.log('🔄 Reloading global application (/) commands...');
         await rest.put(
             Routes.applicationCommands(clientId),
             { body: commands },
         );
-        console.log('✅ Successfully reloaded application (/) commands.');
+        console.log('✅ Successfully loaded application (/) commands.');
     } catch (error) {
-        console.error("Slash Command Error:", error);
+        console.error("Slash Command Registration Error:", error);
     }
 });
 
-// Ticket System Integration
+// ==========================================
+// 2. SUPPORT TICKET SYSTEM & SLASH INTERACTION
+// ==========================================
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
@@ -137,7 +155,7 @@ client.on('interactionCreate', async interaction => {
     try {
         await command.execute(interaction);
     } catch (error) {
-        console.error("Interaction Error:", error);
+        console.error("Interaction Execution Error:", error);
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp({ content: '❌ Error executing command!', ephemeral: true });
         } else {
@@ -146,10 +164,13 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (Groq Llama-3.3-70b-versatile Primary)
+// ==========================================
+// 3. AI CHATBOT ENGINE + PREFIX COMMANDS
+// ==========================================
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
+    // --- AI CHATBOT HANDLER (MENTION BASED) ---
     if (message.mentions.has(client.user)) {
         try {
             await message.channel.sendTyping();
@@ -186,7 +207,6 @@ client.on('messageCreate', async message => {
 
             const grandHacksDownloadChannel = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
             const setupGuideChannel = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
-            
             const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
             const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
 
@@ -270,7 +290,7 @@ GENERAL GAME RULES:
 
             let replyText = null;
 
-            // --- PRIMARY: GROQ LLAMA 3.3 70B VERSATILE ---
+            // --- 1. GROQ ENGINE (PRIMARY) ---
             if (groqKey && !replyText) {
                 const groqModels = [
                     "llama-3.3-70b-versatile",
@@ -291,7 +311,7 @@ GENERAL GAME RULES:
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 7000
+                            timeout: 8000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
@@ -300,12 +320,13 @@ GENERAL GAME RULES:
                             break;
                         }
                     } catch (e) {
-                        console.log(`⚠️ Groq model ${model} failed, switching fallback...`);
+                        const errMessage = e.response?.data?.error?.message || e.message;
+                        console.log(`⚠️ Groq model ${model} failed: ${errMessage}`);
                     }
                 }
             }
 
-            // --- FALLBACK 1: GEMINI FREE TIER ---
+            // --- 2. GEMINI ENGINE (FALLBACK 1) ---
             if (geminiKey && !replyText) {
                 try {
                     const geminiRes = await axios.post(
@@ -318,7 +339,7 @@ GENERAL GAME RULES:
                                 }
                             ]
                         },
-                        { timeout: 7000 }
+                        { timeout: 8000 }
                     );
 
                     if (geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -326,11 +347,11 @@ GENERAL GAME RULES:
                         console.log("✅ Responded using Gemini Free API");
                     }
                 } catch (e) {
-                    console.log("⚠️ Gemini API failed, switching to OpenRouter Free...");
+                    console.log("⚠️ Gemini API failed, trying OpenRouter...");
                 }
             }
 
-            // --- FALLBACK 2: OPENROUTER FREE MODELS ---
+            // --- 3. OPENROUTER ENGINE (FALLBACK 2) ---
             if (openRouterApiKey && !replyText) {
                 const openRouterFreeModels = [
                     "meta-llama/llama-3.3-70b-instruct:free",
@@ -353,35 +374,35 @@ GENERAL GAME RULES:
                                 "Authorization": `Bearer ${openRouterApiKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 9000
+                            timeout: 10000
                         }
                     );
 
                     if (openRouterRes.data?.choices?.[0]?.message?.content) {
                         replyText = openRouterRes.data.choices[0].message.content.trim();
-                        console.log("✅ Responded using OpenRouter Free Tier");
+                        console.log("✅ Responded using OpenRouter Free API");
                     }
                 } catch (e) {
-                    console.log("⚠️ OpenRouter Free Tier failed:", e.message);
+                    console.log("⚠️ OpenRouter Free API failed:", e.message);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ All AI services are busy right now. Please try again in a moment!");
+                await message.reply("❌ API busy or GROQ_API_KEY environment variable missing!");
             }
 
         } catch (error) {
             console.error("Main AI Handler Error:", error.message);
-            await message.reply(`❌ System Issue: \`${error.message}\``);
+            await message.reply(`❌ System Error: \`${error.message}\``);
         }
         return;
     }
 
     const content = message.content.trim();
 
-    // Dot (.) Prefix Commands
+    // --- PREFIX COMMANDS WITH DOT (.) ---
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -426,7 +447,7 @@ GENERAL GAME RULES:
         }
     }
 
-    // Exclamation (!) Prefix Commands
+    // --- PREFIX COMMANDS WITH EXCLAMATION (!) ---
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -437,33 +458,54 @@ GENERAL GAME RULES:
             const minutes = parseInt(args[1]);
             if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user <minutes>`');
             const reason = args.slice(2).join(' ') || 'No reason provided';
-            try { await target.timeout(minutes * 60 * 1000, reason); message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.`); } catch (e) { message.channel.send('❌ Failed to apply timeout.'); }
+            try { 
+                await target.timeout(minutes * 60 * 1000, reason); 
+                message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.`); 
+            } catch (e) { 
+                message.channel.send('❌ Failed to apply timeout.'); 
+            }
         }
 
         if (command === 'rto') {
             if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
             const target = message.mentions.members.first();
             if (!target) return message.reply('❌ Mention a user to remove timeout.');
-            try { await target.timeout(null); message.channel.send(`🔊 Removed timeout for **${target.user.tag}**.`); } catch (e) { message.channel.send('❌ Failed to remove timeout.'); }
+            try { 
+                await target.timeout(null); 
+                message.channel.send(`🔊 Removed timeout for **${target.user.tag}**.`); 
+            } catch (e) { 
+                message.channel.send('❌ Failed to remove timeout.'); 
+            }
         }
 
         if (command === 'clear') {
             if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
             const amount = parseInt(args[0]);
             if (!amount || amount < 1 || amount > 100) return message.reply('❌ Enter a number between 1 and 100.');
-            try { message.delete(); const deleted = await message.channel.bulkDelete(amount, true); const r = await message.channel.send(`🧹 Cleared **${deleted.size}** messages.`); setTimeout(() => r.delete(), 4000); } catch (e) { message.channel.send('❌ Failed to clear messages.'); }
+            try { 
+                message.delete(); 
+                const deleted = await message.channel.bulkDelete(amount, true); 
+                const r = await message.channel.send(`🧹 Cleared **${deleted.size}** messages.`); 
+                setTimeout(() => r.delete(), 4000); 
+            } catch (e) { 
+                message.channel.send('❌ Failed to clear messages.'); 
+            }
         }
 
         if (command === 'say') {
             if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
             const sayMessage = args.join(' ');
             if (!sayMessage) return message.reply('❌ Provide a message to say.');
-            message.delete(); message.channel.send(sayMessage);
+            message.delete(); 
+            message.channel.send(sayMessage);
         }
 
         if (command === 'avatar' || command === 'pfp') {
             const target = message.mentions.users.first() || message.author;
-            const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
+            const embed = new EmbedBuilder()
+                .setColor('#00ffcc')
+                .setTitle(`${target.username}'s Avatar`)
+                .setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
             message.channel.send({ embeds: [embed] });
         }
 
@@ -472,9 +514,13 @@ GENERAL GAME RULES:
     }
 });
 
-// Member Welcome Event
+// ==========================================
+// 4. GUILD MEMBER WELCOME & LEAVE EVENTS
+// ==========================================
 client.on('guildMemberAdd', async (member) => {
-    const channel = member.guild.channels.cache.get(process.env.WELCOME_CHANNEL_ID);
+    const channelId = process.env.WELCOME_CHANNEL_ID;
+    if (!channelId) return;
+    const channel = member.guild.channels.cache.get(channelId);
     if (channel) {
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
@@ -488,7 +534,6 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-// Member Leave Event
 client.on('guildMemberRemove', async (member) => {
     let channelId = process.env.LEAVE_CHANNEL_ID;
     const configPath = path.join(__dirname, 'config.json');
@@ -496,7 +541,9 @@ client.on('guildMemberRemove', async (member) => {
         try {
             const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
             channelId = config.leaveChannelId;
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e); 
+        }
     }
 
     if (!channelId) return;
@@ -514,6 +561,9 @@ client.on('guildMemberRemove', async (member) => {
     channel.send({ embeds: [embed] });
 });
 
+// ==========================================
+// 5. BOT LOGIN
+// ==========================================
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
 
