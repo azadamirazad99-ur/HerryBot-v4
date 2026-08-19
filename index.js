@@ -314,7 +314,7 @@ GENERAL GAME RULES:
                             contents: [
                                 {
                                     role: "user",
-                                    parts: [{ text: `${systemPrompt}\n\nUser Query:${userQuery || "Hello"}` }]
+                                    parts: [{ text: `${systemPrompt}\n\nUser Query: ${userQuery || "Hello"}` }]
                                 }
                             ]
                         },
@@ -393,7 +393,7 @@ GENERAL GAME RULES:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await target.kick(reason); 
-                message.channel.send(``👢 Kicked **${target.user.tag}**. Reason: ${reason}``); 
+                message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to kick user.'); 
             }
@@ -406,7 +406,7 @@ GENERAL GAME RULES:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await target.ban({ reason }); 
-                message.channel.send(``🔨 Banned **${target.user.tag}**. Reason: ${reason}``); 
+                message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to ban user.'); 
             }
@@ -419,7 +419,7 @@ GENERAL GAME RULES:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await message.guild.members.unban(userId, reason); 
-                message.channel.send(``✅ Unbanned ID: \`${userId}\`. Reason: ${reason}``); 
+                message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to unban user.'); 
             }
@@ -439,7 +439,7 @@ GENERAL GAME RULES:
             const reason = args.slice(2).join(' ') || 'No reason provided';
             try { 
                 await target.timeout(minutes * 60 * 1000, reason); 
-                message.channel.send(``🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.``); 
+                message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to apply timeout.'); 
             }
@@ -451,7 +451,7 @@ GENERAL GAME RULES:
             if (!target) return message.reply('❌ Mention a user to remove timeout.');
             try { 
                 await target.timeout(null); 
-                message.channel.send(``🔊 Removed timeout for **${target.user.tag}**.``); 
+                message.channel.send(`🔊 Removed timeout for **${target.user.tag}**.`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to remove timeout.'); 
             }
@@ -464,7 +464,7 @@ GENERAL GAME RULES:
             try { 
                 message.delete(); 
                 const deleted = await message.channel.bulkDelete(amount, true); 
-                const r = await message.channel.send(``🧹 Cleared **${deleted.size}** messages.``); 
+                const r = await message.channel.send(`🧹 Cleared **${deleted.size}** messages.`); 
                 setTimeout(() => r.delete(), 4000); 
             } catch (e) { 
                 message.channel.send('❌ Failed to clear messages.'); 
@@ -489,7 +489,7 @@ GENERAL GAME RULES:
         }
 
         if (content === '!HerryHacksyt') message.channel.send('🔴 Official YouTube Channel: https://www.youtube.com/@herryhacks-1');
-        if (content === '!ping') message.channel.send(``🏓 Pong! \`${client.ws.ping}ms\```);
+        if (content === '!ping') message.channel.send(`🏓 Pong! \`${client.ws.ping}ms\``);
     }
 });
 
