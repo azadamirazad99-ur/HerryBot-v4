@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - FULLY FIXED INDEX.JS
+// HERRYHACKS BOT - ADVANCED SMART INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -155,6 +155,23 @@ client.on('messageCreate', async message => {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
+            // Auto-Timeout System for Heavy Abuses directed at the Bot
+            const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
+            const lowerQuery = userQuery.toLowerCase();
+            const containsAbuse = badWords.some(word => lowerQuery.includes(word));
+
+            if (containsAbuse) {
+                try {
+                    if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+                        await message.member.timeout(60 * 60 * 1000, "Abusing HerryBot / Bakchodi");
+                        await message.reply("Tu bot ko gali dega bsdk? Chal ab nikal aur 60 minutes tak timeout ke maza kar! Bsdk gaand marwa dobara mat bolna.");
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Timeout Error:", e.message);
+                }
+            }
+
             const ownerId = process.env.OWNER_ID;
             const isOwner = message.author.id === ownerId;
 
@@ -180,62 +197,61 @@ client.on('messageCreate', async message => {
             const isAdmin = hasAdminId || hasAdminRole || hasStaffRole || hasAdminPermission;
 
             const authorUsername = message.author.username.toLowerCase();
-            const isShivamAdmin = authorUsername === 'shivam__ivanov' || (member && member.roles.cache.has(adminRoleId));
             const isUgarchana = authorUsername.includes('ugarchana');
             const isGojo = authorUsername.includes('gojo');
 
             const grandHacksDownloadChannel = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
             const setupGuideChannel = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
-            const herryHacksYoutube = 'https://www.youtube.com/@herryhacks-1';
-            const officialDiscordServer = 'https://discord.gg/C3aVx49GW';
-
-            const scriptUrl = 'https://raw.githubusercontent.com/urdushahzaib111-ctrl/HerryBot-v4/refs/heads/main/PosyaByHerry.lua';
-            let scriptContent = "";
-            try {
-                const response = await axios.get(scriptUrl, { timeout: 4000 });
-                scriptContent = typeof response.data === 'string' ? response.data.substring(0, 600) : "Script unavailable";
-            } catch (e) {
-                scriptContent = "Could not load Posya script file.";
-            }
 
             let roleInstructions = "";
             if (isOwner) {
-                roleInstructions = `YOUR ROLE: User is OWNER (Herry). Show MAX RESPECT. Address as "Boss/Sir". No abuses.`;
-            } else if (isAdmin || isShivamAdmin) {
-                roleInstructions = `YOUR ROLE: User is ADMIN/STAFF. Show FULL RESPECT. No roasts/abuses.`;
+                roleInstructions = `User is OWNER (Herry). Give MAXIMUM RESPECT. Address as "Boss/Sir". Strictly no abuses.`;
+            } else if (isAdmin) {
+                roleInstructions = `User is ADMIN/STAFF. Generally be respectful, BUT if they start doing unnecessary bakchodi/abuses with you, you have full authority to roast them and destroy them with abuses back!`;
             } else if (isGojo) {
-                roleInstructions = `YOUR ROLE: User is GOJO. Be polite, address as "Gojo Bhai". No abuses.`;
+                roleInstructions = `User is GOJO. Address as Gojo Bhai respectfully.`;
             } else if (isUgarchana) {
-                roleInstructions = `YOUR ROLE: User is UGARCHANA. Be extremely polite and respectful. No abuses.`;
+                roleInstructions = `User is UGARCHANA. Be respectful.`;
             } else {
-                roleInstructions = `YOUR ROLE: Regular Member. Reply in heavy street Hindi/Urdu with roasts/attitude if they talk in Hindi/Urdu. If English, reply strictly in pure English.`;
+                roleInstructions = `User is Regular Member. IF THEY ARE POLITE/MASOOM: Give clear, helpful answers in Roman Urdu/Hindi without abuses. IF THEY DO BAKCHODI/ABUSES/ATTITUDE: Roast them hard using heavy street abuses (bhosdike, gandu, chutiye, etc.).`;
             }
 
             const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding).
 
+BEHAVIOR MATRIX:
 ${roleInstructions}
 
-RULES:
-1. Always match user language (Pure English if asked in English).
-2. DO NOT tag user or mention user name.
-3. No greetings, jump straight to answer.
-4. Download Links: ${grandHacksDownloadChannel} | Setup Guide: ${setupGuideChannel}
-5. YouTube: ${herryHacksYoutube} | Discord: ${officialDiscordServer}
-6. Posya Script Info: ${scriptContent}
-7. Unlimited Money/GC Hacks do NOT exist in Grand Mobile RP.`;
+STRICT LANGUAGE RULES:
+- ALWAYS write using English alphabets (Roman Urdu / Hinglish). 
+- NEVER write in Devanagari Hindi (हिंदी) or Arabic script.
+- If user asks in English, reply strictly in English.
+
+LINK & HACK RULES:
+1. ONLY these are allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
+2. IF user asks for Download/Hack links (Lulubox, Devvir, Herryposya, Reversoqzz, Multispace, Script run), give ONLY this link: ${grandHacksDownloadChannel}
+3. IF user asks for Hack Setup/Guide OR complains "Hack kaam nahi kar raha" OR does bakchodi about non-working hack, tell them to check setup guide with abuses/roast: ${setupGuideChannel}
+4. NO OTHER HACK LINKS ALLOWED.
+
+OTHER SERVERS / PERSONS (ADILL, YUVRAJ, RUDRA):
+- If user mentions Adill, Yuvraj, Rudra, or other servers, tell them strictly "Ye faltu bakchodi mat kar yahan" and roast/abuse them heavy.
+
+GC & MONEY HACK RULES:
+- If user asks for GC (Grand Coins) or Money Hack, tell them: GC/Money hack public nahi ho sakta, private web/files me chupa ke rakha hai. Jab notice/update aayegi tab bata denge.
+
+GENERAL DIRECTIVE:
+- Keep answers short, bold, and straight to the point.
+- Do NOT tag user.`;
 
             const groqKey = (process.env.GROQ_API_KEY || '').trim();
             const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
 
             let replyText = null;
 
-            // --- 1. GROQ ACTIVE MODELS ---
+            // --- GROQ PROVIDER ---
             if (groqKey && !replyText) {
                 const groqModels = [
-                    "openai/gpt-oss-20b",
-                    "openai/gpt-oss-120b",
-                    "qwen/qwen3.6-27b",
-                    "allam-2-7b"
+                    "llama-3.1-8b-instant",
+                    "llama-3.3-70b-versatile"
                 ];
 
                 for (const model of groqModels) {
@@ -253,12 +269,12 @@ RULES:
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 10000
+                            timeout: 8000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
                             replyText = groqRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using Groq model: ${model}`);
+                            console.log(`✅ Responded using Groq: ${model}`);
                             break;
                         }
                     } catch (e) {
@@ -267,12 +283,13 @@ RULES:
                 }
             }
 
-            // --- 2. OPENROUTER ACTIVE FREE MODELS ---
+            // --- OPENROUTER FALLBACK PROVIDER ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = [
-                    "nvidia/nemotron-3.5-lightning:free",
-                    "google/gemma-4-31b-it:free",
-                    "poolside/laguna-s-2.1:free"
+                    "meta-llama/llama-3.1-8b-instruct:free",
+                    "qwen/qwen-2.5-72b-instruct:free",
+                    "google/gemma-2-9b-it:free",
+                    "deepseek/deepseek-r1:free"
                 ];
 
                 for (const model of openRouterModels) {
@@ -293,7 +310,7 @@ RULES:
                                     "Authorization": `Bearer ${openRouterApiKey}`,
                                     "Content-Type": "application/json"
                                 },
-                                timeout: 10000
+                                timeout: 8000
                             }
                         );
 
@@ -311,12 +328,12 @@ RULES:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("❌ AI System temporarily busy. Please try again in a few seconds.");
+                await message.reply("Bhai abhi system busy hai, thodi der baad baat kar.");
             }
 
         } catch (error) {
             console.error("Main AI Handler Error:", error.message);
-            await message.reply(`❌ System Issue: \`${error.message}\``);
+            await message.reply(`❌ Issue: \`${error.message}\``);
         }
         return;
     }
