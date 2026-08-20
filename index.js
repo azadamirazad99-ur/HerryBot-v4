@@ -1,5 +1,6 @@
+
 // ==========================================
-// HERRYHACKS BOT - PERMANENT FIX INDEX.JS
+// HERRYHACKS BOT - TEXT & VISION AI INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -146,7 +147,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler
+// AI Response & Mention Handler (With Vision Support)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -154,6 +155,15 @@ client.on('messageCreate', async message => {
         try {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
+
+            // Image attachment detector
+            let imageUrl = null;
+            if (message.attachments.size > 0) {
+                const attachment = message.attachments.first();
+                if (attachment.contentType && attachment.contentType.startsWith('image/')) {
+                    imageUrl = attachment.url;
+                }
+            }
 
             // Auto-Timeout System for Abuses
             const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
@@ -226,13 +236,13 @@ STRICT LANGUAGE RULES:
 - NEVER write in Devanagari Hindi or Arabic script.
 - If user asks in English, reply strictly in English.
 
+IMAGE / SCREENSHOT INSTRUCTIONS:
+- If an image/screenshot is provided, read the error or content on it clearly and solve the user's issue based on that image.
+
 LINK & HACK RULES:
 1. ONLY allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
 2. Download/Hack links: ${grandHacksDownloadChannel}
 3. Hack Setup/Guide: ${setupGuideChannel}
-
-GC & MONEY HACK RULES:
-- GC/Money hack public nahi ho sakta, private web/files me chupa ke rakha hai.
 
 GENERAL DIRECTIVE:
 - Keep answers short, bold, and straight to the point.
@@ -243,9 +253,23 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- 1. GROQ ACTIVE FREE MODELS ---
+            // Construct user message payload
+            let userContent;
+            if (imageUrl) {
+                userContent = [
+                    { type: "text", text: userQuery || "Image me kya issue/content he batao." },
+                    { type: "image_url", image_url: { url: imageUrl } }
+                ];
+            } else {
+                userContent = userQuery || "Hello";
+            }
+
+            // --- 1. GROQ MODELS (Vision & Text) ---
             if (groqKey && !replyText) {
-                const groqModels = [
+                const groqModels = imageUrl ? [
+                    "llama-3.2-11b-vision-preview",
+                    "llama-3.2-90b-vision-preview"
+                ] : [
                     "llama-3.1-8b-instant"
                 ];
 
@@ -256,15 +280,15 @@ GENERAL DIRECTIVE:
                             model: model,
                             messages: [
                                 { role: "system", content: systemPrompt },
-                                { role: "user", content: userQuery || "Hello" }
+                                { role: "user", content: userContent }
                             ],
-                            max_tokens: 150
+                            max_tokens: 200
                         }, {
                             headers: {
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 8000
+                            timeout: 10000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
@@ -278,13 +302,15 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- 2. OPENROUTER WORKING FREE MODELS ---
+            // --- 2. OPENROUTER MODELS (Vision & Text) ---
             if (openRouterApiKey && !replyText) {
-                const openRouterModels = [
-                    "meta-llama/llama-3.1-8b-instruct:free",
-                    "deepseek/deepseek-r1:free",
-                    "qwen/qwen-2.5-7b-instruct:free",
-                    "google/gemma-2-9b-it:free"
+                const openRouterModels = imageUrl ? [
+                    "google/gemini-2.0-flash-lite-preview-02-05:free",
+                    "meta-llama/llama-3.2-11b-vision-instruct:free"
+                ] : [
+                    "google/gemini-2.5-flash:free",
+                    "mistralai/mistral-7b-instruct:free",
+                    "qwen/qwen-2.5-7b-instruct:free"
                 ];
 
                 for (const model of openRouterModels) {
@@ -296,9 +322,9 @@ GENERAL DIRECTIVE:
                                 model: model,
                                 messages: [
                                     { role: "system", content: systemPrompt },
-                                    { role: "user", content: userQuery || "Hello" }
+                                    { role: "user", content: userContent }
                                 ],
-                                max_tokens: 150
+                                max_tokens: 200
                             },
                             {
                                 headers: {
@@ -307,7 +333,7 @@ GENERAL DIRECTIVE:
                                     "HTTP-Referer": "https://railway.app",
                                     "X-Title": "HerryBot"
                                 },
-                                timeout: 10000
+                                timeout: 12000
                             }
                         );
 
@@ -496,4 +522,3 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
