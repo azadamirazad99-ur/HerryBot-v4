@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - FULLY FIXED INDEX.JS
+// HERRYHACKS BOT - PERMANENT FIX INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -155,7 +155,7 @@ client.on('messageCreate', async message => {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-            // Auto-Timeout System for Heavy Abuses directed at the Bot
+            // Auto-Timeout System for Abuses
             const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
             const lowerQuery = userQuery.toLowerCase();
             const containsAbuse = badWords.some(word => lowerQuery.includes(word));
@@ -163,7 +163,7 @@ client.on('messageCreate', async message => {
             if (containsAbuse) {
                 try {
                     if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-                        await message.member.timeout(60 * 60 * 1000, "Abusing HerryBot / Bakchodi");
+                        await message.member.timeout(60 * 60 * 1000, "Abusing HerryBot");
                         await message.reply("Tu bot ko gali dega bsdk? Chal ab nikal aur 60 minutes tak timeout ke maza kar! Bsdk gaand marwa dobara mat bolna.");
                         return;
                     }
@@ -207,13 +207,13 @@ client.on('messageCreate', async message => {
             if (isOwner) {
                 roleInstructions = `User is OWNER (Herry). Give MAXIMUM RESPECT. Address as "Boss/Sir". Strictly no abuses.`;
             } else if (isAdmin) {
-                roleInstructions = `User is ADMIN/STAFF. Generally be respectful, BUT if they start doing unnecessary bakchodi/abuses with you, you have full authority to roast them and destroy them with abuses back!`;
+                roleInstructions = `User is ADMIN/STAFF. Respectful, BUT if they start doing unnecessary bakchodi/abuses with you, roast them back!`;
             } else if (isGojo) {
                 roleInstructions = `User is GOJO. Address as Gojo Bhai respectfully.`;
             } else if (isUgarchana) {
                 roleInstructions = `User is UGARCHANA. Be respectful.`;
             } else {
-                roleInstructions = `User is Regular Member. IF THEY ARE POLITE/MASOOM: Give clear, helpful answers in Roman Urdu/Hindi without abuses. IF THEY DO BAKCHODI/ABUSES/ATTITUDE: Roast them hard using heavy street abuses (bhosdike, gandu, chutiye, etc.).`;
+                roleInstructions = `User is Regular Member. IF POLITE: Clear answers in Roman Urdu/Hindi. IF BAD/ATTITUDE: Roast them hard using street abuses.`;
             }
 
             const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding).
@@ -223,20 +223,16 @@ ${roleInstructions}
 
 STRICT LANGUAGE RULES:
 - ALWAYS write using English alphabets (Roman Urdu / Hinglish). 
-- NEVER write in Devanagari Hindi (हिंदी) or Arabic script.
+- NEVER write in Devanagari Hindi or Arabic script.
 - If user asks in English, reply strictly in English.
 
 LINK & HACK RULES:
-1. ONLY these are allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
-2. IF user asks for Download/Hack links (Lulubox, Devvir, Herryposya, Reversoqzz, Multispace, Script run), give ONLY this link: ${grandHacksDownloadChannel}
-3. IF user asks for Hack Setup/Guide OR complains "Hack kaam nahi kar raha" OR does bakchodi about non-working hack, tell them to check setup guide with abuses/roast: ${setupGuideChannel}
-4. NO OTHER HACK LINKS ALLOWED.
-
-OTHER SERVERS / PERSONS (ADILL, YUVRAJ, RUDRA):
-- If user mentions Adill, Yuvraj, Rudra, or other servers, tell them strictly "Ye faltu bakchodi mat kar yahan" and roast/abuse them heavy.
+1. ONLY allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
+2. Download/Hack links: ${grandHacksDownloadChannel}
+3. Hack Setup/Guide: ${setupGuideChannel}
 
 GC & MONEY HACK RULES:
-- If user asks for GC (Grand Coins) or Money Hack, tell them: GC/Money hack public nahi ho sakta, private web/files me chupa ke rakha hai. Jab notice/update aayegi tab bata denge.
+- GC/Money hack public nahi ho sakta, private web/files me chupa ke rakha hai.
 
 GENERAL DIRECTIVE:
 - Keep answers short, bold, and straight to the point.
@@ -247,12 +243,10 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- 1. GROQ ACTIVE 2026 MODELS ---
+            // --- 1. GROQ ACTIVE FREE MODELS ---
             if (groqKey && !replyText) {
                 const groqModels = [
-                    "llama-3.3-70b-versatile",
-                    "llama3-8b-8192",
-                    "gemma2-9b-it"
+                    "llama-3.1-8b-instant"
                 ];
 
                 for (const model of groqModels) {
@@ -264,7 +258,7 @@ GENERAL DIRECTIVE:
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userQuery || "Hello" }
                             ],
-                            max_tokens: 300
+                            max_tokens: 150
                         }, {
                             headers: {
                                 "Authorization": `Bearer ${groqKey}`,
@@ -284,13 +278,13 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- 2. OPENROUTER AUTO & FREE ENDPOINTS ---
+            // --- 2. OPENROUTER WORKING FREE MODELS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = [
-                    "openrouter/auto",
-                    "meta-llama/llama-3.3-70b-instruct:free",
-                    "qwen/qwen-2.5-coder-32b-instruct:free",
-                    "deepseek/deepseek-chat:free"
+                    "meta-llama/llama-3.1-8b-instruct:free",
+                    "deepseek/deepseek-r1:free",
+                    "qwen/qwen-2.5-7b-instruct:free",
+                    "google/gemma-2-9b-it:free"
                 ];
 
                 for (const model of openRouterModels) {
@@ -304,7 +298,7 @@ GENERAL DIRECTIVE:
                                     { role: "system", content: systemPrompt },
                                     { role: "user", content: userQuery || "Hello" }
                                 ],
-                                max_tokens: 300
+                                max_tokens: 150
                             },
                             {
                                 headers: {
@@ -331,7 +325,7 @@ GENERAL DIRECTIVE:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai abhi AI server response nahi de raha, ek baar dobara message mention kar.");
+                await message.reply("Bhai AI server response nahi de raha, ek baar dobara message mention kar.");
             }
 
         } catch (error) {
