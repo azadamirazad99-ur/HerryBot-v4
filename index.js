@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - TEXT & VISION AI INDEX.JS
+// HERRYHACKS BOT - AUTO-FETCH FREE MODELS & VISION INDEX.JS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -147,7 +146,28 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Mention Handler (With Vision Support)
+// Function to fetch all dynamic free models from OpenRouter
+async function fetchOpenRouterFreeModels() {
+    try {
+        const response = await axios.get('https://openrouter.ai/api/v1/models');
+        if (response.data && response.data.data) {
+            const freeModels = response.data.data
+                .filter(m => m.id.endsWith(':free') || (m.pricing && parseFloat(m.pricing.prompt) === 0 && parseFloat(m.pricing.completion) === 0))
+                .map(m => m.id);
+            if (freeModels.length > 0) return freeModels;
+        }
+    } catch (e) {
+        console.error("Failed to fetch OpenRouter model list:", e.message);
+    }
+    return [
+        "google/gemma-3-12b-it:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "qwen/qwen3-coder:free",
+        "deepseek/deepseek-r1:free"
+    ];
+}
+
+// AI Response & Mention Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -156,7 +176,6 @@ client.on('messageCreate', async message => {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-            // Image attachment detector
             let imageUrl = null;
             if (message.attachments.size > 0) {
                 const attachment = message.attachments.first();
@@ -253,7 +272,6 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // Construct user message payload
             let userContent;
             if (imageUrl) {
                 userContent = [
@@ -264,13 +282,15 @@ GENERAL DIRECTIVE:
                 userContent = userQuery || "Hello";
             }
 
-            // --- 1. GROQ MODELS (Vision & Text) ---
+            // --- 1. GROQ MODELS TRY ---
             if (groqKey && !replyText) {
                 const groqModels = imageUrl ? [
                     "llama-3.2-11b-vision-preview",
                     "llama-3.2-90b-vision-preview"
                 ] : [
-                    "llama-3.1-8b-instant"
+                    "llama-3.3-70b-versatile",
+                    "llama3-70b-8192",
+                    "mixtral-8x7b-32768"
                 ];
 
                 for (const model of groqModels) {
@@ -288,7 +308,7 @@ GENERAL DIRECTIVE:
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 10000
+                            timeout: 8000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
@@ -302,18 +322,11 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- 2. OPENROUTER MODELS (Vision & Text) ---
+            // --- 2. DYNAMIC OPENROUTER FREE MODELS ---
             if (openRouterApiKey && !replyText) {
-                const openRouterModels = imageUrl ? [
-                    "google/gemini-2.0-flash-lite-preview-02-05:free",
-                    "meta-llama/llama-3.2-11b-vision-instruct:free"
-                ] : [
-                    "google/gemini-2.5-flash:free",
-                    "mistralai/mistral-7b-instruct:free",
-                    "qwen/qwen-2.5-7b-instruct:free"
-                ];
+                const dynamicFreeModels = await fetchOpenRouterFreeModels();
 
-                for (const model of openRouterModels) {
+                for (const model of dynamicFreeModels) {
                     try {
                         console.log(`Trying OpenRouter model: ${model}...`);
                         const openRouterRes = await axios.post(
@@ -333,7 +346,7 @@ GENERAL DIRECTIVE:
                                     "HTTP-Referer": "https://railway.app",
                                     "X-Title": "HerryBot"
                                 },
-                                timeout: 12000
+                                timeout: 10000
                             }
                         );
 
@@ -363,7 +376,6 @@ GENERAL DIRECTIVE:
 
     const content = message.content.trim();
 
-    // Prefix Commands
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -522,3 +534,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
