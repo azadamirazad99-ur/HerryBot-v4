@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - CLEAN TEXT & COMMANDS ONLY
+// HERRYHACKS BOT - STABLE TEXT ONLY
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -13,7 +13,6 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildPresences
     ]
 });
@@ -146,7 +145,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Text Response & Moderation Handler
+// AI Response & Moderation Handler (STABLE TEXT ONLY)
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -245,6 +244,7 @@ GENERAL DIRECTIVE:
                 const openRouterModels = [
                     "google/gemini-2.5-flash:free",
                     "mistralai/mistral-7b-instruct:free",
+                    "deepseek/deepseek-chat:free",
                     "openrouter/auto"
                 ];
 
@@ -268,7 +268,7 @@ GENERAL DIRECTIVE:
                                     "HTTP-Referer": "https://railway.app",
                                     "X-Title": "HerryBot"
                                 },
-                                timeout: 10000
+                                timeout: 12000
                             }
                         );
 
@@ -322,7 +322,7 @@ GENERAL DIRECTIVE:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai main abhi reply nahi kar pa raha hoon, thodi der baad try kar.");
+                await message.reply("Bhai main abhi reply nahi kar pa raha hoon (Models Busy), thodi der baad try kar.");
             }
 
         } catch (error) {
@@ -446,7 +446,7 @@ GENERAL DIRECTIVE:
     }
 });
 
-// Member Join/Leave Events
+// Member Join Events
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
