@@ -1,5 +1,6 @@
 // ==========================================
-// HERRYHACKS BOT - FIX VISION RESPONSE & PROMPT
+// HERRYHACKS BOT - COMPLETE INDEX.JS
+// (Text AI + Vision Fix + Auto Image/PFP Creator)
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -146,27 +147,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Function to fetch all dynamic free models from OpenRouter
-async function fetchOpenRouterFreeModels() {
-    try {
-        const response = await axios.get('https://openrouter.ai/api/v1/models');
-        if (response.data && response.data.data) {
-            const freeModels = response.data.data
-                .filter(m => m.id.endsWith(':free') || (m.pricing && parseFloat(m.pricing.prompt) === 0 && parseFloat(m.pricing.completion) === 0))
-                .map(m => m.id);
-            if (freeModels.length > 0) return freeModels;
-        }
-    } catch (e) {
-        console.error("Failed to fetch OpenRouter model list:", e.message);
-    }
-    return [
-        "google/gemini-2.0-flash-lite-preview-02-05:free",
-        "meta-llama/llama-3.2-11b-vision-instruct:free",
-        "google/gemma-3-12b-it:free"
-    ];
-}
-
-// AI Response & Mention Handler
+// AI Response, Screenshot Vision & PFP Generator Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -175,6 +156,30 @@ client.on('messageCreate', async message => {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
+            // 1. AUTO AI IMAGE / PFP CREATOR CHECK
+            const lowerQuery = userQuery.toLowerCase();
+            const hasImageKey = ["pfp", "photo", "image", "pic", "avatar", "draw", "poster"].some(w => lowerQuery.includes(w));
+            const hasActionKey = ["bana", "make", "create", "generate", "de", "do", "chahiye"].some(w => lowerQuery.includes(w));
+
+            if (hasImageKey && hasActionKey) {
+                const cleanPrompt = userQuery.replace(/(bana|create|generate|de|do|chahiye|pfp|photo|image|pic|avatar|mere liye|bot|ki|ek)/gi, '').trim();
+                const finalPrompt = `Discord profile picture avatar, ${cleanPrompt || 'cool 3d gamer boy'}, centered face, highly detailed 3D digital art, vibrant lighting, smooth shading, 8k resolution`;
+                
+                const encodedPrompt = encodeURIComponent(finalPrompt);
+                const randomSeed = Math.floor(Math.random() * 9999999);
+                const generatedImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}`;
+
+                const embed = new EmbedBuilder()
+                    .setColor('#00ffcc')
+                    .setTitle('🎨 Custom AI PFP Generated!')
+                    .setDescription(`**Prompt:** ${cleanPrompt || 'Cool 3D Gamer Avatar'}\n\n*Right click image to save and use as Discord PFP!*`)
+                    .setImage(generatedImageUrl)
+                    .setFooter({ text: `Requested by ${message.author.username} | HerryBot Free AI`, iconURL: message.author.displayAvatarURL() });
+
+                return await message.reply({ embeds: [embed] });
+            }
+
+            // Image attachment detector
             let imageUrl = null;
             if (message.attachments.size > 0) {
                 const attachment = message.attachments.first();
@@ -185,7 +190,6 @@ client.on('messageCreate', async message => {
 
             // Auto-Timeout System for Abuses
             const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
-            const lowerQuery = userQuery.toLowerCase();
             const containsAbuse = badWords.some(word => lowerQuery.includes(word));
 
             if (containsAbuse) {
@@ -249,15 +253,14 @@ client.on('messageCreate', async message => {
 BEHAVIOR MATRIX:
 ${roleInstructions}
 
-STRICT CRITICAL RULES FOR IMAGE / SCREENSHOT:
-- NEVER reply with "User safety", "Safe", "Unsafe", or system safety classification labels.
-- Read and explain the exact text, error code, or visual problem shown in the screenshot.
-- Solve the user's issue based on what is visible in the image.
-
 STRICT LANGUAGE RULES:
 - ALWAYS write using English alphabets (Roman Urdu / Hinglish). 
 - NEVER write in Devanagari Hindi or Arabic script.
 - If user asks in English, reply strictly in English.
+
+SCREENSHOT / VISION RULES:
+- If screenshot is provided, explain the error or game problem clearly and tell how to fix it.
+- NEVER reply with "User safety", "Safe", or moderation tags.
 
 LINK & HACK RULES:
 1. ONLY allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
@@ -273,36 +276,41 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // Proper OpenAI Vision Payload
-            let userContent;
+            // Construct Vision/Text Message Object
+            let visionUserContent;
             if (imageUrl) {
-                userContent = [
-                    { type: "text", text: userQuery ? userQuery : "Is screenshot/image me kya he detail me batao aur problem solve karo." },
+                visionUserContent = [
+                    { type: "text", text: userQuery ? userQuery : "Is screenshot/image me kya error ya problem he clearly solve kar ke batao." },
                     { type: "image_url", image_url: { url: imageUrl } }
                 ];
             } else {
-                userContent = userQuery || "Hello";
+                visionUserContent = userQuery || "Hello";
             }
 
-            // --- 1. OPENROUTER VISION PREFERRED FOR IMAGES ---
-            if (imageUrl && openRouterApiKey && !replyText) {
-                const visionModels = [
+            // --- 1. OPENROUTER VISION/TEXT MODELS ---
+            if (openRouterApiKey && !replyText) {
+                const openRouterModels = imageUrl ? [
                     "google/gemini-2.0-flash-lite-preview-02-05:free",
-                    "meta-llama/llama-3.2-11b-vision-instruct:free"
+                    "meta-llama/llama-3.2-11b-vision-instruct:free",
+                    "google/gemma-3-12b-it:free"
+                ] : [
+                    "google/gemini-2.5-flash:free",
+                    "mistralai/mistral-7b-instruct:free",
+                    "openrouter/auto"
                 ];
 
-                for (const model of visionModels) {
+                for (const model of openRouterModels) {
                     try {
-                        console.log(`Trying OpenRouter Vision Model: ${model}...`);
+                        console.log(`Trying OpenRouter model: ${model}...`);
                         const openRouterRes = await axios.post(
                             "https://openrouter.ai/api/v1/chat/completions",
                             {
                                 model: model,
                                 messages: [
                                     { role: "system", content: systemPrompt },
-                                    { role: "user", content: userContent }
+                                    { role: "user", content: visionUserContent }
                                 ],
-                                max_tokens: 300
+                                max_tokens: 250
                             },
                             {
                                 headers: {
@@ -316,93 +324,52 @@ GENERAL DIRECTIVE:
                         );
 
                         if (openRouterRes.data?.choices?.[0]?.message?.content) {
-                            const res = openRouterRes.data.choices[0].message.content.trim();
-                            if (!res.toLowerCase().includes("user safety")) {
-                                replyText = res;
-                                console.log(`✅ Responded using OpenRouter Vision: ${model}`);
+                            const txt = openRouterRes.data.choices[0].message.content.trim();
+                            if (!txt.toLowerCase().includes("user safety")) {
+                                replyText = txt;
+                                console.log(`✅ Responded using OpenRouter: ${model}`);
                                 break;
                             }
                         }
                     } catch (e) {
-                        console.log(`⚠️ OpenRouter Vision Model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                        console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
 
-            // --- 2. GROQ VISION FALLBACK ---
-            if (imageUrl && groqKey && !replyText) {
-                const groqVisionModels = [
-                    "llama-3.2-11b-vision-preview",
-                    "llama-3.2-90b-vision-preview"
+            // --- 2. GROQ FALLBACK (Text Only) ---
+            if (groqKey && !replyText) {
+                const groqModels = [
+                    "llama-3.3-70b-versatile",
+                    "llama-3.1-8b-instant",
+                    "mixtral-8x7b-32768"
                 ];
 
-                for (const model of groqVisionModels) {
+                for (const model of groqModels) {
                     try {
-                        console.log(`Trying Groq Vision Model: ${model}...`);
+                        console.log(`Trying Groq model: ${model}...`);
                         const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
                             model: model,
                             messages: [
                                 { role: "system", content: systemPrompt },
-                                { role: "user", content: userContent }
+                                { role: "user", content: userQuery || "Image me error batao." }
                             ],
-                            max_tokens: 300
+                            max_tokens: 200
                         }, {
                             headers: {
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 10000
+                            timeout: 8000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
-                            const res = groqRes.data.choices[0].message.content.trim();
-                            if (!res.toLowerCase().includes("user safety")) {
-                                replyText = res;
-                                console.log(`✅ Responded using Groq Vision: ${model}`);
-                                break;
-                            }
-                        }
-                    } catch (e) {
-                        console.log(`⚠️ Groq Vision Model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
-                    }
-                }
-            }
-
-            // --- 3. STANDARD TEXT MODELS (If not image) ---
-            if (!imageUrl && openRouterApiKey && !replyText) {
-                const dynamicFreeModels = await fetchOpenRouterFreeModels();
-
-                for (const model of dynamicFreeModels) {
-                    try {
-                        console.log(`Trying OpenRouter Text Model: ${model}...`);
-                        const openRouterRes = await axios.post(
-                            "https://openrouter.ai/api/v1/chat/completions",
-                            {
-                                model: model,
-                                messages: [
-                                    { role: "system", content: systemPrompt },
-                                    { role: "user", content: userContent }
-                                ],
-                                max_tokens: 200
-                            },
-                            {
-                                headers: {
-                                    "Authorization": `Bearer ${openRouterApiKey}`,
-                                    "Content-Type": "application/json",
-                                    "HTTP-Referer": "https://railway.app",
-                                    "X-Title": "HerryBot"
-                                },
-                                timeout: 10000
-                            }
-                        );
-
-                        if (openRouterRes.data?.choices?.[0]?.message?.content) {
-                            replyText = openRouterRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using OpenRouter Text: ${model}`);
+                            replyText = groqRes.data.choices[0].message.content.trim();
+                            console.log(`✅ Responded using Groq: ${model}`);
                             break;
                         }
                     } catch (e) {
-                        console.log(`⚠️ OpenRouter Text Model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                        console.log(`⚠️ Groq model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
@@ -410,7 +377,7 @@ GENERAL DIRECTIVE:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai screenshot read karne me issue aa raha he, clear image send kar aur dobara mention kar.");
+                await message.reply("Bhai AI server response nahi de raha, ek baar dobara try kar.");
             }
 
         } catch (error) {
