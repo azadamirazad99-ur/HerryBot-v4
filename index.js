@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - AUTO-FETCH FREE MODELS & VISION INDEX.JS
+// HERRYHACKS BOT - FIX VISION RESPONSE & PROMPT
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -160,10 +160,9 @@ async function fetchOpenRouterFreeModels() {
         console.error("Failed to fetch OpenRouter model list:", e.message);
     }
     return [
-        "google/gemma-3-12b-it:free",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "qwen/qwen3-coder:free",
-        "deepseek/deepseek-r1:free"
+        "google/gemini-2.0-flash-lite-preview-02-05:free",
+        "meta-llama/llama-3.2-11b-vision-instruct:free",
+        "google/gemma-3-12b-it:free"
     ];
 }
 
@@ -250,13 +249,15 @@ client.on('messageCreate', async message => {
 BEHAVIOR MATRIX:
 ${roleInstructions}
 
+STRICT CRITICAL RULES FOR IMAGE / SCREENSHOT:
+- NEVER reply with "User safety", "Safe", "Unsafe", or system safety classification labels.
+- Read and explain the exact text, error code, or visual problem shown in the screenshot.
+- Solve the user's issue based on what is visible in the image.
+
 STRICT LANGUAGE RULES:
 - ALWAYS write using English alphabets (Roman Urdu / Hinglish). 
 - NEVER write in Devanagari Hindi or Arabic script.
 - If user asks in English, reply strictly in English.
-
-IMAGE / SCREENSHOT INSTRUCTIONS:
-- If an image/screenshot is provided, read the error or content on it clearly and solve the user's issue based on that image.
 
 LINK & HACK RULES:
 1. ONLY allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
@@ -272,63 +273,108 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
+            // Proper OpenAI Vision Payload
             let userContent;
             if (imageUrl) {
                 userContent = [
-                    { type: "text", text: userQuery || "Image me kya issue/content he batao." },
+                    { type: "text", text: userQuery ? userQuery : "Is screenshot/image me kya he detail me batao aur problem solve karo." },
                     { type: "image_url", image_url: { url: imageUrl } }
                 ];
             } else {
                 userContent = userQuery || "Hello";
             }
 
-            // --- 1. GROQ MODELS TRY ---
-            if (groqKey && !replyText) {
-                const groqModels = imageUrl ? [
-                    "llama-3.2-11b-vision-preview",
-                    "llama-3.2-90b-vision-preview"
-                ] : [
-                    "llama-3.3-70b-versatile",
-                    "llama3-70b-8192",
-                    "mixtral-8x7b-32768"
+            // --- 1. OPENROUTER VISION PREFERRED FOR IMAGES ---
+            if (imageUrl && openRouterApiKey && !replyText) {
+                const visionModels = [
+                    "google/gemini-2.0-flash-lite-preview-02-05:free",
+                    "meta-llama/llama-3.2-11b-vision-instruct:free"
                 ];
 
-                for (const model of groqModels) {
+                for (const model of visionModels) {
                     try {
-                        console.log(`Trying Groq model: ${model}...`);
+                        console.log(`Trying OpenRouter Vision Model: ${model}...`);
+                        const openRouterRes = await axios.post(
+                            "https://openrouter.ai/api/v1/chat/completions",
+                            {
+                                model: model,
+                                messages: [
+                                    { role: "system", content: systemPrompt },
+                                    { role: "user", content: userContent }
+                                ],
+                                max_tokens: 300
+                            },
+                            {
+                                headers: {
+                                    "Authorization": `Bearer ${openRouterApiKey}`,
+                                    "Content-Type": "application/json",
+                                    "HTTP-Referer": "https://railway.app",
+                                    "X-Title": "HerryBot"
+                                },
+                                timeout: 12000
+                            }
+                        );
+
+                        if (openRouterRes.data?.choices?.[0]?.message?.content) {
+                            const res = openRouterRes.data.choices[0].message.content.trim();
+                            if (!res.toLowerCase().includes("user safety")) {
+                                replyText = res;
+                                console.log(`✅ Responded using OpenRouter Vision: ${model}`);
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        console.log(`⚠️ OpenRouter Vision Model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                    }
+                }
+            }
+
+            // --- 2. GROQ VISION FALLBACK ---
+            if (imageUrl && groqKey && !replyText) {
+                const groqVisionModels = [
+                    "llama-3.2-11b-vision-preview",
+                    "llama-3.2-90b-vision-preview"
+                ];
+
+                for (const model of groqVisionModels) {
+                    try {
+                        console.log(`Trying Groq Vision Model: ${model}...`);
                         const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
                             model: model,
                             messages: [
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userContent }
                             ],
-                            max_tokens: 200
+                            max_tokens: 300
                         }, {
                             headers: {
                                 "Authorization": `Bearer ${groqKey}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 8000
+                            timeout: 10000
                         });
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
-                            replyText = groqRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using Groq: ${model}`);
-                            break;
+                            const res = groqRes.data.choices[0].message.content.trim();
+                            if (!res.toLowerCase().includes("user safety")) {
+                                replyText = res;
+                                console.log(`✅ Responded using Groq Vision: ${model}`);
+                                break;
+                            }
                         }
                     } catch (e) {
-                        console.log(`⚠️ Groq model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                        console.log(`⚠️ Groq Vision Model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
 
-            // --- 2. DYNAMIC OPENROUTER FREE MODELS ---
-            if (openRouterApiKey && !replyText) {
+            // --- 3. STANDARD TEXT MODELS (If not image) ---
+            if (!imageUrl && openRouterApiKey && !replyText) {
                 const dynamicFreeModels = await fetchOpenRouterFreeModels();
 
                 for (const model of dynamicFreeModels) {
                     try {
-                        console.log(`Trying OpenRouter model: ${model}...`);
+                        console.log(`Trying OpenRouter Text Model: ${model}...`);
                         const openRouterRes = await axios.post(
                             "https://openrouter.ai/api/v1/chat/completions",
                             {
@@ -352,11 +398,11 @@ GENERAL DIRECTIVE:
 
                         if (openRouterRes.data?.choices?.[0]?.message?.content) {
                             replyText = openRouterRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using OpenRouter: ${model}`);
+                            console.log(`✅ Responded using OpenRouter Text: ${model}`);
                             break;
                         }
                     } catch (e) {
-                        console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                        console.log(`⚠️ OpenRouter Text Model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
@@ -364,7 +410,7 @@ GENERAL DIRECTIVE:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai AI server response nahi de raha, ek baar dobara message mention kar.");
+                await message.reply("Bhai screenshot read karne me issue aa raha he, clear image send kar aur dobara mention kar.");
             }
 
         } catch (error) {
