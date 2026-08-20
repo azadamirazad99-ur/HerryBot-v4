@@ -1,6 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - COMPLETE INDEX.JS
-// (Text AI + Vision Fix + Auto Image/PFP Creator)
+// HERRYHACKS BOT - FIXED VISION & IMAGE GENERATOR
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -147,7 +146,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response, Screenshot Vision & PFP Generator Handler
+// AI Response, Screenshot Vision & Accurate PFP Generator Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -156,30 +155,35 @@ client.on('messageCreate', async message => {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-            // 1. AUTO AI IMAGE / PFP CREATOR CHECK
+            // 1. ACCURATE AI IMAGE / PFP CREATOR CHECK
             const lowerQuery = userQuery.toLowerCase();
             const hasImageKey = ["pfp", "photo", "image", "pic", "avatar", "draw", "poster"].some(w => lowerQuery.includes(w));
             const hasActionKey = ["bana", "make", "create", "generate", "de", "do", "chahiye"].some(w => lowerQuery.includes(w));
 
             if (hasImageKey && hasActionKey) {
-                const cleanPrompt = userQuery.replace(/(bana|create|generate|de|do|chahiye|pfp|photo|image|pic|avatar|mere liye|bot|ki|ek)/gi, '').trim();
-                const finalPrompt = `Discord profile picture avatar, ${cleanPrompt || 'cool 3d gamer boy'}, centered face, highly detailed 3D digital art, vibrant lighting, smooth shading, 8k resolution`;
-                
-                const encodedPrompt = encodeURIComponent(finalPrompt);
+                let cleanPrompt = userQuery
+                    .replace(/(bana|create|generate|de|do|chahiye|pfp|photo|image|pic|avatar|mere liye|bot|ki|ek|dene|dikha)/gi, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                if (!cleanPrompt) cleanPrompt = "cool anime gamer boy profile picture";
+
+                const encodedPrompt = encodeURIComponent(`${cleanPrompt}, high quality profile picture avatar`);
                 const randomSeed = Math.floor(Math.random() * 9999999);
-                const generatedImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}`;
+
+                const generatedImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&model=flux&nologo=true&seed=${randomSeed}`;
 
                 const embed = new EmbedBuilder()
                     .setColor('#00ffcc')
-                    .setTitle('🎨 Custom AI PFP Generated!')
-                    .setDescription(`**Prompt:** ${cleanPrompt || 'Cool 3D Gamer Avatar'}\n\n*Right click image to save and use as Discord PFP!*`)
+                    .setTitle('🎨 Custom AI Image Generated!')
+                    .setDescription(`**Exact Prompt:** \`${cleanPrompt}\`\n\n*Right click image to download and set as PFP!*`)
                     .setImage(generatedImageUrl)
-                    .setFooter({ text: `Requested by ${message.author.username} | HerryBot Free AI`, iconURL: message.author.displayAvatarURL() });
+                    .setFooter({ text: `Requested by ${message.author.username} | HerryBot Flux Engine`, iconURL: message.author.displayAvatarURL() });
 
                 return await message.reply({ embeds: [embed] });
             }
 
-            // Image attachment detector
+            // Image attachment detector for Vision
             let imageUrl = null;
             if (message.attachments.size > 0) {
                 const attachment = message.attachments.first();
@@ -196,7 +200,7 @@ client.on('messageCreate', async message => {
                 try {
                     if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                         await message.member.timeout(60 * 60 * 1000, "Abusing HerryBot");
-                        await message.reply("Tu bot ko gali dega bsdk? Chal ab nikal aur 60 minutes tak timeout ke maza kar! Bsdk gaand marwa dobara mat bolna.");
+                        await message.reply("Tu bot ko gali dega bsdk? Chal ab nikal aur 60 minutes tak timeout ke maza kar!");
                         return;
                     }
                 } catch (e) {
@@ -287,12 +291,12 @@ GENERAL DIRECTIVE:
                 visionUserContent = userQuery || "Hello";
             }
 
-            // --- 1. OPENROUTER VISION/TEXT MODELS ---
+            // --- 1. OPENROUTER VISION/TEXT MODELS (UPDATED WORKING MODELS) ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = imageUrl ? [
-                    "google/gemini-2.0-flash-lite-preview-02-05:free",
-                    "meta-llama/llama-3.2-11b-vision-instruct:free",
-                    "google/gemma-3-12b-it:free"
+                    "google/gemini-2.5-flash:free",
+                    "meta-llama/llama-3.2-90b-vision-instruct:free",
+                    "qwen/qwen-2-vl-72b-instruct:free"
                 ] : [
                     "google/gemini-2.5-flash:free",
                     "mistralai/mistral-7b-instruct:free",
@@ -319,7 +323,7 @@ GENERAL DIRECTIVE:
                                     "HTTP-Referer": "https://railway.app",
                                     "X-Title": "HerryBot"
                                 },
-                                timeout: 12000
+                                timeout: 15000
                             }
                         );
 
@@ -337,12 +341,11 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- 2. GROQ FALLBACK (Text Only) ---
+            // --- 2. GROQ FALLBACK (Text & Vision) ---
             if (groqKey && !replyText) {
                 const groqModels = [
                     "llama-3.3-70b-versatile",
-                    "llama-3.1-8b-instant",
-                    "mixtral-8x7b-32768"
+                    "llama-3.1-8b-instant"
                 ];
 
                 for (const model of groqModels) {
@@ -352,7 +355,7 @@ GENERAL DIRECTIVE:
                             model: model,
                             messages: [
                                 { role: "system", content: systemPrompt },
-                                { role: "user", content: userQuery || "Image me error batao." }
+                                { role: "user", content: typeof visionUserContent === 'string' ? visionUserContent : userQuery }
                             ],
                             max_tokens: 200
                         }, {
@@ -377,7 +380,7 @@ GENERAL DIRECTIVE:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai AI server response nahi de raha, ek baar dobara try kar.");
+                await message.reply("Bhai image process nahi ho pa rahi, ek baar dobara try kar.");
             }
 
         } catch (error) {
@@ -547,4 +550,3 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
