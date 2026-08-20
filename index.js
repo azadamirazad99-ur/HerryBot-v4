@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - FIXED VISION & IMAGE GENERATOR
+// HERRYHACKS BOT - CLEAN TEXT & COMMANDS ONLY
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -146,7 +146,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response, Screenshot Vision & Accurate PFP Generator Handler
+// AI Text Response & Moderation Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -154,43 +154,7 @@ client.on('messageCreate', async message => {
         try {
             await message.channel.sendTyping();
             const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
-
-            // 1. ACCURATE AI IMAGE / PFP CREATOR CHECK
             const lowerQuery = userQuery.toLowerCase();
-            const hasImageKey = ["pfp", "photo", "image", "pic", "avatar", "draw", "poster"].some(w => lowerQuery.includes(w));
-            const hasActionKey = ["bana", "make", "create", "generate", "de", "do", "chahiye"].some(w => lowerQuery.includes(w));
-
-            if (hasImageKey && hasActionKey) {
-                let cleanPrompt = userQuery
-                    .replace(/(bana|create|generate|de|do|chahiye|pfp|photo|image|pic|avatar|mere liye|bot|ki|ek|dene|dikha)/gi, '')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-
-                if (!cleanPrompt) cleanPrompt = "cool anime gamer boy profile picture";
-
-                const encodedPrompt = encodeURIComponent(`${cleanPrompt}, high quality profile picture avatar`);
-                const randomSeed = Math.floor(Math.random() * 9999999);
-
-                const generatedImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&model=flux&nologo=true&seed=${randomSeed}`;
-
-                const embed = new EmbedBuilder()
-                    .setColor('#00ffcc')
-                    .setTitle('🎨 Custom AI Image Generated!')
-                    .setDescription(`**Exact Prompt:** \`${cleanPrompt}\`\n\n*Right click image to download and set as PFP!*`)
-                    .setImage(generatedImageUrl)
-                    .setFooter({ text: `Requested by ${message.author.username} | HerryBot Flux Engine`, iconURL: message.author.displayAvatarURL() });
-
-                return await message.reply({ embeds: [embed] });
-            }
-
-            // Image attachment detector for Vision
-            let imageUrl = null;
-            if (message.attachments.size > 0) {
-                const attachment = message.attachments.first();
-                if (attachment.contentType && attachment.contentType.startsWith('image/')) {
-                    imageUrl = attachment.url;
-                }
-            }
 
             // Auto-Timeout System for Abuses
             const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
@@ -262,10 +226,6 @@ STRICT LANGUAGE RULES:
 - NEVER write in Devanagari Hindi or Arabic script.
 - If user asks in English, reply strictly in English.
 
-SCREENSHOT / VISION RULES:
-- If screenshot is provided, explain the error or game problem clearly and tell how to fix it.
-- NEVER reply with "User safety", "Safe", or moderation tags.
-
 LINK & HACK RULES:
 1. ONLY allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
 2. Download/Hack links: ${grandHacksDownloadChannel}
@@ -280,24 +240,9 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // Construct Vision/Text Message Object
-            let visionUserContent;
-            if (imageUrl) {
-                visionUserContent = [
-                    { type: "text", text: userQuery ? userQuery : "Is screenshot/image me kya error ya problem he clearly solve kar ke batao." },
-                    { type: "image_url", image_url: { url: imageUrl } }
-                ];
-            } else {
-                visionUserContent = userQuery || "Hello";
-            }
-
-            // --- 1. OPENROUTER VISION/TEXT MODELS (UPDATED WORKING MODELS) ---
+            // --- 1. OPENROUTER TEXT AI ---
             if (openRouterApiKey && !replyText) {
-                const openRouterModels = imageUrl ? [
-                    "google/gemini-2.5-flash:free",
-                    "meta-llama/llama-3.2-90b-vision-instruct:free",
-                    "qwen/qwen-2-vl-72b-instruct:free"
-                ] : [
+                const openRouterModels = [
                     "google/gemini-2.5-flash:free",
                     "mistralai/mistral-7b-instruct:free",
                     "openrouter/auto"
@@ -312,7 +257,7 @@ GENERAL DIRECTIVE:
                                 model: model,
                                 messages: [
                                     { role: "system", content: systemPrompt },
-                                    { role: "user", content: visionUserContent }
+                                    { role: "user", content: userQuery || "Hello" }
                                 ],
                                 max_tokens: 250
                             },
@@ -323,17 +268,14 @@ GENERAL DIRECTIVE:
                                     "HTTP-Referer": "https://railway.app",
                                     "X-Title": "HerryBot"
                                 },
-                                timeout: 15000
+                                timeout: 10000
                             }
                         );
 
                         if (openRouterRes.data?.choices?.[0]?.message?.content) {
-                            const txt = openRouterRes.data.choices[0].message.content.trim();
-                            if (!txt.toLowerCase().includes("user safety")) {
-                                replyText = txt;
-                                console.log(`✅ Responded using OpenRouter: ${model}`);
-                                break;
-                            }
+                            replyText = openRouterRes.data.choices[0].message.content.trim();
+                            console.log(`✅ Responded using OpenRouter: ${model}`);
+                            break;
                         }
                     } catch (e) {
                         console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
@@ -341,7 +283,7 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- 2. GROQ FALLBACK (Text & Vision) ---
+            // --- 2. GROQ FALLBACK TEXT AI ---
             if (groqKey && !replyText) {
                 const groqModels = [
                     "llama-3.3-70b-versatile",
@@ -355,7 +297,7 @@ GENERAL DIRECTIVE:
                             model: model,
                             messages: [
                                 { role: "system", content: systemPrompt },
-                                { role: "user", content: typeof visionUserContent === 'string' ? visionUserContent : userQuery }
+                                { role: "user", content: userQuery || "Hello" }
                             ],
                             max_tokens: 200
                         }, {
@@ -380,7 +322,7 @@ GENERAL DIRECTIVE:
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai image process nahi ho pa rahi, ek baar dobara try kar.");
+                await message.reply("Bhai main abhi reply nahi kar pa raha hoon, thodi der baad try kar.");
             }
 
         } catch (error) {
@@ -392,6 +334,7 @@ GENERAL DIRECTIVE:
 
     const content = message.content.trim();
 
+    // Moderation Commands (.kick, .ban, .unban)
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -436,6 +379,7 @@ GENERAL DIRECTIVE:
         }
     }
 
+    // Utility Commands (!timeout, !rto, !clear, !say, !pfp)
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -550,3 +494,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
