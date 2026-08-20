@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - STABLE TEXT ONLY
+// HERRYHACKS BOT - STABLE FREE MODELS ONLY
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -20,7 +20,7 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Slash Command Handler Setup
+// Slash Command Handler
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -41,7 +41,7 @@ client.once('ready', async () => {
     const clientId = process.env.CLIENT_ID || process.env['CLIENT ID'];
 
     if (!botToken || !clientId) {
-        console.error("❌ TOKEN or CLIENT_ID is missing in Railway Variables!");
+        console.error("❌ TOKEN or CLIENT_ID missing in Railway Variables!");
         return;
     }
 
@@ -145,7 +145,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Moderation Handler (STABLE TEXT ONLY)
+// AI Response & Moderation Handler
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -239,12 +239,12 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- 1. OPENROUTER TEXT AI ---
+            // --- 1. OPENROUTER FREE MODELS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = [
-                    "google/gemini-2.5-flash:free",
-                    "mistralai/mistral-7b-instruct:free",
                     "deepseek/deepseek-chat:free",
+                    "google/gemini-2.0-flash-lite-preview-02-05:free",
+                    "meta-llama/llama-3.2-3b-instruct:free",
                     "openrouter/auto"
                 ];
 
@@ -268,26 +268,27 @@ GENERAL DIRECTIVE:
                                     "HTTP-Referer": "https://railway.app",
                                     "X-Title": "HerryBot"
                                 },
-                                timeout: 12000
+                                timeout: 10000
                             }
                         );
 
                         if (openRouterRes.data?.choices?.[0]?.message?.content) {
                             replyText = openRouterRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using OpenRouter: ${model}`);
+                            console.log(`✅ OpenRouter Success: ${model}`);
                             break;
                         }
                     } catch (e) {
-                        console.log(`⚠️ OpenRouter model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                        console.log(`⚠️ OpenRouter ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
 
-            // --- 2. GROQ FALLBACK TEXT AI ---
+            // --- 2. GROQ FREE FALLBACK MODELS ---
             if (groqKey && !replyText) {
                 const groqModels = [
+                    "llama-3.1-8b-instant",
                     "llama-3.3-70b-versatile",
-                    "llama-3.1-8b-instant"
+                    "mixtral-8x7b-32768"
                 ];
 
                 for (const model of groqModels) {
@@ -310,11 +311,11 @@ GENERAL DIRECTIVE:
 
                         if (groqRes.data?.choices?.[0]?.message?.content) {
                             replyText = groqRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Responded using Groq: ${model}`);
+                            console.log(`✅ Groq Success: ${model}`);
                             break;
                         }
                     } catch (e) {
-                        console.log(`⚠️ Groq model ${model} failed: ${e.response?.data?.error?.message || e.message}`);
+                        console.log(`⚠️ Groq ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
@@ -327,7 +328,7 @@ GENERAL DIRECTIVE:
 
         } catch (error) {
             console.error("Main AI Handler Error:", error.message);
-            await message.reply(`❌ Issue: \`${error.message}\``);
+            await message.reply("❌ API connection fail ho gaya.");
         }
         return;
     }
