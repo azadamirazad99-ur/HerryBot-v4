@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - FIXED GROQ & FALLBACK AI
+// HERRYHACKS BOT - FIXED SYNTAX ERROR
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -318,7 +317,7 @@ GENERAL DIRECTIVE:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await target.kick(reason); 
-                message.channel.send(``👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
+                message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to kick user.'); 
             }
@@ -466,3 +465,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
