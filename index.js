@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - GROQ & OPENROUTER FALLBACK
+// HERRYHACKS BOT - FIXED SYSTEM & FILTERS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -19,6 +19,9 @@ const client = new Client({
 
 client.commands = new Collection();
 const commands = [];
+
+// Track message spamming: userId -> Array of timestamps
+const userMessageMap = new Map();
 
 // Slash Command Handler
 const commandsPath = path.join(__dirname, 'commands');
@@ -149,195 +152,210 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    if (message.mentions.has(client.user)) {
+    const lowerQuery = message.content.toLowerCase().trim();
+    const isMentioned = message.mentions.has(client.user);
+
+    const hackLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
+    const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
+
+    // 1. BAN CHECK: Kid / Bacha / Son
+    const banKeywords = ["bacha", "bachha", "kid", "son", "beta", "pappu"];
+    const matchesBan = banKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
+
+    if (matchesBan && isMentioned) {
         try {
-            await message.channel.sendTyping();
-            const userQuery = message.content.replace(/<@!?\d+>/g, '').trim();
-            const lowerQuery = userQuery.toLowerCase();
-
-            // Auto-Timeout System for Abuses
-            const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
-            const containsAbuse = badWords.some(word => lowerQuery.includes(word));
-
-            if (containsAbuse) {
-                try {
-                    if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-                        await message.member.timeout(60 * 60 * 1000, "Abusing HerryBot");
-                        await message.reply("Tu bot ko gali dega bsdk? Chal ab nikal aur 60 minutes tak timeout ke maza kar!");
-                        return;
-                    }
-                } catch (e) {
-                    console.error("Timeout Error:", e.message);
-                }
+            if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
+                await message.guild.members.ban(message.author.id, { reason: "By bot for a reason" });
+                await message.channel.send(`🔨 Banned **${message.author.tag}**. Reason: By bot for a reason`);
+                return;
             }
-
-            const ownerId = process.env.OWNER_ID;
-            const isOwner = message.author.id === ownerId;
-
-            let member = message.member;
-            if (message.guild && (!member || !member.roles)) {
-                try {
-                    member = await message.guild.members.fetch(message.author.id);
-                } catch (e) {
-                    console.error("Fetch Member Error:", e);
-                }
-            }
-
-            const adminRoleId = "1538952736169656330";
-            const staffRoleId = process.env.STAFF_ROLE_ID;
-            const adminIdsRaw = process.env.ADMIN_IDS || "";
-            const adminIds = adminIdsRaw.split(',').map(id => id.trim());
-
-            const hasAdminId = adminIds.includes(message.author.id);
-            const hasAdminRole = member ? member.roles.cache.has(adminRoleId) : false;
-            const hasStaffRole = (staffRoleId && member) ? member.roles.cache.has(staffRoleId) : false;
-            const hasAdminPermission = member ? (member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.ManageGuild) || member.permissions.has(PermissionFlagsBits.ModerateMembers)) : false;
-
-            const isAdmin = hasAdminId || hasAdminRole || hasStaffRole || hasAdminPermission;
-
-            const authorUsername = message.author.username.toLowerCase();
-            const isUgarchana = authorUsername.includes('ugarchana');
-            const isGojo = authorUsername.includes('gojo');
-
-            const grandHacksDownloadChannel = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
-            const setupGuideChannel = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
-
-            let roleInstructions = "";
-            if (isOwner) {
-                roleInstructions = `User is OWNER (Herry). Give MAXIMUM RESPECT. Address as "Boss/Sir". Strictly no abuses.`;
-            } else if (isAdmin) {
-                roleInstructions = `User is ADMIN/STAFF. Respectful, BUT if they start doing unnecessary bakchodi/abuses with you, roast them back!`;
-            } else if (isGojo) {
-                roleInstructions = `User is GOJO. Address as Gojo Bhai respectfully.`;
-            } else if (isUgarchana) {
-                roleInstructions = `User is UGARCHANA. Be respectful.`;
-            } else {
-                roleInstructions = `User is Regular Member. IF POLITE: Clear answers in Roman Urdu/Hindi. IF BAD/ATTITUDE: Roast them hard using street abuses.`;
-            }
-
-            const systemPrompt = `You are HerryBot, official assistant in HerryHacks Discord Server (Grand Mobile RP Modding).
-
-BEHAVIOR MATRIX:
-${roleInstructions}
-
-STRICT LANGUAGE RULES:
-- ALWAYS write using English alphabets (Roman Urdu / Hinglish). 
-- NEVER write in Devanagari Hindi or Arabic script.
-- If user asks in English, reply strictly in English.
-
-LINK & HACK RULES:
-1. ONLY allowed hacks: Lulubox, Devvir, Herryposya, Reversoqzz, Multispace / script run, and general Hacks.
-2. Download/Hack links: ${grandHacksDownloadChannel}
-3. Hack Setup/Guide: ${setupGuideChannel}
-
-GENERAL DIRECTIVE:
-- Keep answers short, bold, and straight to the point.
-- Do NOT tag user.`;
-
-            let replyText = null;
-
-            // --- OPTION 1: GROQ FREE TIER MODELS ---
-            const groqKey = (process.env.GROQ_API_KEY || '').trim();
-            if (groqKey) {
-                const groqModels = [
-                    "openai/gpt-oss-20b",
-                    "openai/gpt-oss-120b",
-                    "qwen/qwen3.6-27b"
-                ];
-
-                for (const model of groqModels) {
-                    try {
-                        console.log(`Trying Groq (${model})...`);
-                        const groqRes = await axios.post(
-                            "https://api.groq.com/openai/v1/chat/completions",
-                            {
-                                model: model,
-                                messages: [
-                                    { role: "system", content: systemPrompt },
-                                    { role: "user", content: userQuery || "Hello" }
-                                ],
-                                max_tokens: 200
-                            },
-                            {
-                                headers: {
-                                    "Authorization": `Bearer ${groqKey}`,
-                                    "Content-Type": "application/json"
-                                },
-                                timeout: 6000
-                            }
-                        );
-
-                        if (groqRes.data?.choices?.[0]?.message?.content) {
-                            replyText = groqRes.data.choices[0].message.content.trim();
-                            console.log(`✅ Groq Success with ${model}!`);
-                            break;
-                        }
-                    } catch (e) {
-                        console.log(`⚠️ Groq ${model} failed: ${e.response?.data?.error?.message || e.message}`);
-                    }
-                }
-            }
-
-            // --- OPTION 2: OPENROUTER FREE MODELS FALLBACK ---
-            if (!replyText) {
-                const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
-                const openRouterModels = [
-                    "openrouter/free",
-                    "google/gemma-4-31b-it:free",
-                    "deepseek/deepseek-r1:free"
-                ];
-
-                for (const model of openRouterModels) {
-                    try {
-                        console.log(`Trying OpenRouter Fallback (${model})...`);
-                        const headers = { "Content-Type": "application/json" };
-                        if (openRouterKey) {
-                            headers["Authorization"] = `Bearer ${openRouterKey}`;
-                        }
-
-                        const orRes = await axios.post(
-                            "https://openrouter.ai/api/v1/chat/completions",
-                            {
-                                model: model,
-                                messages: [
-                                    { role: "system", content: systemPrompt },
-                                    { role: "user", content: userQuery || "Hello" }
-                                ],
-                                max_tokens: 200
-                            },
-                            {
-                                headers: headers,
-                                timeout: 7000
-                            }
-                        );
-
-                        if (orRes.data?.choices?.[0]?.message?.content) {
-                            replyText = orRes.data.choices[0].message.content.trim();
-                            console.log(`✅ OpenRouter Success with ${model}!`);
-                            break;
-                        }
-                    } catch (e) {
-                        console.log(`⚠️ OpenRouter ${model} failed: ${e.response?.data?.error?.message || e.message}`);
-                    }
-                }
-            }
-
-            if (replyText) {
-                await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
-            } else {
-                await message.reply("Bhai abhi AI services Busy/Rate-Limited hain, 10 second baad wapas retry kar.");
-            }
-
-        } catch (error) {
-            console.error("Main AI Handler Error:", error.message);
-            await message.reply("❌ API connection fail ho gaya.");
+        } catch (e) {
+            console.error("Ban Execution Error:", e.message);
         }
-        return;
     }
 
+    // 2. SPAM DETECTOR & ABUSE TIMEOUT
+    const now = Date.now();
+    const userTimestamps = userMessageMap.get(message.author.id) || [];
+    userTimestamps.push(now);
+
+    // Keep timestamps from last 5 seconds
+    const recentMessages = userTimestamps.filter(time => now - time < 5000);
+    userMessageMap.set(message.author.id, recentMessages);
+
+    const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
+    const containsAbuse = badWords.some(word => lowerQuery.includes(word));
+
+    if (recentMessages.length >= 5) {
+        try {
+            if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+                if (containsAbuse) {
+                    await message.delete().catch(() => {});
+                    await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Abusive Spamming Detected");
+                    await message.channel.send(`🚨 ${message.author} ko **3 Days** ka Timeout de diya hai (Abusive Spam + Messages Deleted).`);
+                    return;
+                } else {
+                    await message.member.timeout(1 * 24 * 60 * 60 * 1000, "Spamming Detected");
+                    await message.channel.send(`⚠️ ${message.author} ko **1 Day** ka Timeout de diya hai (Spamming).`);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error("Spam Timeout Error:", e.message);
+        }
+    }
+
+    // 3. KEYWORD SPECIFIC AUTO-LINKS (Tag Ho ya Na Ho)
+    const isHackRequest = ["lulubox", "devvir", "reversoqzz", "posya", "herryposya", "hack"].some(w => lowerQuery.includes(w));
+    const isSetupRequest = ["setup", "guide", "setup guide", "kaise kare", "install"].some(w => lowerQuery.includes(w));
+
+    if (isHackRequest) {
+        return message.reply(`🔗 **All Hacks & Scripts Link:**\n${hackLink}`);
+    }
+
+    if (isSetupRequest) {
+        return message.reply(`📖 **Setup Guide Link:**\n${setupLink}`);
+    }
+
+    // NOTE: Agar mention nahi kiya aur hack/setup query nahi hai toh bilkul ignore kar do
+    if (!isMentioned) return;
+
+    // 4. MENTIONED AI RESPONSE SYSTEM
+    try {
+        await message.channel.sendTyping();
+        const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
+
+        const ownerId = process.env.OWNER_ID;
+        const isOwner = message.author.id === ownerId;
+
+        let member = message.member;
+        if (message.guild && (!member || !member.roles)) {
+            try {
+                member = await message.guild.members.fetch(message.author.id);
+            } catch (e) {
+                console.error("Fetch Member Error:", e);
+            }
+        }
+
+        const adminRoleId = "1538952736169656330";
+        const staffRoleId = process.env.STAFF_ROLE_ID;
+        const adminIdsRaw = process.env.ADMIN_IDS || "";
+        const adminIds = adminIdsRaw.split(',').map(id => id.trim());
+
+        const hasAdminId = adminIds.includes(message.author.id);
+        const hasAdminRole = member ? member.roles.cache.has(adminRoleId) : false;
+        const hasStaffRole = (staffRoleId && member) ? member.roles.cache.has(staffRoleId) : false;
+        const hasAdminPermission = member ? (member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.ManageGuild) || member.permissions.has(PermissionFlagsBits.ModerateMembers)) : false;
+
+        const isAdmin = hasAdminId || hasAdminRole || hasStaffRole || hasAdminPermission;
+
+        let roleInstructions = "";
+        if (isOwner) {
+            roleInstructions = `User is OWNER (Herry). Give MAXIMUM RESPECT. Address as "Boss/Sir". Strictly NO abuses.`;
+        } else if (isAdmin) {
+            roleInstructions = `User is ADMIN/STAFF. Be polite. If they mess with you, do funny light roasting.`;
+        } else {
+            roleInstructions = `User is Member. IF BAKCHODI: Give funny light roasts and light humor. NO EXTREME ABUSE.`;
+        }
+
+        const systemPrompt = `You are HerryBot in HerryHacks Discord Server.
+
+RULES:
+${roleInstructions}
+
+STRICT INSTRUCTIONS:
+- ALWAYS use plain text in English alphabets (Roman Urdu / Hinglish).
+- DO NOT use markdown code blocks or dark background formatting.
+- Keep answers SHORT, FUNNY, and DIRECT.
+
+HACK LINK: ${hackLink}
+SETUP LINK: ${setupLink}`;
+
+        let replyText = null;
+
+        // GROQ FIRST
+        const groqKey = (process.env.GROQ_API_KEY || '').trim();
+        if (groqKey) {
+            const groqModels = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b"];
+            for (const model of groqModels) {
+                try {
+                    const groqRes = await axios.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        {
+                            model: model,
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: cleanUserQuery || "Hello" }
+                            ],
+                            max_tokens: 180
+                        },
+                        {
+                            headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
+                            timeout: 6000
+                        }
+                    );
+
+                    if (groqRes.data?.choices?.[0]?.message?.content) {
+                        replyText = groqRes.data.choices[0].message.content.trim();
+                        break;
+                    }
+                } catch (e) {
+                    console.log(`Groq Error: ${e.message}`);
+                }
+            }
+        }
+
+        // OPENROUTER FALLBACK
+        if (!replyText) {
+            const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
+            const openRouterModels = ["openrouter/free", "google/gemma-4-31b-it:free", "deepseek/deepseek-r1:free"];
+
+            for (const model of openRouterModels) {
+                try {
+                    const headers = { "Content-Type": "application/json" };
+                    if (openRouterKey) headers["Authorization"] = `Bearer ${openRouterKey}`;
+
+                    const orRes = await axios.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        {
+                            model: model,
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: cleanUserQuery || "Hello" }
+                            ],
+                            max_tokens: 180
+                        },
+                        { headers: headers, timeout: 7000 }
+                    );
+
+                    if (orRes.data?.choices?.[0]?.message?.content) {
+                        replyText = orRes.data.choices[0].message.content.trim();
+                        break;
+                    }
+                } catch (e) {
+                    console.log(`OpenRouter Error: ${e.message}`);
+                }
+            }
+        }
+
+        if (replyText) {
+            // Clean markdown blocks to fix dark/black text formatting issue
+            const cleanText = replyText.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+            await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
+        } else {
+            await message.reply("Abe thoda ruk, AI busy chal raha hai!");
+        }
+
+    } catch (error) {
+        console.error("Main AI Handler Error:", error.message);
+    }
+});
+
+// Moderation Commands (.kick, .ban, .unban)
+client.on('messageCreate', async message => {
+    if (message.author.bot) return;
     const content = message.content.trim();
 
-    // Moderation Commands (.kick, .ban, .unban)
     if (content.startsWith('.')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
