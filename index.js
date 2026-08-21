@@ -236,7 +236,7 @@ client.on('messageCreate', async message => {
 
     if (!isMentioned) return;
 
-    // AI ROASTING & RESPONSE
+    // AI ROASTING & RESPONSE WITH DYNAMIC LANGUAGE MATCHING
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
@@ -256,14 +256,17 @@ client.on('messageCreate', async message => {
         const systemPrompt = `You are HerryBot in HerryHacks Discord Server (Grand Mobile RP Modding).
 
 LANGUAGE RULES:
-- STRICTLY SPEAK IN ROMAN URDU / HINGLISH ONLY.
-- DO NOT USE ENGLISH OR DEVANAGARI HINDI.
-- DO NOT USE MARKDOWN CODE BLOCKS.
+- Detect the language of the user query automatically.
+- IF THE USER SPEAKS IN ENGLISH, YOU MUST REPLY IN ENGLISH.
+- IF THE USER SPEAKS IN ROMAN URDU / HINGLISH, REPLY IN ROMAN URDU / HINGLISH.
+- IF THE USER SAYS "talk in English", REPLY STRICTLY IN ENGLISH.
+- NEVER USE DEVANAGARI HINDI SCRIPT OR ARABIC SCRIPT.
+- DO NOT USE MARKDOWN CODE BLOCKS (\`\`\`).
 
 BEHAVIOR RULES:
 - Owner (${isOwner ? 'YES' : 'NO'}): If owner, give respect.
-- If user uses mild abuse or bad attitude: Roast them back aggressively in Roman Urdu with street/funny abuses (like chutiye, gandu, bsdk, chal nikal).
-- If regular question: Reply directly and humorously in Roman Urdu.`;
+- If user uses bad attitude or mild roast: Roast them back in the exact same language they used (English or Roman Urdu).
+- Be funny, short, and to the point.`;
 
         let replyText = null;
 
