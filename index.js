@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - STABLE FREE MODELS ONLY
+// HERRYHACKS BOT - FIXED WORKING FREE MODELS
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -239,13 +239,12 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- 1. OPENROUTER FREE MODELS ---
+            // --- 1. CURRENT WORKING OPENROUTER FREE MODELS ---
             if (openRouterApiKey && !replyText) {
                 const openRouterModels = [
-                    "deepseek/deepseek-chat:free",
-                    "google/gemini-2.0-flash-lite-preview-02-05:free",
-                    "meta-llama/llama-3.2-3b-instruct:free",
-                    "openrouter/auto"
+                    "qwen/qwen-2.5-coder-32b-instruct:free",
+                    "meta-llama/llama-3.1-8b-instruct:free",
+                    "google/gemma-2-9b-it:free"
                 ];
 
                 for (const model of openRouterModels) {
@@ -259,7 +258,7 @@ GENERAL DIRECTIVE:
                                     { role: "system", content: systemPrompt },
                                     { role: "user", content: userQuery || "Hello" }
                                 ],
-                                max_tokens: 250
+                                max_tokens: 150
                             },
                             {
                                 headers: {
@@ -283,12 +282,12 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- 2. GROQ FREE FALLBACK MODELS ---
+            // --- 2. GROQ ACTIVE FALLBACK MODELS ---
             if (groqKey && !replyText) {
                 const groqModels = [
                     "llama-3.1-8b-instant",
-                    "llama-3.3-70b-versatile",
-                    "mixtral-8x7b-32768"
+                    "llama3-8b-8192",
+                    "llama3-70b-8192"
                 ];
 
                 for (const model of groqModels) {
@@ -300,7 +299,7 @@ GENERAL DIRECTIVE:
                                 { role: "system", content: systemPrompt },
                                 { role: "user", content: userQuery || "Hello" }
                             ],
-                            max_tokens: 200
+                            max_tokens: 150
                         }, {
                             headers: {
                                 "Authorization": `Bearer ${groqKey}`,
