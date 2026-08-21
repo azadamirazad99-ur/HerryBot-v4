@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - FIXED SYSTEM & FILTERS
+// HERRYHACKS BOT - ADVANCED MODERATION & AI
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -20,8 +20,8 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Track message spamming: userId -> Array of timestamps
-const userMessageMap = new Map();
+// Track message history: userId -> Array of { text, time }
+const userMessageHistory = new Map();
 
 // Slash Command Handler
 const commandsPath = path.join(__dirname, 'commands');
@@ -158,54 +158,71 @@ client.on('messageCreate', async message => {
     const hackLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
     const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
 
-    // 1. BAN CHECK: Kid / Bacha / Son
+    // Mother/Heavy Abuse Detection -> Direct BAN (Staff & Member both)
+    const severeAbuses = ["maa", "behen", "maderchod", "bhenchod", "madarchod", "bsdk", "bhosdike", "mc", "bc"];
+    const containsSevereAbuse = severeAbuses.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
+
+    if (isMentioned && containsSevereAbuse) {
+        try {
+            if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
+                await message.guild.members.ban(message.author.id, { reason: "By bot for abusing" });
+                await message.channel.send(`🔨 **${message.author.tag}** ko ban kar diya gaya hai. Reason: By bot for abusing.`);
+                return;
+            }
+        } catch (e) {
+            console.error("Abuse Ban Error:", e.message);
+        }
+    }
+
+    // Kid / Bacha Detection -> Direct BAN
     const banKeywords = ["bacha", "bachha", "kid", "son", "beta", "pappu"];
     const matchesBan = banKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
 
     if (matchesBan && isMentioned) {
         try {
-            if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
+            if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
                 await message.guild.members.ban(message.author.id, { reason: "By bot for a reason" });
-                await message.channel.send(`🔨 Banned **${message.author.tag}**. Reason: By bot for a reason`);
+                await message.channel.send(`🔨 **${message.author.tag}** ko ban kar diya gaya hai. Reason: By bot for a reason.`);
                 return;
             }
         } catch (e) {
-            console.error("Ban Execution Error:", e.message);
+            console.error("Kid Ban Error:", e.message);
         }
     }
 
-    // 2. SPAM DETECTOR & ABUSE TIMEOUT
+    // SPAM & REPEAT ABUSE DETECTION
     const now = Date.now();
-    const userTimestamps = userMessageMap.get(message.author.id) || [];
-    userTimestamps.push(now);
+    const userHistory = userMessageHistory.get(message.author.id) || [];
+    userHistory.push({ text: lowerQuery, time: now });
 
-    // Keep timestamps from last 5 seconds
-    const recentMessages = userTimestamps.filter(time => now - time < 5000);
-    userMessageMap.set(message.author.id, recentMessages);
+    // Filter messages in last 10 seconds
+    const recentHistory = userHistory.filter(m => now - m.time < 10000);
+    userMessageHistory.set(message.author.id, recentHistory);
 
-    const badWords = ["mc", "bc", "bhenchod", "madarchod", "gandu", "chutiye", "bsdk", "bhosdike", "laude", "lode", "lodu", "randi", "harami"];
-    const containsAbuse = badWords.some(word => lowerQuery.includes(word));
+    // Check if same message repeated 3 times
+    const sameMsgCount = recentHistory.filter(m => m.text === lowerQuery).length;
+    const isAbusiveMessage = severeAbuses.some(w => lowerQuery.includes(w));
 
-    if (recentMessages.length >= 5) {
+    if (sameMsgCount >= 3) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-                if (containsAbuse) {
+                if (isAbusiveMessage) {
                     await message.delete().catch(() => {});
-                    await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Abusive Spamming Detected");
-                    await message.channel.send(`🚨 ${message.author} ko **3 Days** ka Timeout de diya hai (Abusive Spam + Messages Deleted).`);
+                    await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Abusive Repeat Spam");
+                    await message.channel.send(`🚨 ${message.author} ne same gaali wale msg 3 baar repeat kiye. **3 Days Timeout** lag gaya.`);
                     return;
                 } else {
-                    await message.member.timeout(1 * 24 * 60 * 60 * 1000, "Spamming Detected");
-                    await message.channel.send(`⚠️ ${message.author} ko **1 Day** ka Timeout de diya hai (Spamming).`);
+                    await message.member.timeout(1 * 24 * 60 * 60 * 1000, "Normal Message Repeat Spam");
+                    await message.channel.send(`⚠️ ${message.author} ne same msg 3 baar repeat kiya. **1 Day Timeout** lag gaya.`);
                     return;
                 }
             }
         } catch (e) {
-            console.error("Spam Timeout Error:", e.message);
+            console.error("Spam Handling Error:", e.message);
         }
     }
 
-    // 3. KEYWORD SPECIFIC AUTO-LINKS (Tag Ho ya Na Ho)
+    // KEYWORD AUTO-LINKS
     const isHackRequest = ["lulubox", "devvir", "reversoqzz", "posya", "herryposya", "hack"].some(w => lowerQuery.includes(w));
     const isSetupRequest = ["setup", "guide", "setup guide", "kaise kare", "install"].some(w => lowerQuery.includes(w));
 
@@ -217,10 +234,9 @@ client.on('messageCreate', async message => {
         return message.reply(`📖 **Setup Guide Link:**\n${setupLink}`);
     }
 
-    // NOTE: Agar mention nahi kiya aur hack/setup query nahi hai toh bilkul ignore kar do
     if (!isMentioned) return;
 
-    // 4. MENTIONED AI RESPONSE SYSTEM
+    // AI ROASTING & RESPONSE
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
@@ -237,39 +253,17 @@ client.on('messageCreate', async message => {
             }
         }
 
-        const adminRoleId = "1538952736169656330";
-        const staffRoleId = process.env.STAFF_ROLE_ID;
-        const adminIdsRaw = process.env.ADMIN_IDS || "";
-        const adminIds = adminIdsRaw.split(',').map(id => id.trim());
+        const systemPrompt = `You are HerryBot in HerryHacks Discord Server (Grand Mobile RP Modding).
 
-        const hasAdminId = adminIds.includes(message.author.id);
-        const hasAdminRole = member ? member.roles.cache.has(adminRoleId) : false;
-        const hasStaffRole = (staffRoleId && member) ? member.roles.cache.has(staffRoleId) : false;
-        const hasAdminPermission = member ? (member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.ManageGuild) || member.permissions.has(PermissionFlagsBits.ModerateMembers)) : false;
+LANGUAGE RULES:
+- STRICTLY SPEAK IN ROMAN URDU / HINGLISH ONLY.
+- DO NOT USE ENGLISH OR DEVANAGARI HINDI.
+- DO NOT USE MARKDOWN CODE BLOCKS.
 
-        const isAdmin = hasAdminId || hasAdminRole || hasStaffRole || hasAdminPermission;
-
-        let roleInstructions = "";
-        if (isOwner) {
-            roleInstructions = `User is OWNER (Herry). Give MAXIMUM RESPECT. Address as "Boss/Sir". Strictly NO abuses.`;
-        } else if (isAdmin) {
-            roleInstructions = `User is ADMIN/STAFF. Be polite. If they mess with you, do funny light roasting.`;
-        } else {
-            roleInstructions = `User is Member. IF BAKCHODI: Give funny light roasts and light humor. NO EXTREME ABUSE.`;
-        }
-
-        const systemPrompt = `You are HerryBot in HerryHacks Discord Server.
-
-RULES:
-${roleInstructions}
-
-STRICT INSTRUCTIONS:
-- ALWAYS use plain text in English alphabets (Roman Urdu / Hinglish).
-- DO NOT use markdown code blocks or dark background formatting.
-- Keep answers SHORT, FUNNY, and DIRECT.
-
-HACK LINK: ${hackLink}
-SETUP LINK: ${setupLink}`;
+BEHAVIOR RULES:
+- Owner (${isOwner ? 'YES' : 'NO'}): If owner, give respect.
+- If user uses mild abuse or bad attitude: Roast them back aggressively in Roman Urdu with street/funny abuses (like chutiye, gandu, bsdk, chal nikal).
+- If regular question: Reply directly and humorously in Roman Urdu.`;
 
         let replyText = null;
 
@@ -339,11 +333,10 @@ SETUP LINK: ${setupLink}`;
         }
 
         if (replyText) {
-            // Clean markdown blocks to fix dark/black text formatting issue
             const cleanText = replyText.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
             await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
         } else {
-            await message.reply("Abe thoda ruk, AI busy chal raha hai!");
+            await message.reply("Abe AI thoda busy hai, 5 sec baad dubara try kar!");
         }
 
     } catch (error) {
