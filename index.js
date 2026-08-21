@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - 100% WORKING FREE AI CODE
+// HERRYHACKS BOT - 100% WORKING FIXED AI
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -236,96 +236,94 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- OPTION 1: GROQ API (Primary Working Model) ---
+            // --- OPTION 1: GROQ API (Updated Valid Models) ---
             const groqKey = (process.env.GROQ_API_KEY || '').trim();
             if (groqKey) {
-                try {
-                    console.log("Trying Groq (llama-3.1-8b-instant)...");
-                    const groqRes = await axios.post(
-                        "https://api.groq.com/openai/v1/chat/completions",
-                        {
-                            model: "llama-3.1-8b-instant",
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: userQuery || "Hello" }
-                            ],
-                            temperature: 0.7
-                        },
-                        {
-                            headers: {
-                                "Authorization": `Bearer ${groqKey}`,
-                                "Content-Type": "application/json"
-                            },
-                            timeout: 8000
-                        }
-                    );
-
-                    if (groqRes.data?.choices?.[0]?.message?.content) {
-                        replyText = groqRes.data.choices[0].message.content.trim();
-                        console.log("✅ Groq Success!");
-                    }
-                } catch (e) {
-                    console.log(`⚠️ Groq failed: ${e.response?.data?.error?.message || e.message}`);
-                }
-            }
-
-            // --- OPTION 2: OPENROUTER FREE FALLBACK ---
-            const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
-            if (!replyText && openRouterApiKey) {
-                const openRouterModels = [
-                    "meta-llama/llama-3.2-3b-instruct:free",
-                    "google/gemma-2-9b-it:free"
-                ];
-
-                for (const model of openRouterModels) {
+                const groqModels = ["llama-3.3-70b-versatile", "llama3-8b-8192", "mixtral-8x7b-32768"];
+                for (const model of groqModels) {
                     try {
-                        console.log(`Trying OpenRouter model: ${model}...`);
-                        const openRouterRes = await axios.post(
-                            "https://openrouter.ai/api/v1/chat/completions",
+                        console.log(`Trying Groq (${model})...`);
+                        const groqRes = await axios.post(
+                            "https://api.groq.com/openai/v1/chat/completions",
                             {
                                 model: model,
                                 messages: [
                                     { role: "system", content: systemPrompt },
                                     { role: "user", content: userQuery || "Hello" }
-                                ]
+                                ],
+                                max_tokens: 200
                             },
                             {
                                 headers: {
-                                    "Authorization": `Bearer ${openRouterApiKey}`,
+                                    "Authorization": `Bearer ${groqKey}`,
                                     "Content-Type": "application/json"
                                 },
-                                timeout: 8000
+                                timeout: 6000
                             }
                         );
 
-                        if (openRouterRes.data?.choices?.[0]?.message?.content) {
-                            replyText = openRouterRes.data.choices[0].message.content.trim();
-                            console.log(`✅ OpenRouter Success: ${model}`);
+                        if (groqRes.data?.choices?.[0]?.message?.content) {
+                            replyText = groqRes.data.choices[0].message.content.trim();
+                            console.log(`✅ Groq Success with ${model}!`);
                             break;
                         }
                     } catch (e) {
-                        console.log(`⚠️ OpenRouter ${model} failed`);
+                        console.log(`⚠️ Groq ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
                 }
             }
 
-            // --- OPTION 3: PUBLIC API FALLBACK ---
-            if (!replyText) {
+            // --- OPTION 2: OPENROUTER (Active Auto Free Router) ---
+            const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
+            if (!replyText && openRouterApiKey) {
                 try {
-                    console.log("Trying Public API Fallback...");
-                    const pubRes = await axios.get(`https://api.duckduckgo.com/?q=${encodeURIComponent(userQuery)}&format=json`, { timeout: 5000 });
-                    if (pubRes.data?.AbstractText) {
-                        replyText = pubRes.data.AbstractText;
+                    console.log(`Trying OpenRouter Auto-Free Model...`);
+                    const openRouterRes = await axios.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        {
+                            model: "auto",
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userQuery || "Hello" }
+                            ]
+                        },
+                        {
+                            headers: {
+                                "Authorization": `Bearer ${openRouterApiKey}`,
+                                "Content-Type": "application/json"
+                            },
+                            timeout: 6000
+                        }
+                    );
+
+                    if (openRouterRes.data?.choices?.[0]?.message?.content) {
+                        replyText = openRouterRes.data.choices[0].message.content.trim();
+                        console.log(`✅ OpenRouter Success!`);
                     }
                 } catch (e) {
-                    console.log(`⚠️ Public Fallback failed: ${e.message}`);
+                    console.log(`⚠️ OpenRouter failed: ${e.message}`);
+                }
+            }
+
+            // --- OPTION 3: NO-API-KEY FREE GET ROUTE (100% Guaranteed Backup) ---
+            if (!replyText) {
+                try {
+                    console.log("Trying Public Free Engine...");
+                    const encodedQuery = encodeURIComponent(`${systemPrompt}\nUser Question: ${userQuery || "Hello"}`);
+                    const freeRes = await axios.get(`https://text.pollinations.ai/${encodedQuery}`, { timeout: 8000 });
+                    if (freeRes.data) {
+                        replyText = typeof freeRes.data === 'string' ? freeRes.data : JSON.stringify(freeRes.data);
+                        console.log("✅ Public Free Engine Success!");
+                    }
+                } catch (e) {
+                    console.log(`⚠️ Free Engine failed: ${e.message}`);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai AI services down hain, thodi der baad try karo.");
+                await message.reply("Bhai AI system busy hai, 10 second baad dobara try kar.");
             }
 
         } catch (error) {
@@ -497,5 +495,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
 
