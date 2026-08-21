@@ -236,32 +236,45 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- OPTION 1: POLLINATIONS AI (100% FREE, NO API KEY REQUIRED, NO LIMITS) ---
-            try {
-                console.log("Trying Pollinations AI (Unlimited Free)...");
-                const pollRes = await axios.post("https://text.pollinations.ai/", {
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userQuery || "Hello" }
-                    ],
-                    model: "openai"
-                }, { timeout: 10000 });
+            // --- OPTION 1: GROQ API (Primary Working Model) ---
+            const groqKey = (process.env.GROQ_API_KEY || '').trim();
+            if (groqKey) {
+                try {
+                    console.log("Trying Groq (llama-3.1-8b-instant)...");
+                    const groqRes = await axios.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        {
+                            model: "llama-3.1-8b-instant",
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: userQuery || "Hello" }
+                            ],
+                            temperature: 0.7
+                        },
+                        {
+                            headers: {
+                                "Authorization": `Bearer ${groqKey}`,
+                                "Content-Type": "application/json"
+                            },
+                            timeout: 8000
+                        }
+                    );
 
-                if (pollRes.data) {
-                    replyText = typeof pollRes.data === 'string' ? pollRes.data : pollRes.data.content || JSON.stringify(pollRes.data);
-                    console.log("✅ Pollinations AI Success!");
+                    if (groqRes.data?.choices?.[0]?.message?.content) {
+                        replyText = groqRes.data.choices[0].message.content.trim();
+                        console.log("✅ Groq Success!");
+                    }
+                } catch (e) {
+                    console.log(`⚠️ Groq failed: ${e.response?.data?.error?.message || e.message}`);
                 }
-            } catch (e) {
-                console.log(`⚠️ Pollinations AI failed: ${e.message}`);
             }
 
-            // --- OPTION 2: OPENROUTER FREE MODELS FALLBACK ---
+            // --- OPTION 2: OPENROUTER FREE FALLBACK ---
             const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
             if (!replyText && openRouterApiKey) {
                 const openRouterModels = [
-                    "mistralai/mistral-7b-instruct:free",
-                    "google/gemma-2-9b-it:free",
-                    "huggyllama/llama-7b"
+                    "meta-llama/llama-3.2-3b-instruct:free",
+                    "google/gemma-2-9b-it:free"
                 ];
 
                 for (const model of openRouterModels) {
@@ -274,8 +287,7 @@ GENERAL DIRECTIVE:
                                 messages: [
                                     { role: "system", content: systemPrompt },
                                     { role: "user", content: userQuery || "Hello" }
-                                ],
-                                max_tokens: 150
+                                ]
                             },
                             {
                                 headers: {
@@ -297,39 +309,23 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- OPTION 3: GROQ FALLBACK ---
-            const groqKey = (process.env.GROQ_API_KEY || '').trim();
-            if (!replyText && groqKey) {
+            // --- OPTION 3: PUBLIC API FALLBACK ---
+            if (!replyText) {
                 try {
-                    console.log("Trying Groq fallback...");
-                    const groqRes = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
-                        model: "gemma2-9b-it",
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: userQuery || "Hello" }
-                        ],
-                        max_tokens: 150
-                    }, {
-                        headers: {
-                            "Authorization": `Bearer ${groqKey}`,
-                            "Content-Type": "application/json"
-                        },
-                        timeout: 8000
-                    });
-
-                    if (groqRes.data?.choices?.[0]?.message?.content) {
-                        replyText = groqRes.data.choices[0].message.content.trim();
-                        console.log("✅ Groq Success!");
+                    console.log("Trying Public API Fallback...");
+                    const pubRes = await axios.get(`https://api.duckduckgo.com/?q=${encodeURIComponent(userQuery)}&format=json`, { timeout: 5000 });
+                    if (pubRes.data?.AbstractText) {
+                        replyText = pubRes.data.AbstractText;
                     }
                 } catch (e) {
-                    console.log(`⚠️ Groq failed: ${e.message}`);
+                    console.log(`⚠️ Public Fallback failed: ${e.message}`);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai main abhi reply nahi kar pa raha hoon, 1 minute baad try kar.");
+                await message.reply("Bhai AI services down hain, thodi der baad try karo.");
             }
 
         } catch (error) {
@@ -501,4 +497,5 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
 
