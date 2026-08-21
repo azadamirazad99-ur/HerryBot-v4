@@ -1,5 +1,5 @@
 // ==========================================
-// HERRYHACKS BOT - FIXED SYNTAX ERROR
+// HERRYHACKS BOT - GROQ & OPENROUTER FALLBACK
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -236,10 +236,15 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- OPTION 1: GROQ API (Current Active Models) ---
+            // --- OPTION 1: GROQ FREE TIER MODELS ---
             const groqKey = (process.env.GROQ_API_KEY || '').trim();
             if (groqKey) {
-                const groqModels = ["llama-3.3-70b-versatile", "llama3-70b-8192", "gemma2-9b-it"];
+                const groqModels = [
+                    "openai/gpt-oss-20b",
+                    "openai/gpt-oss-120b",
+                    "qwen/qwen3.6-27b"
+                ];
+
                 for (const model of groqModels) {
                     try {
                         console.log(`Trying Groq (${model})...`);
@@ -273,27 +278,54 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- OPTION 2: DIRECT PUBLIC FREE API (No API Key Required) ---
+            // --- OPTION 2: OPENROUTER FREE MODELS FALLBACK ---
             if (!replyText) {
-                try {
-                    console.log("Trying Public AI Service...");
-                    const response = await axios.post("https://express-ai-api.vercel.app/api/chat", {
-                        prompt: `${systemPrompt}\n\nUser Question: ${userQuery || "Hello"}`
-                    }, { timeout: 8000 });
+                const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
+                const openRouterModels = [
+                    "openrouter/free",
+                    "google/gemma-4-31b-it:free",
+                    "deepseek/deepseek-r1:free"
+                ];
 
-                    if (response.data && response.data.reply) {
-                        replyText = response.data.reply.trim();
-                        console.log("✅ Public AI Service Success!");
+                for (const model of openRouterModels) {
+                    try {
+                        console.log(`Trying OpenRouter Fallback (${model})...`);
+                        const headers = { "Content-Type": "application/json" };
+                        if (openRouterKey) {
+                            headers["Authorization"] = `Bearer ${openRouterKey}`;
+                        }
+
+                        const orRes = await axios.post(
+                            "https://openrouter.ai/api/v1/chat/completions",
+                            {
+                                model: model,
+                                messages: [
+                                    { role: "system", content: systemPrompt },
+                                    { role: "user", content: userQuery || "Hello" }
+                                ],
+                                max_tokens: 200
+                            },
+                            {
+                                headers: headers,
+                                timeout: 7000
+                            }
+                        );
+
+                        if (orRes.data?.choices?.[0]?.message?.content) {
+                            replyText = orRes.data.choices[0].message.content.trim();
+                            console.log(`✅ OpenRouter Success with ${model}!`);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log(`⚠️ OpenRouter ${model} failed: ${e.response?.data?.error?.message || e.message}`);
                     }
-                } catch (e) {
-                    console.log(`⚠️ Public AI Service failed: ${e.message}`);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai abhi AI overloaded hai, 10 second baad dobara mention kar.");
+                await message.reply("Bhai abhi AI services Busy/Rate-Limited hain, 10 second baad wapas retry kar.");
             }
 
         } catch (error) {
