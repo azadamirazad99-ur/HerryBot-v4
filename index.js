@@ -1,5 +1,6 @@
+
 // ==========================================
-// HERRYHACKS BOT - 100% WORKING FIXED AI
+// HERRYHACKS BOT - FIXED GROQ & FALLBACK AI
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -236,10 +237,10 @@ GENERAL DIRECTIVE:
 
             let replyText = null;
 
-            // --- OPTION 1: GROQ API (Updated Valid Models) ---
+            // --- OPTION 1: GROQ API (Current Active Models) ---
             const groqKey = (process.env.GROQ_API_KEY || '').trim();
             if (groqKey) {
-                const groqModels = ["llama-3.3-70b-versatile", "llama3-8b-8192", "mixtral-8x7b-32768"];
+                const groqModels = ["llama-3.3-70b-versatile", "llama3-70b-8192", "gemma2-9b-it"];
                 for (const model of groqModels) {
                     try {
                         console.log(`Trying Groq (${model})...`);
@@ -273,57 +274,27 @@ GENERAL DIRECTIVE:
                 }
             }
 
-            // --- OPTION 2: OPENROUTER (Active Auto Free Router) ---
-            const openRouterApiKey = (process.env.OPENROUTER_API_KEY || '').trim();
-            if (!replyText && openRouterApiKey) {
-                try {
-                    console.log(`Trying OpenRouter Auto-Free Model...`);
-                    const openRouterRes = await axios.post(
-                        "https://openrouter.ai/api/v1/chat/completions",
-                        {
-                            model: "auto",
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: userQuery || "Hello" }
-                            ]
-                        },
-                        {
-                            headers: {
-                                "Authorization": `Bearer ${openRouterApiKey}`,
-                                "Content-Type": "application/json"
-                            },
-                            timeout: 6000
-                        }
-                    );
-
-                    if (openRouterRes.data?.choices?.[0]?.message?.content) {
-                        replyText = openRouterRes.data.choices[0].message.content.trim();
-                        console.log(`✅ OpenRouter Success!`);
-                    }
-                } catch (e) {
-                    console.log(`⚠️ OpenRouter failed: ${e.message}`);
-                }
-            }
-
-            // --- OPTION 3: NO-API-KEY FREE GET ROUTE (100% Guaranteed Backup) ---
+            // --- OPTION 2: DIRECT PUBLIC FREE API (No API Key Required) ---
             if (!replyText) {
                 try {
-                    console.log("Trying Public Free Engine...");
-                    const encodedQuery = encodeURIComponent(`${systemPrompt}\nUser Question: ${userQuery || "Hello"}`);
-                    const freeRes = await axios.get(`https://text.pollinations.ai/${encodedQuery}`, { timeout: 8000 });
-                    if (freeRes.data) {
-                        replyText = typeof freeRes.data === 'string' ? freeRes.data : JSON.stringify(freeRes.data);
-                        console.log("✅ Public Free Engine Success!");
+                    console.log("Trying Public AI Service...");
+                    const response = await axios.post("https://express-ai-api.vercel.app/api/chat", {
+                        prompt: `${systemPrompt}\n\nUser Question: ${userQuery || "Hello"}`
+                    }, { timeout: 8000 });
+
+                    if (response.data && response.data.reply) {
+                        replyText = response.data.reply.trim();
+                        console.log("✅ Public AI Service Success!");
                     }
                 } catch (e) {
-                    console.log(`⚠️ Free Engine failed: ${e.message}`);
+                    console.log(`⚠️ Public AI Service failed: ${e.message}`);
                 }
             }
 
             if (replyText) {
                 await message.reply(replyText.length > 2000 ? replyText.substring(0, 1995) + '...' : replyText);
             } else {
-                await message.reply("Bhai AI system busy hai, 10 second baad dobara try kar.");
+                await message.reply("Bhai abhi AI overloaded hai, 10 second baad dobara mention kar.");
             }
 
         } catch (error) {
@@ -347,7 +318,7 @@ GENERAL DIRECTIVE:
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await target.kick(reason); 
-                message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
+                message.channel.send(``👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to kick user.'); 
             }
@@ -495,4 +466,3 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
