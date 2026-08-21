@@ -154,11 +154,34 @@ client.on('messageCreate', async message => {
 
     const lowerQuery = message.content.toLowerCase().trim();
     const isMentioned = message.mentions.has(client.user);
+    const ownerId = process.env.OWNER_ID;
+    const isOwner = message.author.id === ownerId;
 
     const hackLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
     const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
 
-    // Mother/Heavy Abuse Detection -> Direct BAN (Staff & Member both)
+    // 1. FAKE OWNER CLAIM CHECK
+    const fakeOwnerClaims = ["i am owner", "main owner hu", "me owner hu", "iam owner", "im owner", "i am the owner", "main hu owner"];
+    const claimsToBeOwner = fakeOwnerClaims.some(phrase => lowerQuery.includes(phrase));
+
+    if (claimsToBeOwner && !isOwner) {
+        try {
+            if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+                await message.member.timeout(60 * 60 * 1000, "Fake Owner Impersonation");
+                return message.reply("Abe saale fake owner ban raha hai? Chal ab nikal aur 60 minutes tak 1 ghante ka timeout enjoy kar! Real Owner Sirf Herry Sir Hain.");
+            }
+        } catch (e) {
+            console.error("Fake Owner Timeout Error:", e.message);
+        }
+    }
+
+    // 2. OWNER QUERY CHECK
+    const isOwnerQuery = ["who is owner", "owner kon he", "owner kaun hai", "owner kon hai", "who is the owner"].some(w => lowerQuery.includes(w));
+    if (isOwnerQuery) {
+        return message.reply("👑 **Herry Sir** is the official owner of HerryHacks!");
+    }
+
+    // 3. SEVERE ABUSE BAN CHECK
     const severeAbuses = ["maa", "behen", "maderchod", "bhenchod", "madarchod", "bsdk", "bhosdike", "mc", "bc"];
     const containsSevereAbuse = severeAbuses.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
 
@@ -174,7 +197,7 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // Kid / Bacha Detection -> Direct BAN
+    // 4. KID / BACHA BAN CHECK
     const banKeywords = ["bacha", "bachha", "kid", "son", "beta", "pappu"];
     const matchesBan = banKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
 
@@ -190,16 +213,14 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // SPAM & REPEAT ABUSE DETECTION
+    // 5. SPAM & REPEAT ABUSE DETECTION
     const now = Date.now();
     const userHistory = userMessageHistory.get(message.author.id) || [];
     userHistory.push({ text: lowerQuery, time: now });
 
-    // Filter messages in last 10 seconds
     const recentHistory = userHistory.filter(m => now - m.time < 10000);
     userMessageHistory.set(message.author.id, recentHistory);
 
-    // Check if same message repeated 3 times
     const sameMsgCount = recentHistory.filter(m => m.text === lowerQuery).length;
     const isAbusiveMessage = severeAbuses.some(w => lowerQuery.includes(w));
 
@@ -222,7 +243,7 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // KEYWORD AUTO-LINKS
+    // 6. KEYWORD AUTO-LINKS
     const isHackRequest = ["lulubox", "devvir", "reversoqzz", "posya", "herryposya", "hack"].some(w => lowerQuery.includes(w));
     const isSetupRequest = ["setup", "guide", "setup guide", "kaise kare", "install"].some(w => lowerQuery.includes(w));
 
@@ -236,13 +257,10 @@ client.on('messageCreate', async message => {
 
     if (!isMentioned) return;
 
-    // AI ROASTING & RESPONSE WITH DYNAMIC LANGUAGE MATCHING
+    // 7. AI ROASTING & RESPONSE WITH OWNER RECOGNITION
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
-
-        const ownerId = process.env.OWNER_ID;
-        const isOwner = message.author.id === ownerId;
 
         let member = message.member;
         if (message.guild && (!member || !member.roles)) {
@@ -255,18 +273,18 @@ client.on('messageCreate', async message => {
 
         const systemPrompt = `You are HerryBot in HerryHacks Discord Server (Grand Mobile RP Modding).
 
+OWNER RECOGNITION STATUS:
+- User is Owner: ${isOwner ? 'YES' : 'NO'}
+- IF USER IS OWNER (YES): Always address them respectfully as "Herry Sir" or "Boss". Never roast or abuse the owner.
+- IF USER IS NOT OWNER (NO): Respond normally or roast if they show attitude.
+
 LANGUAGE RULES:
 - Detect the language of the user query automatically.
-- IF THE USER SPEAKS IN ENGLISH, YOU MUST REPLY IN ENGLISH.
+- IF THE USER SPEAKS IN ENGLISH, REPLY IN ENGLISH.
 - IF THE USER SPEAKS IN ROMAN URDU / HINGLISH, REPLY IN ROMAN URDU / HINGLISH.
 - IF THE USER SAYS "talk in English", REPLY STRICTLY IN ENGLISH.
 - NEVER USE DEVANAGARI HINDI SCRIPT OR ARABIC SCRIPT.
-- DO NOT USE MARKDOWN CODE BLOCKS (\`\`\`).
-
-BEHAVIOR RULES:
-- Owner (${isOwner ? 'YES' : 'NO'}): If owner, give respect.
-- If user uses bad attitude or mild roast: Roast them back in the exact same language they used (English or Roman Urdu).
-- Be funny, short, and to the point.`;
+- DO NOT USE MARKDOWN CODE BLOCKS (\`\`\`).`;
 
         let replyText = null;
 
