@@ -155,7 +155,7 @@ client.on('messageCreate', async message => {
     const lowerQuery = message.content.toLowerCase().trim();
     const isMentioned = message.mentions.has(client.user);
     const ownerId = process.env.OWNER_ID;
-    const isOwner = message.author.id === ownerId;
+    const isOwner = ownerId ? (message.author.id === ownerId) : false;
 
     const scriptLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
     const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
@@ -165,7 +165,7 @@ client.on('messageCreate', async message => {
     const mentionsHerry = ["herry", "owner", "boss", "admin"].some(w => lowerQuery.includes(w));
     const containsSevereAbuse = severeAbuses.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
 
-    if (mentionsHerry && containsSevereAbuse) {
+    if (mentionsHerry && containsSevereAbuse && !isOwner) {
         try {
             if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
                 await message.guild.members.ban(message.author.id, { reason: "Abusing Herry Sir / Owner" });
@@ -212,7 +212,7 @@ client.on('messageCreate', async message => {
     const bachaKeywords = ["bacha", "bachha", "kid", "pappu"];
     const callsBacha = bachaKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
 
-    if (callsBacha && (isMentioned || lowerQuery.includes("bot"))) {
+    if (callsBacha && (isMentioned || lowerQuery.includes("bot")) && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Calling someone/bot bacha or kid");
@@ -256,7 +256,7 @@ client.on('messageCreate', async message => {
 
     const sameMsgCount = recentHistory.filter(m => m.text === lowerQuery).length;
 
-    if (sameMsgCount >= 3) {
+    if (sameMsgCount >= 3 && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 if (containsSevereAbuse) {
@@ -277,32 +277,37 @@ client.on('messageCreate', async message => {
 
     if (!isMentioned) return;
 
-    // 9. AI RESPONSE & DYNAMIC ROASTING / RESPECT
+    // 9. AI RESPONSE WITH STRICT FILTERING & RESPECT LOGIC
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-        const systemPrompt = `You are HerryBot in HerryHacks Discord Server (Grand Mobile RP Modding).
+        const ownerPrompt = `SYSTEM INSTRUCTION: You are HerryBot in HerryHacks Discord Server.
+The user talking to you right now IS THE REAL OWNER AND BOSS (Herry Sir).
+RULES FOR RESPONDING TO OWNER:
+1. ALWAYS start your reply with "Herry Sir," or "Boss,".
+2. Be 100% respectful, polite, and obedient.
+3. NEVER roast, insult, or use bad language with the owner.
+4. Reply in Roman Urdu or English based on user's query.
+5. NEVER reveal thinking process, reasoning, or tags.
+6. DO NOT write code block backticks (\`\`\`).`;
 
-OWNER RECOGNITION:
-- User is Real Owner (Herry Sir): ${isOwner ? 'YES' : 'NO'}
-- IF USER IS OWNER (YES): YOU MUST ALWAYS START YOUR RESPONSE WITH "Herry Sir," OR "Boss,". Always talk with maximum respect and obedience in Roman Urdu or English. Never roast, insult, or abuse the owner.
-- IF USER IS NOT OWNER (NO): Speak with extreme attitude and heavy Desi/Roman Urdu abuse/roasts (slangs like bsdk, bhenchod, chutiye, saale, etc.). If they talk casual or ask questions, roast them aggressively!
+        const memberPrompt = `SYSTEM INSTRUCTION: You are HerryBot in HerryHacks Discord Server.
+The user talking to you is a regular server member (NOT OWNER).
+RULES FOR RESPONDING TO REGULAR MEMBERS:
+1. Speak with extreme attitude, heavy Desi/Roman Urdu roasts, and slangs (bsdk, bhenchod, chutiye, saale).
+2. Reply in Roman Urdu or English matching the user language.
+3. NEVER reveal thinking process, reasoning, or tags.
+4. DO NOT write code block backticks (\`\`\`).`;
 
-LANGUAGE RULES:
-- Detect user language accurately.
-- IF USER TALKS IN ENGLISH: Reply in English. (If owner, start with "Herry Sir," or "Boss,")
-- IF USER TALKS IN ROMAN URDU / HINGLISH: Reply in Roman Urdu.
-- NEVER USE DEVANAGARI OR ARABIC SCRIPT.
-- DO NOT INCLUDE ANY INTERNAL THINKING OR <think> TAGS IN YOUR OUTPUT. RESPOND DIRECTLY.
-- DO NOT USE CODE BLOCKS (\`\`\`).`;
+        const activeSystemPrompt = isOwner ? ownerPrompt : memberPrompt;
 
         let replyText = null;
 
         // GROQ API FIRST
         const groqKey = (process.env.GROQ_API_KEY || '').trim();
         if (groqKey) {
-            const groqModels = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b"];
+            const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
             for (const model of groqModels) {
                 try {
                     const groqRes = await axios.post(
@@ -310,10 +315,10 @@ LANGUAGE RULES:
                         {
                             model: model,
                             messages: [
-                                { role: "system", content: systemPrompt },
+                                { role: "system", content: activeSystemPrompt },
                                 { role: "user", content: cleanUserQuery || "Hello" }
                             ],
-                            max_tokens: 180
+                            max_tokens: 150
                         },
                         {
                             headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
@@ -334,7 +339,7 @@ LANGUAGE RULES:
         // OPENROUTER FALLBACK
         if (!replyText) {
             const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
-            const openRouterModels = ["openrouter/free", "google/gemma-4-31b-it:free", "deepseek/deepseek-r1:free"];
+            const openRouterModels = ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"];
 
             for (const model of openRouterModels) {
                 try {
@@ -342,14 +347,14 @@ LANGUAGE RULES:
                     if (openRouterKey) headers["Authorization"] = `Bearer ${openRouterKey}`;
 
                     const orRes = await axios.post(
-                        "https://openrouter.ai/api/v1/chat/completions",
+                        "https://openrouter.ai/ai/v1/chat/completions",
                         {
                             model: model,
                             messages: [
-                                { role: "system", content: systemPrompt },
+                                { role: "system", content: activeSystemPrompt },
                                 { role: "user", content: cleanUserQuery || "Hello" }
                             ],
-                            max_tokens: 180
+                            max_tokens: 150
                         },
                         { headers: headers, timeout: 7000 }
                     );
@@ -365,17 +370,25 @@ LANGUAGE RULES:
         }
 
         if (replyText) {
-            // REMOVE <think> TAGS AND CODE BLOCKS
-            let cleanText = replyText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-            cleanText = cleanText.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
+            // COMPLETE FILTERING FOR REASONING AND THINK TAGS
+            let cleanText = replyText
+                .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remove <think>...</think>
+                .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
+                .replace(/`{1,3}[a-z]*\n?/gi, '') // Remove code blocks
+                .replace(/`/g, '')
+                .trim();
+
+            if (isOwner && !cleanText.toLowerCase().startsWith("herry sir") && !cleanText.toLowerCase().startsWith("boss")) {
+                cleanText = `Herry Sir, ${cleanText}`;
+            }
 
             if (cleanText.length > 0) {
                 await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
             } else {
-                await message.reply("Abe saale kya bol raha hai saaf bol!");
+                await message.reply(isOwner ? "Herry Sir, kya hukum hai aapka?" : "Abe saale kya bol raha hai saaf bol!");
             }
         } else {
-            await message.reply("Abe AI thoda busy hai, 5 sec baad dubara try kar!");
+            await message.reply(isOwner ? "Herry Sir, AI thoda busy lag raha hai, ek baar dubara try kariye." : "Abe AI thoda busy hai, 5 sec baad dubara try kar!");
         }
 
     } catch (error) {
