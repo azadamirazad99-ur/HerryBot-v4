@@ -1,3 +1,4 @@
+
 // ==========================================
 // HERRYHACKS BOT - ADVANCED MODERATION & AI
 // ==========================================
@@ -157,63 +158,96 @@ client.on('messageCreate', async message => {
     const ownerId = process.env.OWNER_ID;
     const isOwner = message.author.id === ownerId;
 
-    const hackLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
+    const scriptLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
     const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
 
-    // 1. FAKE OWNER CLAIM CHECK
-    const fakeOwnerClaims = ["i am owner", "main owner hu", "me owner hu", "iam owner", "im owner", "i am the owner", "main hu owner"];
+    // 1. ABUSE TOWARDS HERRY -> DIRECT INSTANT BAN
+    const severeAbuses = ["maa", "behen", "maderchod", "bhenchod", "madarchod", "bsdk", "bhosdike", "mc", "bc"];
+    const mentionsHerry = ["herry", "owner", "boss", "admin"].some(w => lowerQuery.includes(w));
+    const containsSevereAbuse = severeAbuses.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
+
+    if (mentionsHerry && containsSevereAbuse) {
+        try {
+            if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
+                await message.guild.members.ban(message.author.id, { reason: "Abusing Herry Sir / Owner" });
+                await message.channel.send(`🔨 **${message.author.tag}** ko permanent ban kar diya gaya hai. Reason: Abusing Herry Sir.`);
+                return;
+            }
+        } catch (e) {
+            console.error("Herry Abuse Ban Error:", e.message);
+        }
+    }
+
+    // 2. FAKE HERRY IMPERSONATION CHECK
+    const fakeOwnerClaims = ["i am herry", "iam herry", "im herry", "i am owner", "main owner hu", "me owner hu", "iam owner", "im owner", "i am the owner", "main hu owner"];
     const claimsToBeOwner = fakeOwnerClaims.some(phrase => lowerQuery.includes(phrase));
 
     if (claimsToBeOwner && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-                await message.member.timeout(60 * 60 * 1000, "Fake Owner Impersonation");
-                return message.reply("Abe saale fake owner ban raha hai? Chal ab nikal aur 60 minutes tak 1 ghante ka timeout enjoy kar! Real Owner Sirf Herry Sir Hain.");
+                await message.member.timeout(60 * 60 * 1000, "Fake Owner Claim");
+                return message.reply("Mene detect krliya bsdk bhag yaha se 60m ka timeout ka maza le");
             }
         } catch (e) {
             console.error("Fake Owner Timeout Error:", e.message);
         }
     }
 
-    // 2. OWNER QUERY CHECK
+    // 3. COMPETITOR HACKS (Adil, Yuvraj, Rudra) -> ROAST & WARNING
+    const competitors = ["adil", "yuvraj", "rudra"];
+    const mentionsCompetitor = competitors.some(c => lowerQuery.includes(c));
+
+    if (mentionsCompetitor) {
+        return message.reply("Abe saale un 3rd class scammer logon ka naam mat le yahan! Un ke faltu aur nakli hacks use karke apna account ban karwana hai kya? Last warning hai, dubara un scammers ka naam mat lena!");
+    }
+
+    // 4. GC HACK SPECIFIC QUERY
+    if (lowerQuery.includes("gc hack") || lowerQuery.includes("gchack")) {
+        if (lowerQuery.includes("kab") || lowerQuery.includes("when") || lowerQuery.includes("make") || lowerQuery.includes("banega")) {
+            return message.reply("We working on it. If we find Way to create Hack we will publish it free Asap!");
+        }
+        return message.reply("GC hack is Unavailable.");
+    }
+
+    // 5. BACHA / KID CALLING -> 3 DAYS TIMEOUT
+    const bachaKeywords = ["bacha", "bachha", "kid", "pappu"];
+    const callsBacha = bachaKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
+
+    if (callsBacha && (isMentioned || lowerQuery.includes("bot"))) {
+        try {
+            if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+                await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Calling someone/bot bacha or kid");
+                return message.reply(`🚨 ${message.author} tu kisse bacha bol raha hai saale? Chal **3 Days Timeout** bhugat ab!`);
+            }
+        } catch (e) {
+            console.error("Bacha Timeout Error:", e.message);
+        }
+    }
+
+    // 6. OWNER QUERY CHECK
     const isOwnerQuery = ["who is owner", "owner kon he", "owner kaun hai", "owner kon hai", "who is the owner"].some(w => lowerQuery.includes(w));
     if (isOwnerQuery) {
         return message.reply("👑 **Herry Sir** is the official owner of HerryHacks!");
     }
 
-    // 3. SEVERE ABUSE BAN CHECK
-    const severeAbuses = ["maa", "behen", "maderchod", "bhenchod", "madarchod", "bsdk", "bhosdike", "mc", "bc"];
-    const containsSevereAbuse = severeAbuses.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
+    // 7. SPECIFIC SCRIPT & SETUP REQUESTS (Must explicitly contain the word "link")
+    const hasLinkKeyword = lowerQuery.includes("link");
+    const isTargetedScript = ["reversoqzz", "lulubox", "devvir", "herryposya", "posya"].some(w => lowerQuery.includes(w));
 
-    if (isMentioned && containsSevereAbuse) {
-        try {
-            if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
-                await message.guild.members.ban(message.author.id, { reason: "By bot for abusing" });
-                await message.channel.send(`🔨 **${message.author.tag}** ko ban kar diya gaya hai. Reason: By bot for abusing.`);
-                return;
-            }
-        } catch (e) {
-            console.error("Abuse Ban Error:", e.message);
-        }
+    if (hasLinkKeyword && isTargetedScript) {
+        return message.reply(`🔗 **Official Script Link:**\n${scriptLink}`);
     }
 
-    // 4. KID / BACHA BAN CHECK
-    const banKeywords = ["bacha", "bachha", "kid", "son", "beta", "pappu"];
-    const matchesBan = banKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
-
-    if (matchesBan && isMentioned) {
-        try {
-            if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
-                await message.guild.members.ban(message.author.id, { reason: "By bot for a reason" });
-                await message.channel.send(`🔨 **${message.author.tag}** ko ban kar diya gaya hai. Reason: By bot for a reason.`);
-                return;
-            }
-        } catch (e) {
-            console.error("Kid Ban Error:", e.message);
-        }
+    if (lowerQuery.includes("where is posya") || lowerQuery.includes("where is herryposya")) {
+        return message.reply(`🔗 **HerryPosya Script Link:**\n${scriptLink}`);
     }
 
-    // 5. SPAM & REPEAT ABUSE DETECTION
+    const isSetupRequest = ["setup guide", "guide link", "kaise kare link", "install link"].some(w => lowerQuery.includes(w));
+    if (isSetupRequest) {
+        return message.reply(`📖 **Setup Guide Link:**\n${setupLink}`);
+    }
+
+    // 8. SPAM & REPEAT MESSAGE DETECTION
     const now = Date.now();
     const userHistory = userMessageHistory.get(message.author.id) || [];
     userHistory.push({ text: lowerQuery, time: now });
@@ -222,12 +256,11 @@ client.on('messageCreate', async message => {
     userMessageHistory.set(message.author.id, recentHistory);
 
     const sameMsgCount = recentHistory.filter(m => m.text === lowerQuery).length;
-    const isAbusiveMessage = severeAbuses.some(w => lowerQuery.includes(w));
 
     if (sameMsgCount >= 3) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-                if (isAbusiveMessage) {
+                if (containsSevereAbuse) {
                     await message.delete().catch(() => {});
                     await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Abusive Repeat Spam");
                     await message.channel.send(`🚨 ${message.author} ne same gaali wale msg 3 baar repeat kiye. **3 Days Timeout** lag gaya.`);
@@ -243,52 +276,31 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // 6. KEYWORD AUTO-LINKS
-    const isHackRequest = ["lulubox", "devvir", "reversoqzz", "posya", "herryposya", "hack"].some(w => lowerQuery.includes(w));
-    const isSetupRequest = ["setup", "guide", "setup guide", "kaise kare", "install"].some(w => lowerQuery.includes(w));
-
-    if (isHackRequest) {
-        return message.reply(`🔗 **All Hacks & Scripts Link:**\n${hackLink}`);
-    }
-
-    if (isSetupRequest) {
-        return message.reply(`📖 **Setup Guide Link:**\n${setupLink}`);
-    }
-
     if (!isMentioned) return;
 
-    // 7. AI ROASTING & RESPONSE WITH OWNER RECOGNITION
+    // 9. AI RESPONSE & DYNAMIC ROASTING / RESPECT
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-        let member = message.member;
-        if (message.guild && (!member || !member.roles)) {
-            try {
-                member = await message.guild.members.fetch(message.author.id);
-            } catch (e) {
-                console.error("Fetch Member Error:", e);
-            }
-        }
-
         const systemPrompt = `You are HerryBot in HerryHacks Discord Server (Grand Mobile RP Modding).
 
-OWNER RECOGNITION STATUS:
-- User is Owner: ${isOwner ? 'YES' : 'NO'}
-- IF USER IS OWNER (YES): Always address them respectfully as "Herry Sir" or "Boss". Never roast or abuse the owner.
-- IF USER IS NOT OWNER (NO): Respond normally or roast if they show attitude.
+OWNER RECOGNITION:
+- User is Real Owner (Herry Sir): ${isOwner ? 'YES' : 'NO'}
+- IF USER IS OWNER (YES): Always talk with maximum respect. Call them "Herry Sir" or "Boss". Never roast, insult, or abuse the owner.
+- IF USER IS NOT OWNER (NO): Talk with attitude. If they give attitude, roast them heavily with funny Roman Urdu slangs/roasts.
 
 LANGUAGE RULES:
-- Detect the language of the user query automatically.
-- IF THE USER SPEAKS IN ENGLISH, REPLY IN ENGLISH.
-- IF THE USER SPEAKS IN ROMAN URDU / HINGLISH, REPLY IN ROMAN URDU / HINGLISH.
-- IF THE USER SAYS "talk in English", REPLY STRICTLY IN ENGLISH.
-- NEVER USE DEVANAGARI HINDI SCRIPT OR ARABIC SCRIPT.
-- DO NOT USE MARKDOWN CODE BLOCKS (\`\`\`).`;
+- Detect user language accurately.
+- IF USER TALKS IN ENGLISH: Reply purely in English.
+- IF USER TALKS IN ROMAN URDU / HINGLISH: Reply in aggressive/funny Roman Urdu with local slangs.
+- IF USER SAYS "talk in English": Switch strictly to English.
+- NEVER USE DEVANAGARI OR ARABIC SCRIPT.
+- DO NOT USE CODE BLOCKS (\`\`\`).`;
 
         let replyText = null;
 
-        // GROQ FIRST
+        // GROQ API FIRST
         const groqKey = (process.env.GROQ_API_KEY || '').trim();
         if (groqKey) {
             const groqModels = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b"];
@@ -529,4 +541,3 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
