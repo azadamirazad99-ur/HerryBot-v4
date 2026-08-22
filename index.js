@@ -1,4 +1,3 @@
-
 // ==========================================
 // HERRYHACKS BOT - ADVANCED MODERATION & AI
 // ==========================================
@@ -287,15 +286,15 @@ client.on('messageCreate', async message => {
 
 OWNER RECOGNITION:
 - User is Real Owner (Herry Sir): ${isOwner ? 'YES' : 'NO'}
-- IF USER IS OWNER (YES): Always talk with maximum respect. Call them "Herry Sir" or "Boss". Never roast, insult, or abuse the owner.
-- IF USER IS NOT OWNER (NO): Talk with attitude. If they give attitude, roast them heavily with funny Roman Urdu slangs/roasts.
+- IF USER IS OWNER (YES): YOU MUST ALWAYS START YOUR RESPONSE WITH "Herry Sir," OR "Boss,". Always talk with maximum respect and obedience in Roman Urdu or English. Never roast, insult, or abuse the owner.
+- IF USER IS NOT OWNER (NO): Speak with extreme attitude and heavy Desi/Roman Urdu abuse/roasts (slangs like bsdk, bhenchod, chutiye, saale, etc.). If they talk casual or ask questions, roast them aggressively!
 
 LANGUAGE RULES:
 - Detect user language accurately.
-- IF USER TALKS IN ENGLISH: Reply purely in English.
-- IF USER TALKS IN ROMAN URDU / HINGLISH: Reply in aggressive/funny Roman Urdu with local slangs.
-- IF USER SAYS "talk in English": Switch strictly to English.
+- IF USER TALKS IN ENGLISH: Reply in English. (If owner, start with "Herry Sir," or "Boss,")
+- IF USER TALKS IN ROMAN URDU / HINGLISH: Reply in Roman Urdu.
 - NEVER USE DEVANAGARI OR ARABIC SCRIPT.
+- DO NOT INCLUDE ANY INTERNAL THINKING OR <think> TAGS IN YOUR OUTPUT. RESPOND DIRECTLY.
 - DO NOT USE CODE BLOCKS (\`\`\`).`;
 
         let replyText = null;
@@ -366,8 +365,15 @@ LANGUAGE RULES:
         }
 
         if (replyText) {
-            const cleanText = replyText.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
-            await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
+            // REMOVE <think> TAGS AND CODE BLOCKS
+            let cleanText = replyText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+            cleanText = cleanText.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
+
+            if (cleanText.length > 0) {
+                await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
+            } else {
+                await message.reply("Abe saale kya bol raha hai saaf bol!");
+            }
         } else {
             await message.reply("Abe AI thoda busy hai, 5 sec baad dubara try kar!");
         }
@@ -393,7 +399,7 @@ client.on('messageCreate', async message => {
             const reason = args.slice(1).join(' ') || 'No reason provided';
             try { 
                 await target.kick(reason); 
-                message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
+                message.channel.send(``👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
             } catch (e) { 
                 message.channel.send('❌ Failed to kick user.'); 
             }
@@ -541,3 +547,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
