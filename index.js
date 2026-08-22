@@ -307,7 +307,8 @@ RULES FOR RESPONDING TO REGULAR MEMBERS:
         // GROQ API FIRST
         const groqKey = (process.env.GROQ_API_KEY || '').trim();
         if (groqKey) {
-            const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+            const groqModels = ["llama-3.1-70b-versatile", "llama-3.1-8b-instant"];
+            
             for (const model of groqModels) {
                 try {
                     const groqRes = await axios.post(
