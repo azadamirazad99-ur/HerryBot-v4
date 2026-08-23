@@ -1,101 +1,96 @@
-
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const axios = require('axios');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getkey')
-        .setDescription('Get your private 3-Day VIP Game Guardian Access Key'),
+        .setDescription('Get your private 3-Day VIP Game Guardian Access Key')
+        .setDMPermission(true),
 
     async execute(interaction) {
+        await interaction.deferReply({ ephemeral: true });
+
+        const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+        const REPO_OWNER = 'urdushahzaib111-ctrl';
+        const REPO_NAME = 'HerryBot-v4';
+        const FILE_PATH = 'keys.txt';
+        const userId = interaction.user.id;
+
         try {
-            await interaction.deferReply({ ephemeral: true });
-
-            const userId = interaction.user.id;
-            const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Railway Variables me set hona chahiye
-            const REPO_OWNER = "urdushahzaib111-ctrl";
-            const REPO_NAME = "HerryBot-v4";
-            const FILE_PATH = "keys.txt";
-
-            const githubApiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-
             // 1. Fetch current keys.txt from GitHub
-            let fileData = { sha: null, content: "" };
-            try {
-                const getRes = await fetch(githubApiUrl, {
-                    headers: { 
-                        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'User-Agent': 'DiscordBot'
-                    }
-                });
-                if (getRes.ok) {
-                    const data = await getRes.json();
-                    fileData.sha = data.sha;
-                    fileData.content = Buffer.from(data.content, 'base64').toString('utf-8');
-                }
-            } catch (err) {
-                console.error("GitHub Fetch Error:", err);
-            }
-
-            const currentSeconds = Math.floor(Date.now() / 1000);
-            let lines = fileData.content.split('\n').filter(line => line.trim() !== '');
-            let userKey = null;
-
-            // 2. Check if this Discord user already has an active key
-            for (let line of lines) {
-                let parts = line.split('|');
-                // parts[3] is Discord User ID
-                if (parts[3] && parts[3].trim() === userId) {
-                    let exp = parseInt(parts[1]);
-                    if (exp > currentSeconds) {
-                        userKey = parts[0].trim();
-                        break;
-                    }
-                }
-            }
-
-            // 3. If no active key exists, generate a new unique key
-            if (!userKey) {
-                const randomNum = Math.floor(100 + Math.random() * 900); // 3-digit number
-                userKey = `HerryHacks${randomNum}`;
-                const expiryTime = currentSeconds + (3 * 24 * 60 * 60); // 3 Days Valid
-
-                // Format: Key|ExpiryTimestamp||DiscordUserId
-                const newRecord = `${userKey}|${expiryTime}||${userId}`;
-                lines.push(newRecord);
-
-                const updatedContent = lines.join('\n') + '\n';
-                const base64Content = Buffer.from(updatedContent).toString('base64');
-
-                // 4. Push/Update directly to GitHub repository
-                await fetch(githubApiUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/vnd.github.v3+json',
-                        'User-Agent': 'DiscordBot'
-                    },
-                    body: JSON.stringify({
-                        message: `Add VIP Key for user ${userId}`,
-                        content: base64Content,
-                        sha: fileData.sha || undefined
-                    })
-                });
-            }
-
-            // 5. Send key to user privately
-            await interaction.editReply({
-                content: `🔑 **YOUR PRIVATE VIP KEY:**\n\n` +
-                         `\`\`\`text\n${userKey}\n\`\`\`\n` +
-                         `⏱️ **Validity:** 3 Days\n` +
-                         `🔒 **Security:** Locked to your 1st Device on use.\n\n` +
-                         `⚠️ *Ye key sirf aapke liye hai!*`
+            const getUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+            const fileRes = await axios.get(getUrl, {
+                headers: { Authorization: `token ${GITHUB_TOKEN}` }
             });
 
+            const sha = fileRes.data.sha;
+            let currentContent = Buffer.from(fileRes.data.content, 'base64').toString('utf-8');
+
+            // 2. Check if user already has an active key
+            const lines = currentContent.split('\n');
+            let existingKey = null;
+
+            for (let line of lines) {
+                const parts = line.split('|');
+                if (parts[3] && parts[3].trim() === userId) {
+                    existingKey = parts[0].trim();
+                    break;
+                }
+            }
+
+            if (existingKey) {
+                const existingEmbed = new EmbedBuilder()
+                    .setTitle('🔑 VIP ACCESS KEY')
+                    .setColor('#FFD700')
+                    .setDescription(`Aapki key pehle se active hai!\n\n**Key:** \`${existingKey}\``)
+                    .addFields(
+                        { name: '⏳ Expiry', value: '3 Days', inline: true },
+                        { name: '🔒 Device', value: 'Locked to 1st device', inline: true }
+                    )
+                    .setFooter({ text: 'HerryHacks Official Security System' });
+
+                return await interaction.editReply({ embeds: [existingEmbed] });
+            }
+
+            // 3. Generate New Key & Expiry Timestamp (Current Seconds + 3 Days)
+            const keyNum = Math.floor(100 + Math.random() * 900);
+            const newKey = `HerryHacks${keyNum}`;
+            const expiryTimestamp = Math.floor(Date.now() / 1000) + (3 * 24 * 60 * 60);
+
+            // Format: Key|ExpiryTimestamp|HWID_Slot|Discord_UserID
+            const newLine = `${newKey}|${expiryTimestamp}||${userId}`;
+            
+            // Clean trail before appending
+            const updatedContent = currentContent.trim() ? `${currentContent.trim()}\n${newLine}` : newLine;
+
+            // 4. Push Updated keys.txt back to GitHub
+            await axios.put(getUrl, {
+                message: `Add key for ${interaction.user.tag}`,
+                content: Buffer.from(updatedContent).toString('base64'),
+                sha: sha
+            }, {
+                headers: { Authorization: `token ${GITHUB_TOKEN}` }
+            });
+
+            // 5. Send Key Embed Response
+            const embed = new EmbedBuilder()
+                .setTitle('🎉 VIP ACCESS KEY GENERATED!')
+                .setColor('#00FF00')
+                .setDescription(`Aapki private GG key generate ho chuki hai:\n\n**🔑 VIP Key:** \`${newKey}\``)
+                .addFields(
+                    { name: '⌛ Validity', value: '3 Days', inline: true },
+                    { name: '🔒 Security', value: 'Locked to 1st Device', inline: true }
+                )
+                .setFooter({ text: '⚠️ Key kisi ke sath share na karein!' });
+
+            await interaction.editReply({ embeds: [embed] });
+
         } catch (error) {
-            console.error("Getkey Error:", error);
-            await interaction.editReply({ content: "❌ Key generate karne me issue aaya! Developer ko contact karein." });
+            console.error('Error generating key:', error);
+            await interaction.editReply({
+                content: '❌ Key generate karne me error aaya. Developer (herry_escobar) se contact karein.'
+            });
         }
-    },
+    }
 };
+
