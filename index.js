@@ -1,4 +1,3 @@
-
 // ==========================================
 // HERRYHACKS BOT - ADVANCED MODERATION & AI
 // ==========================================
@@ -154,30 +153,29 @@ client.on('messageCreate', async message => {
     const scriptLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
     const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
 
-    // 1. ABUSE TOWARDS HERRY -> INSTANT BAN
-    const severeAbuses = ["maa", "behen", "maderchod", "bhenchod", "madarchod", "bsdk", "bhosdike", "mc", "bc"];
-    const mentionsHerry = ["herry", "owner", "boss", "admin"].some(w => lowerQuery.includes(w));
+    // 1. MOTHER/SISTER/BOT SEVERE ABUSE -> AUTO BAN
+    const severeAbuses = ["maa", "behen", "behn", "maderchod", "bhenchod", "madarchod", "ami", "ammi", "mami", "chut", "gaand", "lund"];
     const containsSevereAbuse = severeAbuses.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
 
-    if (mentionsHerry && containsSevereAbuse && !isOwner) {
+    if (containsSevereAbuse && !isOwner) {
         try {
+            await message.delete().catch(() => {});
             if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
-                await message.guild.members.ban(message.author.id, { reason: "Abusing Herry Sir / Owner" });
-                await message.channel.send(`🔨 **${message.author.tag}** ko permanent ban kar diya gaya hai. Reason: Abusing Herry Sir.`);
-                return;
+                await message.guild.members.ban(message.author.id, { reason: "Abusing Mother/Sister/Severe Slang in Server" });
+                return message.channel.send(`🔨 **${message.author.tag}** ko PERMANENT BAN kar diya gaya hai! Reason: Severe Abuse / Gaali Ghaloch.`);
             }
         } catch (e) {
-            console.error("Herry Abuse Ban Error:", e.message);
+            console.error("Ban Execution Error:", e.message);
         }
     }
 
-    // 2. FAKE OWNER CLAIMS
+    // 2. FAKE OWNER CLAIMS -> 1 HOUR TIMEOUT
     const fakeOwnerClaims = ["i am herry", "iam herry", "im herry", "i am owner", "main owner hu", "me owner hu", "iam owner", "im owner", "i am the owner", "main hu owner"];
     if (fakeOwnerClaims.some(phrase => lowerQuery.includes(phrase)) && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 await message.member.timeout(60 * 60 * 1000, "Fake Owner Claim");
-                return message.reply("Mene detect krliya bsdk bhag yaha se 60m ka timeout ka maza le");
+                return message.reply("Mene detect krliya bsdk bhag yaha se 60m ka timeout ka maza le!");
             }
         } catch (e) {
             console.error("Fake Owner Timeout Error:", e.message);
@@ -186,7 +184,7 @@ client.on('messageCreate', async message => {
 
     // 3. COMPETITOR HACKS
     if (["adil", "yuvraj", "rudra"].some(c => lowerQuery.includes(c))) {
-        return message.reply("Abe saale un 3rd class scammer logon ka naam mat le yahan! Un ke faltu aur nakli hacks use karke apna account ban karwana hai kya? Last warning hai, dubara un scammers ka naam mat lena!");
+        return message.reply("Abe saale un 3rd class scammer logon ka naam mat le yahan! Un ke faltu aur nakli hacks use karke apna account ban karwana hai kya? Last warning hai!");
     }
 
     // 4. GC HACK SPECIFIC QUERY
@@ -197,7 +195,7 @@ client.on('messageCreate', async message => {
         return message.reply("GC hack is Unavailable.");
     }
 
-    // 5. BACHA / KID CALLING
+    // 5. BACHA / KID CALLING -> 3 DAYS TIMEOUT
     if (["bacha", "bachha", "kid", "pappu"].some(w => new RegExp(`\\b${w}\\b`, 'i').test(lowerQuery)) && (isMentioned || lowerQuery.includes("bot")) && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
@@ -225,7 +223,7 @@ client.on('messageCreate', async message => {
         return message.reply(`📖 **Setup Guide Link:**\n${setupLink}`);
     }
 
-    // 8. SPAM & REPEAT MESSAGE DETECTION
+    // 8. SPAM & REPEAT MESSAGE DETECTION -> 1 DAY TIMEOUT
     const now = Date.now();
     const userHistory = userMessageHistory.get(message.author.id) || [];
     userHistory.push({ text: lowerQuery, time: now });
@@ -235,14 +233,8 @@ client.on('messageCreate', async message => {
     if (recentHistory.filter(m => m.text === lowerQuery).length >= 3 && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-                if (containsSevereAbuse) {
-                    await message.delete().catch(() => {});
-                    await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Abusive Repeat Spam");
-                    return message.channel.send(`🚨 ${message.author} ne same gaali wale msg 3 baar repeat kiye. **3 Days Timeout** lag gaya.`);
-                } else {
-                    await message.member.timeout(1 * 24 * 60 * 60 * 1000, "Normal Message Repeat Spam");
-                    return message.channel.send(`⚠️ ${message.author} ne same msg 3 baar repeat kiya. **1 Day Timeout** lag gaya.`);
-                }
+                await message.member.timeout(1 * 24 * 60 * 60 * 1000, "Message Repeat Spam");
+                return message.channel.send(`⚠️ ${message.author} ne same msg 3 baar repeat kiya. **1 Day Timeout** lag gaya.`);
             }
         } catch (e) {
             console.error("Spam Handling Error:", e.message);
@@ -251,39 +243,33 @@ client.on('messageCreate', async message => {
 
     if (!isMentioned) return;
 
-    // 9. AI RESPONSE ENGINE (GROQ & OPENROUTER WITH FREE MODELS)
+    // 9. AI RESPONSE ENGINE (WITH RESPECT SYSTEM & STRICT LEAK CLEANING)
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
+        // Check if member speaks with polite words
+        const isPoliteUser = ["bhai", "sir", "bro", "dear", "pyaare", "pyaar", "respect", "ji", "please", "pls", "pyare"].some(w => lowerQuery.includes(w));
+
         const ownerPrompt = `You are HerryBot in HerryHacks Discord Server.
-The user talking to you IS YOUR REAL OWNER AND BOSS (Herry Sir).
-RULES FOR OWNER:
-1. ALWAYS start your response with "Herry Sir," or "Boss,".
-2. Show maximum respect, politeness, and obedience. Never roast or use slang.
-3. Respond in short Roman Urdu or English.
-4. NEVER write code block backticks (\`\`\`) or include thinking tags.`;
+The user is YOUR OWNER (Herry Sir).
+ALWAYS start your reply with "Herry Sir," or "Boss,". Be respectful and short. DO NOT write code backticks or thoughts.`;
 
-        const memberPrompt = `You are HerryBot in HerryHacks Discord Server.
-The user talking to you is a normal member (NOT OWNER).
-RULES FOR REGULAR MEMBERS:
-1. Speak with extreme attitude, heavy Desi/Roman Urdu roasts, and slangs (bsdk, bhenchod, chutiye, saale).
-2. Respond in short Roman Urdu or English.
-3. NEVER write code block backticks (\`\`\`) or include thinking tags.`;
+        const politePrompt = `You are HerryBot in HerryHacks Discord Server.
+The user is asking politely using respectful words (bhai/sir/bro).
+Be friendly, helpful, polite, and respectful in short Roman Urdu or English. DO NOT roast them. DO NOT write code backticks or thoughts.`;
 
-        const activePrompt = isOwner ? ownerPrompt : memberPrompt;
+        const rudePrompt = `You are HerryBot in HerryHacks Discord Server.
+The user is a regular server member.
+Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, saale, chutiye). DO NOT write code backticks, DO NOT write system thoughts. Just reply directly with the final chat response.`;
+
+        let activePrompt = isOwner ? ownerPrompt : (isPoliteUser ? politePrompt : rudePrompt);
         let replyText = null;
 
-        // 1. GROQ MODELS TRY
+        // 1. GROQ TRY
         const groqKey = (process.env.GROQ_API_KEY || '').trim();
         if (groqKey) {
-            const groqModels = [
-                "deepseek-r1-distill-llama-70b",
-                "llama-3.3-70b-versatile",
-                "llama4-scout",
-                "qwen3-32b-instruct"
-            ];
-
+            const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
             for (const model of groqModels) {
                 try {
                     const groqRes = await axios.post(
@@ -294,35 +280,23 @@ RULES FOR REGULAR MEMBERS:
                                 { role: "system", content: activePrompt },
                                 { role: "user", content: cleanUserQuery || "Hello" }
                             ],
-                            max_tokens: 150
+                            max_tokens: 100
                         },
-                        {
-                            headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
-                            timeout: 6000
-                        }
+                        { headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, timeout: 5000 }
                     );
 
                     if (groqRes.data?.choices?.[0]?.message?.content) {
                         replyText = groqRes.data.choices[0].message.content.trim();
                         break;
                     }
-                } catch (e) {
-                    console.log(`Groq Model Failed (${model}): ${e.response ? e.response.status : e.message}`);
-                }
+                } catch (e) {}
             }
         }
 
-        // 2. OPENROUTER FREE MODELS FALLBACK
+        // 2. OPENROUTER FALLBACK
         if (!replyText) {
             const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
-            const openRouterModels = [
-                "deepseek/deepseek-r1:free",
-                "x-ai/grok-mini:free",
-                "qwen/qwen3-coder:free",
-                "meta-llama/llama-4-maverick:free",
-                "thinkingmachines/inkling:free",
-                "openrouter/free"
-            ];
+            const openRouterModels = ["meta-llama/llama-3.3-70b-instruct:free", "x-ai/grok-mini:free"];
 
             for (const model of openRouterModels) {
                 try {
@@ -337,35 +311,39 @@ RULES FOR REGULAR MEMBERS:
                                 { role: "system", content: activePrompt },
                                 { role: "user", content: cleanUserQuery || "Hello" }
                             ],
-                            max_tokens: 150
+                            max_tokens: 100
                         },
-                        { headers: headers, timeout: 6000 }
+                        { headers: headers, timeout: 5000 }
                     );
 
                     if (orRes.data?.choices?.[0]?.message?.content) {
                         replyText = orRes.data.choices[0].message.content.trim();
                         break;
                     }
-                } catch (e) {
-                    console.log(`OpenRouter Model Failed (${model}): ${e.response ? e.response.status : e.message}`);
-                }
+                } catch (e) {}
             }
         }
 
         // HARD FALLBACK
         if (!replyText) {
-            replyText = isOwner 
-                ? "Herry Sir, aapka kya hukum hai?" 
-                : "Abe saale kya bol raha hai saaf bol!";
+            if (isOwner) replyText = "Herry Sir, aapka kya hukum hai?";
+            else if (isPoliteUser) replyText = "Haan bhai, bolo kya madaad chahiye?";
+            else replyText = "Abe saale kya bol raha hai saaf bol!";
         }
 
-        // REMOVE <think> AND <thought> TAGS COMPLETELY
+        // STRICT THINKING PROCESS AND PROMPT CLEANER
         let cleanText = replyText
             .replace(/<think>[\s\S]*?<\/think>/gi, '')
             .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
+            .replace(/We need to respond[\s\S]*/gi, '')
+            .replace(/The user just typed[\s\S]*/gi, '')
             .replace(/`{1,3}[a-z]*\n?/gi, '')
             .replace(/`/g, '')
             .trim();
+
+        if (!cleanText) {
+            cleanText = isPoliteUser ? "Haan bhai, main sun raha hu, bolo?" : "Abe bol bhi ab kya tamasha hai!";
+        }
 
         if (isOwner && !cleanText.toLowerCase().startsWith("herry sir") && !cleanText.toLowerCase().startsWith("boss")) {
             cleanText = `Herry Sir, ${cleanText}`;
@@ -444,7 +422,7 @@ client.on('messageCreate', async message => {
 
         if (command === 'avatar' || command === 'pfp') {
             const target = message.mentions.users.first() || message.author;
-            const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
+            const embed = new EmbedBuilder().setColor('#FFD700').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
             message.channel.send({ embeds: [embed] });
         }
 
@@ -460,7 +438,7 @@ client.on('guildMemberAdd', async (member) => {
     const channel = member.guild.channels.cache.get(channelId);
     if (channel) {
         const embed = new EmbedBuilder()
-            .setColor('#00ffcc')
+            .setColor('#FFD700')
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
             .setDescription(`Welcome ${member}!\n\nMention the bot for Grand Mobile RP scripts and tools information.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
@@ -486,3 +464,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
