@@ -20,8 +20,9 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Track message history
+// Track message history for spam & AI Context
 const userMessageHistory = new Map();
+const chatContextHistory = new Map();
 
 // Slash Command Handler
 const commandsPath = path.join(__dirname, 'commands');
@@ -101,7 +102,7 @@ client.on('interactionCreate', async interaction => {
                 const channel = await guild.channels.create(channelOptions);
 
                 const embed = new EmbedBuilder()
-                    .setColor('#00ffcc')
+                    .setColor('#FFD700')
                     .setTitle('🎫 Support Ticket')
                     .setDescription(`Welcome ${interaction.user}, your ticket has been created. State your issue and staff will assist you.`);
 
@@ -162,7 +163,7 @@ client.on('messageCreate', async message => {
             await message.delete().catch(() => {});
             if (message.guild.members.me.permissions.has(PermissionFlagsBits.BanMembers)) {
                 await message.guild.members.ban(message.author.id, { reason: "Abusing Mother/Sister/Severe Slang in Server" });
-                return message.channel.send(`🔨 **${message.author.tag}** ko PERMANENT BAN kar diya gaya hai! Reason: Severe Abuse / Gaali Ghaloch.`);
+                return message.channel.send(`🔨 **${message.author.tag}** ko PERMANENT BAN kar diya gaya hai! Reason: Severe Abuse.`);
             }
         } catch (e) {
             console.error("Ban Execution Error:", e.message);
@@ -223,7 +224,7 @@ client.on('messageCreate', async message => {
         return message.reply(`📖 **Setup Guide Link:**\n${setupLink}`);
     }
 
-    // 8. SPAM & REPEAT MESSAGE DETECTION -> 1 DAY TIMEOUT
+    // 8. SPAM DETECTION
     const now = Date.now();
     const userHistory = userMessageHistory.get(message.author.id) || [];
     userHistory.push({ text: lowerQuery, time: now });
@@ -243,30 +244,41 @@ client.on('messageCreate', async message => {
 
     if (!isMentioned) return;
 
-    // 9. AI RESPONSE ENGINE (WITH RESPECT SYSTEM & STRICT LEAK CLEANING)
+    // 9. DYNAMIC AI RESPONSE ENGINE WITH CONTEXT MEMORY
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-        // Check if member speaks with polite words
+        // Check if user is polite
         const isPoliteUser = ["bhai", "sir", "bro", "dear", "pyaare", "pyaar", "respect", "ji", "please", "pls", "pyare"].some(w => lowerQuery.includes(w));
 
         const ownerPrompt = `You are HerryBot in HerryHacks Discord Server.
 The user is YOUR OWNER (Herry Sir).
-ALWAYS start your reply with "Herry Sir," or "Boss,". Be respectful and short. DO NOT write code backticks or thoughts.`;
+ALWAYS start your reply with "Herry Sir," or "Boss,". Be respectful and short. DO NOT write code backticks or thoughts. DO NOT repeat your previous questions.`;
 
         const politePrompt = `You are HerryBot in HerryHacks Discord Server.
 The user is asking politely using respectful words (bhai/sir/bro).
-Be friendly, helpful, polite, and respectful in short Roman Urdu or English. DO NOT roast them. DO NOT write code backticks or thoughts.`;
+Be friendly, helpful, polite, and respectful in short Roman Urdu or English. DO NOT roast them. DO NOT write code backticks or thoughts. Never repeat the same response twice.`;
 
         const rudePrompt = `You are HerryBot in HerryHacks Discord Server.
 The user is a regular server member.
-Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, saale, chutiye). DO NOT write code backticks, DO NOT write system thoughts. Just reply directly with the final chat response.`;
+Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, saale, chutiye). DO NOT write code backticks, DO NOT write system thoughts. Vary your roasts every time, NEVER repeat the exact same sentence.`;
 
         let activePrompt = isOwner ? ownerPrompt : (isPoliteUser ? politePrompt : rudePrompt);
+
+        // Retrieve Chat Context Memory (Last 4 Messages)
+        const userMemoryKey = `${message.channel.id}_${message.author.id}`;
+        let previousHistory = chatContextHistory.get(userMemoryKey) || [];
+
+        const messagesPayload = [
+            { role: "system", content: activePrompt },
+            ...previousHistory,
+            { role: "user", content: cleanUserQuery || "Hello" }
+        ];
+
         let replyText = null;
 
-        // 1. GROQ TRY
+        // 1. GROQ EXECUTION WITH RANDOMNESS
         const groqKey = (process.env.GROQ_API_KEY || '').trim();
         if (groqKey) {
             const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
@@ -276,11 +288,10 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
                         "https://api.groq.com/openai/v1/chat/completions",
                         {
                             model: model,
-                            messages: [
-                                { role: "system", content: activePrompt },
-                                { role: "user", content: cleanUserQuery || "Hello" }
-                            ],
-                            max_tokens: 100
+                            messages: messagesPayload,
+                            max_tokens: 120,
+                            temperature: 0.85,
+                            frequency_penalty: 0.6
                         },
                         { headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, timeout: 5000 }
                     );
@@ -307,11 +318,9 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
                         "https://openrouter.ai/api/v1/chat/completions",
                         {
                             model: model,
-                            messages: [
-                                { role: "system", content: activePrompt },
-                                { role: "user", content: cleanUserQuery || "Hello" }
-                            ],
-                            max_tokens: 100
+                            messages: messagesPayload,
+                            max_tokens: 120,
+                            temperature: 0.85
                         },
                         { headers: headers, timeout: 5000 }
                     );
@@ -331,7 +340,7 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
             else replyText = "Abe saale kya bol raha hai saaf bol!";
         }
 
-        // STRICT THINKING PROCESS AND PROMPT CLEANER
+        // CLEANING INTERNAL THINKING LEAKS
         let cleanText = replyText
             .replace(/<think>[\s\S]*?<\/think>/gi, '')
             .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
@@ -341,13 +350,18 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
             .replace(/`/g, '')
             .trim();
 
-        if (!cleanText) {
-            cleanText = isPoliteUser ? "Haan bhai, main sun raha hu, bolo?" : "Abe bol bhi ab kya tamasha hai!";
-        }
-
         if (isOwner && !cleanText.toLowerCase().startsWith("herry sir") && !cleanText.toLowerCase().startsWith("boss")) {
             cleanText = `Herry Sir, ${cleanText}`;
         }
+
+        // Save conversation history to prevent repetition in future replies
+        previousHistory.push({ role: "user", content: cleanUserQuery });
+        previousHistory.push({ role: "assistant", content: cleanText });
+
+        if (previousHistory.length > 6) {
+            previousHistory = previousHistory.slice(-6);
+        }
+        chatContextHistory.set(userMemoryKey, previousHistory);
 
         await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
 
