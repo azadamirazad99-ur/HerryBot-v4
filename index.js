@@ -1,3 +1,4 @@
+
 // ==========================================
 // HERRYHACKS BOT - ADVANCED MODERATION & AI
 // ==========================================
@@ -20,9 +21,35 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Track message history for spam & AI Context
+// Track message history
 const userMessageHistory = new Map();
 const chatContextHistory = new Map();
+
+// Dynamic Fallback Replies (Agai API Fail Ho Toh)
+const ownerFallbacks = [
+    "Herry Sir, boliye kya karna hai?",
+    "Boss, main online hu, command bataiye!",
+    "Herry Sir, aaj kya plan hai server ka?",
+    "Ji Boss, sun raha hu!"
+];
+
+const politeFallbacks = [
+    "Haan bhai, kaise ho?",
+    "Bolo brother, kya help chahiye?",
+    "Haan ji, bataiye kya masla hai?",
+    "Suno bhai, main yahin hu bolo."
+];
+
+const rudeFallbacks = [
+    "Abe saale bol bhi ab kya tamasha hai!",
+    "Bar bar tag kyu kar raha hai bsdk?",
+    "Kaam bol apna, faltu me tag mat kar!",
+    "Kya hai abe? Ek baar me bol jo bolna hai!"
+];
+
+function getRandomFallback(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
 
 // Slash Command Handler
 const commandsPath = path.join(__dirname, 'commands');
@@ -244,29 +271,27 @@ client.on('messageCreate', async message => {
 
     if (!isMentioned) return;
 
-    // 9. DYNAMIC AI RESPONSE ENGINE WITH CONTEXT MEMORY
+    // 9. DYNAMIC AI RESPONSE ENGINE
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-        // Check if user is polite
         const isPoliteUser = ["bhai", "sir", "bro", "dear", "pyaare", "pyaar", "respect", "ji", "please", "pls", "pyare"].some(w => lowerQuery.includes(w));
 
         const ownerPrompt = `You are HerryBot in HerryHacks Discord Server.
 The user is YOUR OWNER (Herry Sir).
-ALWAYS start your reply with "Herry Sir," or "Boss,". Be respectful and short. DO NOT write code backticks or thoughts. DO NOT repeat your previous questions.`;
+ALWAYS start your reply with "Herry Sir," or "Boss,". Answer his question directly. Never ask "What is your command" or repeat the same reply.`;
 
         const politePrompt = `You are HerryBot in HerryHacks Discord Server.
 The user is asking politely using respectful words (bhai/sir/bro).
-Be friendly, helpful, polite, and respectful in short Roman Urdu or English. DO NOT roast them. DO NOT write code backticks or thoughts. Never repeat the same response twice.`;
+Be friendly, helpful, polite, and respectful in short Roman Urdu or English. DO NOT roast them. Never repeat the exact same sentence twice.`;
 
         const rudePrompt = `You are HerryBot in HerryHacks Discord Server.
 The user is a regular server member.
-Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, saale, chutiye). DO NOT write code backticks, DO NOT write system thoughts. Vary your roasts every time, NEVER repeat the exact same sentence.`;
+Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, saale, chutiye). Vary your roasts every time!`;
 
         let activePrompt = isOwner ? ownerPrompt : (isPoliteUser ? politePrompt : rudePrompt);
 
-        // Retrieve Chat Context Memory (Last 4 Messages)
         const userMemoryKey = `${message.channel.id}_${message.author.id}`;
         let previousHistory = chatContextHistory.get(userMemoryKey) || [];
 
@@ -278,7 +303,7 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
 
         let replyText = null;
 
-        // 1. GROQ EXECUTION WITH RANDOMNESS
+        // 1. GROQ TRY
         const groqKey = (process.env.GROQ_API_KEY || '').trim();
         if (groqKey) {
             const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
@@ -290,17 +315,19 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
                             model: model,
                             messages: messagesPayload,
                             max_tokens: 120,
-                            temperature: 0.85,
-                            frequency_penalty: 0.6
+                            temperature: 0.9,
+                            frequency_penalty: 0.7
                         },
-                        { headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, timeout: 5000 }
+                        { headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, timeout: 6000 }
                     );
 
                     if (groqRes.data?.choices?.[0]?.message?.content) {
                         replyText = groqRes.data.choices[0].message.content.trim();
                         break;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error("Groq Model Fail:", e.message);
+                }
             }
         }
 
@@ -320,24 +347,26 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
                             model: model,
                             messages: messagesPayload,
                             max_tokens: 120,
-                            temperature: 0.85
+                            temperature: 0.9
                         },
-                        { headers: headers, timeout: 5000 }
+                        { headers: headers, timeout: 6000 }
                     );
 
                     if (orRes.data?.choices?.[0]?.message?.content) {
                         replyText = orRes.data.choices[0].message.content.trim();
                         break;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error("OpenRouter Fail:", e.message);
+                }
             }
         }
 
-        // HARD FALLBACK
+        // DYNAMIC HARD FALLBACK (NO REPETITION)
         if (!replyText) {
-            if (isOwner) replyText = "Herry Sir, aapka kya hukum hai?";
-            else if (isPoliteUser) replyText = "Haan bhai, bolo kya madaad chahiye?";
-            else replyText = "Abe saale kya bol raha hai saaf bol!";
+            if (isOwner) replyText = getRandomFallback(ownerFallbacks);
+            else if (isPoliteUser) replyText = getRandomFallback(politeFallbacks);
+            else replyText = getRandomFallback(rudeFallbacks);
         }
 
         // CLEANING INTERNAL THINKING LEAKS
@@ -354,7 +383,6 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
             cleanText = `Herry Sir, ${cleanText}`;
         }
 
-        // Save conversation history to prevent repetition in future replies
         previousHistory.push({ role: "user", content: cleanUserQuery });
         previousHistory.push({ role: "assistant", content: cleanText });
 
@@ -478,4 +506,3 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
