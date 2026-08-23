@@ -1,3 +1,4 @@
+
 // ==========================================
 // HERRYHACKS BOT - ADVANCED MODERATION & AI
 // ==========================================
@@ -20,7 +21,7 @@ const client = new Client({
 client.commands = new Collection();
 const commands = [];
 
-// Track message history: userId -> Array of { text, time }
+// Track message history
 const userMessageHistory = new Map();
 
 // Slash Command Handler
@@ -62,16 +63,16 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket System Integration
+// Ticket System & Command Interactions
 client.on('interactionCreate', async interaction => {
-    if (interaction.isButton()) {
-        if (interaction.customId === 'create_ticket') {
-            const guild = interaction.guild;
-            const rawCategoryId = process.env.TICKET_CATEGORY_ID;
-            const categoryId = (rawCategoryId && rawCategoryId.length > 10) ? rawCategoryId : null;
-            const staffRoleId = process.env.STAFF_ROLE_ID;
+    try {
+        if (interaction.isButton()) {
+            if (interaction.customId === 'create_ticket') {
+                const guild = interaction.guild;
+                const rawCategoryId = process.env.TICKET_CATEGORY_ID;
+                const categoryId = (rawCategoryId && rawCategoryId.length > 10) ? rawCategoryId : null;
+                const staffRoleId = process.env.STAFF_ROLE_ID;
 
-            try {
                 const permissionOverwrites = [
                     {
                         id: guild.id,
@@ -96,9 +97,7 @@ client.on('interactionCreate', async interaction => {
                     permissionOverwrites: permissionOverwrites,
                 };
 
-                if (categoryId) {
-                    channelOptions.parent = categoryId;
-                }
+                if (categoryId) channelOptions.parent = categoryId;
 
                 const channel = await guild.channels.create(channelOptions);
 
@@ -116,51 +115,46 @@ client.on('interactionCreate', async interaction => {
 
                 await channel.send({ content: `${interaction.user}`, embeds: [embed], components: [row] });
                 await interaction.reply({ content: `✅ Ticket created: ${channel}`, ephemeral: true });
-            } catch (error) {
-                console.error("Ticket Creation Error:", error);
-                await interaction.reply({ content: `❌ Error creating ticket! (${error.message})`, ephemeral: true });
             }
+
+            if (interaction.customId === 'close_ticket') {
+                await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...' });
+                setTimeout(() => {
+                    if (interaction.channel) interaction.channel.delete().catch(() => {});
+                }, 5000);
+            }
+            return;
         }
 
-        if (interaction.customId === 'close_ticket') {
-            await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...' });
-            setTimeout(() => {
-                interaction.channel.delete().catch(() => {});
-            }, 5000);
-        }
-        return;
-    }
+        if (!interaction.isChatInputCommand()) return;
 
-    if (!interaction.isChatInputCommand()) return;
+        const command = client.commands.get(interaction.commandName);
+        if (!command) return;
 
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
-
-    try {
         await command.execute(interaction);
     } catch (error) {
         console.error("Interaction Error:", error);
         if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: '❌ Error executing command!', ephemeral: true });
+            await interaction.followUp({ content: '❌ Error executing command!', ephemeral: true }).catch(() => {});
         } else {
-            await interaction.reply({ content: '❌ Error executing command!', ephemeral: true });
+            await interaction.reply({ content: '❌ Error executing command!', ephemeral: true }).catch(() => {});
         }
     }
 });
 
 // AI Response & Moderation Handler
 client.on('messageCreate', async message => {
-    if (message.author.bot) return;
+    if (message.author.bot || !message.guild) return;
 
     const lowerQuery = message.content.toLowerCase().trim();
     const isMentioned = message.mentions.has(client.user);
     const ownerId = process.env.OWNER_ID;
-    const isOwner = ownerId ? (message.author.id === ownerId) : false;
+    const isOwner = ownerId ? (message.author.id === ownerId.trim()) : false;
 
     const scriptLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
     const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
 
-    // 1. ABUSE TOWARDS HERRY -> DIRECT INSTANT BAN
+    // 1. ABUSE TOWARDS HERRY -> INSTANT BAN
     const severeAbuses = ["maa", "behen", "maderchod", "bhenchod", "madarchod", "bsdk", "bhosdike", "mc", "bc"];
     const mentionsHerry = ["herry", "owner", "boss", "admin"].some(w => lowerQuery.includes(w));
     const containsSevereAbuse = severeAbuses.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
@@ -177,11 +171,9 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // 2. FAKE HERRY IMPERSONATION CHECK
+    // 2. FAKE OWNER CLAIMS
     const fakeOwnerClaims = ["i am herry", "iam herry", "im herry", "i am owner", "main owner hu", "me owner hu", "iam owner", "im owner", "i am the owner", "main hu owner"];
-    const claimsToBeOwner = fakeOwnerClaims.some(phrase => lowerQuery.includes(phrase));
-
-    if (claimsToBeOwner && !isOwner) {
+    if (fakeOwnerClaims.some(phrase => lowerQuery.includes(phrase)) && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 await message.member.timeout(60 * 60 * 1000, "Fake Owner Claim");
@@ -192,11 +184,8 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // 3. COMPETITOR HACKS (Adil, Yuvraj, Rudra) -> ROAST & WARNING
-    const competitors = ["adil", "yuvraj", "rudra"];
-    const mentionsCompetitor = competitors.some(c => lowerQuery.includes(c));
-
-    if (mentionsCompetitor) {
+    // 3. COMPETITOR HACKS
+    if (["adil", "yuvraj", "rudra"].some(c => lowerQuery.includes(c))) {
         return message.reply("Abe saale un 3rd class scammer logon ka naam mat le yahan! Un ke faltu aur nakli hacks use karke apna account ban karwana hai kya? Last warning hai, dubara un scammers ka naam mat lena!");
     }
 
@@ -208,11 +197,8 @@ client.on('messageCreate', async message => {
         return message.reply("GC hack is Unavailable.");
     }
 
-    // 5. BACHA / KID CALLING -> 3 DAYS TIMEOUT
-    const bachaKeywords = ["bacha", "bachha", "kid", "pappu"];
-    const callsBacha = bachaKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lowerQuery));
-
-    if (callsBacha && (isMentioned || lowerQuery.includes("bot")) && !isOwner) {
+    // 5. BACHA / KID CALLING
+    if (["bacha", "bachha", "kid", "pappu"].some(w => new RegExp(`\\b${w}\\b`, 'i').test(lowerQuery)) && (isMentioned || lowerQuery.includes("bot")) && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Calling someone/bot bacha or kid");
@@ -224,25 +210,18 @@ client.on('messageCreate', async message => {
     }
 
     // 6. OWNER QUERY CHECK
-    const isOwnerQuery = ["who is owner", "owner kon he", "owner kaun hai", "owner kon hai", "who is the owner"].some(w => lowerQuery.includes(w));
-    if (isOwnerQuery) {
+    if (["who is owner", "owner kon he", "owner kaun hai", "owner kon hai", "who is the owner"].some(w => lowerQuery.includes(w))) {
         return message.reply("👑 **Herry Sir** is the official owner of HerryHacks!");
     }
 
-    // 7. SPECIFIC SCRIPT & SETUP REQUESTS (Must explicitly contain the word "link")
-    const hasLinkKeyword = lowerQuery.includes("link");
-    const isTargetedScript = ["reversoqzz", "lulubox", "devvir", "herryposya", "posya"].some(w => lowerQuery.includes(w));
-
-    if (hasLinkKeyword && isTargetedScript) {
+    // 7. SCRIPT & SETUP REQUESTS
+    if (lowerQuery.includes("link") && ["reversoqzz", "lulubox", "devvir", "herryposya", "posya"].some(w => lowerQuery.includes(w))) {
         return message.reply(`🔗 **Official Script Link:**\n${scriptLink}`);
     }
-
     if (lowerQuery.includes("where is posya") || lowerQuery.includes("where is herryposya")) {
         return message.reply(`🔗 **HerryPosya Script Link:**\n${scriptLink}`);
     }
-
-    const isSetupRequest = ["setup guide", "guide link", "kaise kare link", "install link"].some(w => lowerQuery.includes(w));
-    if (isSetupRequest) {
+    if (["setup guide", "guide link", "kaise kare link", "install link"].some(w => lowerQuery.includes(w))) {
         return message.reply(`📖 **Setup Guide Link:**\n${setupLink}`);
     }
 
@@ -250,24 +229,19 @@ client.on('messageCreate', async message => {
     const now = Date.now();
     const userHistory = userMessageHistory.get(message.author.id) || [];
     userHistory.push({ text: lowerQuery, time: now });
-
     const recentHistory = userHistory.filter(m => now - m.time < 10000);
     userMessageHistory.set(message.author.id, recentHistory);
 
-    const sameMsgCount = recentHistory.filter(m => m.text === lowerQuery).length;
-
-    if (sameMsgCount >= 3 && !isOwner) {
+    if (recentHistory.filter(m => m.text === lowerQuery).length >= 3 && !isOwner) {
         try {
             if (message.member && message.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                 if (containsSevereAbuse) {
                     await message.delete().catch(() => {});
                     await message.member.timeout(3 * 24 * 60 * 60 * 1000, "Abusive Repeat Spam");
-                    await message.channel.send(`🚨 ${message.author} ne same gaali wale msg 3 baar repeat kiye. **3 Days Timeout** lag gaya.`);
-                    return;
+                    return message.channel.send(`🚨 ${message.author} ne same gaali wale msg 3 baar repeat kiye. **3 Days Timeout** lag gaya.`);
                 } else {
                     await message.member.timeout(1 * 24 * 60 * 60 * 1000, "Normal Message Repeat Spam");
-                    await message.channel.send(`⚠️ ${message.author} ne same msg 3 baar repeat kiya. **1 Day Timeout** lag gaya.`);
-                    return;
+                    return message.channel.send(`⚠️ ${message.author} ne same msg 3 baar repeat kiya. **1 Day Timeout** lag gaya.`);
                 }
             }
         } catch (e) {
@@ -277,38 +251,39 @@ client.on('messageCreate', async message => {
 
     if (!isMentioned) return;
 
-    // 9. AI RESPONSE WITH STRICT FILTERING & RESPECT LOGIC
+    // 9. AI RESPONSE ENGINE (GROQ & OPENROUTER WITH FREE MODELS)
     try {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-        const ownerPrompt = `SYSTEM INSTRUCTION: You are HerryBot in HerryHacks Discord Server.
-The user talking to you right now IS THE REAL OWNER AND BOSS (Herry Sir).
-RULES FOR RESPONDING TO OWNER:
-1. ALWAYS start your reply with "Herry Sir," or "Boss,".
-2. Be 100% respectful, polite, and obedient.
-3. NEVER roast, insult, or use bad language with the owner.
-4. Reply in Roman Urdu or English based on user's query.
-5. NEVER reveal thinking process, reasoning, or tags.
-6. DO NOT write code block backticks (\`\`\`).`;
+        const ownerPrompt = `You are HerryBot in HerryHacks Discord Server.
+The user talking to you IS YOUR REAL OWNER AND BOSS (Herry Sir).
+RULES FOR OWNER:
+1. ALWAYS start your response with "Herry Sir," or "Boss,".
+2. Show maximum respect, politeness, and obedience. Never roast or use slang.
+3. Respond in short Roman Urdu or English.
+4. NEVER write code block backticks (\`\`\`) or include thinking tags.`;
 
-        const memberPrompt = `SYSTEM INSTRUCTION: You are HerryBot in HerryHacks Discord Server.
-The user talking to you is a regular server member (NOT OWNER).
-RULES FOR RESPONDING TO REGULAR MEMBERS:
+        const memberPrompt = `You are HerryBot in HerryHacks Discord Server.
+The user talking to you is a normal member (NOT OWNER).
+RULES FOR REGULAR MEMBERS:
 1. Speak with extreme attitude, heavy Desi/Roman Urdu roasts, and slangs (bsdk, bhenchod, chutiye, saale).
-2. Reply in Roman Urdu or English matching the user language.
-3. NEVER reveal thinking process, reasoning, or tags.
-4. DO NOT write code block backticks (\`\`\`).`;
+2. Respond in short Roman Urdu or English.
+3. NEVER write code block backticks (\`\`\`) or include thinking tags.`;
 
-        const activeSystemPrompt = isOwner ? ownerPrompt : memberPrompt;
-
+        const activePrompt = isOwner ? ownerPrompt : memberPrompt;
         let replyText = null;
 
-        // GROQ API FIRST
+        // 1. GROQ MODELS TRY
         const groqKey = (process.env.GROQ_API_KEY || '').trim();
         if (groqKey) {
-            const groqModels = ["llama-3.1-70b-versatile", "llama-3.1-8b-instant"];
-            
+            const groqModels = [
+                "deepseek-r1-distill-llama-70b",
+                "llama-3.3-70b-versatile",
+                "llama4-scout",
+                "qwen3-32b-instruct"
+            ];
+
             for (const model of groqModels) {
                 try {
                     const groqRes = await axios.post(
@@ -316,7 +291,7 @@ RULES FOR RESPONDING TO REGULAR MEMBERS:
                         {
                             model: model,
                             messages: [
-                                { role: "system", content: activeSystemPrompt },
+                                { role: "system", content: activePrompt },
                                 { role: "user", content: cleanUserQuery || "Hello" }
                             ],
                             max_tokens: 150
@@ -332,15 +307,22 @@ RULES FOR RESPONDING TO REGULAR MEMBERS:
                         break;
                     }
                 } catch (e) {
-                    console.log(`Groq Error: ${e.message}`);
+                    console.log(`Groq Model Failed (${model}): ${e.response ? e.response.status : e.message}`);
                 }
             }
         }
 
-        // OPENROUTER FALLBACK
+        // 2. OPENROUTER FREE MODELS FALLBACK
         if (!replyText) {
             const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
-            const openRouterModels = ["openrouter/free", "meta-llama/llama-3.3-70b-instruct:free"];
+            const openRouterModels = [
+                "deepseek/deepseek-r1:free",
+                "x-ai/grok-mini:free",
+                "qwen/qwen3-coder:free",
+                "meta-llama/llama-4-maverick:free",
+                "thinkingmachines/inkling:free",
+                "openrouter/free"
+            ];
 
             for (const model of openRouterModels) {
                 try {
@@ -348,16 +330,16 @@ RULES FOR RESPONDING TO REGULAR MEMBERS:
                     if (openRouterKey) headers["Authorization"] = `Bearer ${openRouterKey}`;
 
                     const orRes = await axios.post(
-                        "https://openrouter.ai/ai/v1/chat/completions",
+                        "https://openrouter.ai/api/v1/chat/completions",
                         {
                             model: model,
                             messages: [
-                                { role: "system", content: activeSystemPrompt },
+                                { role: "system", content: activePrompt },
                                 { role: "user", content: cleanUserQuery || "Hello" }
                             ],
                             max_tokens: 150
                         },
-                        { headers: headers, timeout: 7000 }
+                        { headers: headers, timeout: 6000 }
                     );
 
                     if (orRes.data?.choices?.[0]?.message?.content) {
@@ -365,32 +347,31 @@ RULES FOR RESPONDING TO REGULAR MEMBERS:
                         break;
                     }
                 } catch (e) {
-                    console.log(`OpenRouter Error: ${e.message}`);
+                    console.log(`OpenRouter Model Failed (${model}): ${e.response ? e.response.status : e.message}`);
                 }
             }
         }
 
-        if (replyText) {
-            // COMPLETE FILTERING FOR REASONING AND THINK TAGS
-            let cleanText = replyText
-                .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remove <think>...</think>
-                .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
-                .replace(/`{1,3}[a-z]*\n?/gi, '') // Remove code blocks
-                .replace(/`/g, '')
-                .trim();
-
-            if (isOwner && !cleanText.toLowerCase().startsWith("herry sir") && !cleanText.toLowerCase().startsWith("boss")) {
-                cleanText = `Herry Sir, ${cleanText}`;
-            }
-
-            if (cleanText.length > 0) {
-                await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
-            } else {
-                await message.reply(isOwner ? "Herry Sir, kya hukum hai aapka?" : "Abe saale kya bol raha hai saaf bol!");
-            }
-        } else {
-            await message.reply(isOwner ? "Herry Sir, AI thoda busy lag raha hai, ek baar dubara try kariye." : "Abe AI thoda busy hai, 5 sec baad dubara try kar!");
+        // HARD FALLBACK
+        if (!replyText) {
+            replyText = isOwner 
+                ? "Herry Sir, aapka kya hukum hai?" 
+                : "Abe saale kya bol raha hai saaf bol!";
         }
+
+        // REMOVE <think> AND <thought> TAGS COMPLETELY
+        let cleanText = replyText
+            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
+            .replace(/`{1,3}[a-z]*\n?/gi, '')
+            .replace(/`/g, '')
+            .trim();
+
+        if (isOwner && !cleanText.toLowerCase().startsWith("herry sir") && !cleanText.toLowerCase().startsWith("boss")) {
+            cleanText = `Herry Sir, ${cleanText}`;
+        }
+
+        await message.reply(cleanText.length > 1900 ? cleanText.substring(0, 1900) + '...' : cleanText);
 
     } catch (error) {
         console.error("Main AI Handler Error:", error.message);
@@ -399,7 +380,7 @@ RULES FOR RESPONDING TO REGULAR MEMBERS:
 
 // Moderation Commands (.kick, .ban, .unban)
 client.on('messageCreate', async message => {
-    if (message.author.bot) return;
+    if (message.author.bot || !message.guild) return;
     const content = message.content.trim();
 
     if (content.startsWith('.')) {
@@ -407,46 +388,29 @@ client.on('messageCreate', async message => {
         const command = args.shift().toLowerCase();
 
         if (command === 'kick') {
-            if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ No permission to kick members.');
+            if (!message.member.permissions.has(PermissionFlagsBits.KickMembers)) return message.reply('❌ No permission.');
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Please mention a member to kick.');
-            const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { 
-                await target.kick(reason); 
-                message.channel.send(`👢 Kicked **${target.user.tag}**. Reason: ${reason}`); 
-            } catch (e) { 
-                message.channel.send('❌ Failed to kick user.'); 
-            }
+            if (!target) return message.reply('❌ Mention a member.');
+            const reason = args.slice(1).join(' ') || 'No reason';
+            try { await target.kick(reason); message.channel.send(`👢 Kicked **${target.user.tag}**.`); } catch (e) { message.channel.send('❌ Error kicking user.'); }
         }
 
         if (command === 'ban') {
-            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission to ban members.');
+            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Please mention a member to ban.');
-            const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { 
-                await target.ban({ reason }); 
-                message.channel.send(`🔨 Banned **${target.user.tag}**. Reason: ${reason}`); 
-            } catch (e) { 
-                message.channel.send('❌ Failed to ban user.'); 
-            }
+            if (!target) return message.reply('❌ Mention a member.');
+            const reason = args.slice(1).join(' ') || 'No reason';
+            try { await target.ban({ reason }); message.channel.send(`🔨 Banned **${target.user.tag}**.`); } catch (e) { message.channel.send('❌ Error banning user.'); }
         }
 
         if (command === 'unban') {
-            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission to unban members.');
+            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) return message.reply('❌ No permission.');
             const userId = args[0];
-            if (!userId) return message.reply('❌ Please provide a valid User ID.');
-            const reason = args.slice(1).join(' ') || 'No reason provided';
-            try { 
-                await message.guild.members.unban(userId, reason); 
-                message.channel.send(`✅ Unbanned ID: \`${userId}\`. Reason: ${reason}`); 
-            } catch (e) { 
-                message.channel.send('❌ Failed to unban user.'); 
-            }
+            if (!userId) return message.reply('❌ Provide User ID.');
+            try { await message.guild.members.unban(userId); message.channel.send(`✅ Unbanned ID: \`${userId}\``); } catch (e) { message.channel.send('❌ Error unbanning user.'); }
         }
     }
 
-    // Utility Commands (!timeout, !rto, !clear, !say, !pfp)
     if (content.startsWith('!')) {
         const args = content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -456,55 +420,31 @@ client.on('messageCreate', async message => {
             const target = message.mentions.members.first();
             const minutes = parseInt(args[1]);
             if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user <minutes>`');
-            const reason = args.slice(2).join(' ') || 'No reason provided';
-            try { 
-                await target.timeout(minutes * 60 * 1000, reason); 
-                message.channel.send(`🔇 Timed out **${target.user.tag}** for **${minutes}** minutes.`); 
-            } catch (e) { 
-                message.channel.send('❌ Failed to apply timeout.'); 
-            }
+            try { await target.timeout(minutes * 60 * 1000); message.channel.send(`🔇 Timed out **${target.user.tag}** for ${minutes}m.`); } catch (e) { message.channel.send('❌ Timeout failed.'); }
         }
 
         if (command === 'rto') {
             if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return message.reply('❌ No permission.');
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Mention a user to remove timeout.');
-            try { 
-                await target.timeout(null); 
-                message.channel.send(`🔊 Removed timeout for **${target.user.tag}**.`); 
-            } catch (e) { 
-                message.channel.send('❌ Failed to remove timeout.'); 
-            }
+            if (!target) return message.reply('❌ Mention user.');
+            try { await target.timeout(null); message.channel.send(`🔊 Removed timeout for **${target.user.tag}**.`); } catch (e) { message.channel.send('❌ Error.'); }
         }
 
         if (command === 'clear') {
             if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
             const amount = parseInt(args[0]);
-            if (!amount || amount < 1 || amount > 100) return message.reply('❌ Enter a number between 1 and 100.');
+            if (!amount || amount < 1 || amount > 100) return message.reply('❌ Enter number 1-100.');
             try { 
-                message.delete(); 
+                await message.delete().catch(() => {});
                 const deleted = await message.channel.bulkDelete(amount, true); 
                 const r = await message.channel.send(`🧹 Cleared **${deleted.size}** messages.`); 
-                setTimeout(() => r.delete(), 4000); 
-            } catch (e) { 
-                message.channel.send('❌ Failed to clear messages.'); 
-            }
-        }
-
-        if (command === 'say') {
-            if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) return message.reply('❌ No permission.');
-            const sayMessage = args.join(' ');
-            if (!sayMessage) return message.reply('❌ Provide a message to say.');
-            message.delete(); 
-            message.channel.send(sayMessage);
+                setTimeout(() => r.delete().catch(() => {}), 4000); 
+            } catch (e) { message.channel.send('❌ Error clearing.'); }
         }
 
         if (command === 'avatar' || command === 'pfp') {
             const target = message.mentions.users.first() || message.author;
-            const embed = new EmbedBuilder()
-                .setColor('#00ffcc')
-                .setTitle(`${target.username}'s Avatar`)
-                .setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
+            const embed = new EmbedBuilder().setColor('#00ffcc').setTitle(`${target.username}'s Avatar`).setImage(target.displayAvatarURL({ size: 1024, dynamic: true }));
             message.channel.send({ embeds: [embed] });
         }
 
@@ -513,7 +453,7 @@ client.on('messageCreate', async message => {
     }
 });
 
-// Member Join Events
+// Member Join/Leave Events
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
@@ -524,41 +464,25 @@ client.on('guildMemberAdd', async (member) => {
             .setTitle('🚨 Welcome To HerryHacks Server 🚨')
             .setDescription(`Welcome ${member}!\n\nMention the bot for Grand Mobile RP scripts and tools information.`)
             .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}`, inline: true })
-            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: 'HerryHacks Community System' });
-
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }));
         channel.send({ content: `👋 **WELCOME:** ${member}`, embeds: [embed] });
     }
 });
 
 client.on('guildMemberRemove', async (member) => {
-    let channelId = process.env.LEAVE_CHANNEL_ID;
-    const configPath = path.join(__dirname, 'config.json');
-    if (!channelId && fs.existsSync(configPath)) {
-        try {
-            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            channelId = config.leaveChannelId;
-        } catch (e) { 
-            console.error(e); 
-        }
-    }
-
+    const channelId = process.env.LEAVE_CHANNEL_ID;
     if (!channelId) return;
     const channel = member.guild.channels.cache.get(channelId);
-    if (!channel) return;
-
-    const embed = new EmbedBuilder()
-        .setColor('#ff4d4d')
-        .setTitle('🚪 Member Left')
-        .setDescription(`**${member.user.tag}** has left the server 👋`)
-        .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}`, inline: true })
-        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-        .setFooter({ text: 'HerryHacks Community System' });
-
-    channel.send({ embeds: [embed] });
+    if (channel) {
+        const embed = new EmbedBuilder()
+            .setColor('#ff4d4d')
+            .setTitle('🚪 Member Left')
+            .setDescription(`**${member.user.tag}** has left the server 👋`)
+            .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}`, inline: true });
+        channel.send({ embeds: [embed] });
+    }
 });
 
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
