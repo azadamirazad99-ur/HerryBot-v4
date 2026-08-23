@@ -1,6 +1,5 @@
-
 // ==========================================
-// HERRYHACKS BOT - ADVANCED MODERATION & AI
+// HERRYHACKS BOT - FULL FEATURED CODE
 // ==========================================
 
 const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -25,12 +24,25 @@ const commands = [];
 const userMessageHistory = new Map();
 const chatContextHistory = new Map();
 
-// Dynamic Fallback Replies (Agai API Fail Ho Toh)
+// Dynamic Fallback Replies
 const ownerFallbacks = [
     "Herry Sir, boliye kya karna hai?",
     "Boss, main online hu, command bataiye!",
     "Herry Sir, aaj kya plan hai server ka?",
     "Ji Boss, sun raha hu!"
+];
+
+const vipRespectFallbacks = [
+    "Aapka welcome hai sir, bataiye kya madad karun?",
+    "Ji respected member, main aapki service me hu.",
+    "Bataiye sir, aapke liye kya script ya details chahiye?"
+];
+
+const bakchodiFallbacks = [
+    "Abe saale mere se hi bakchodi kar raha hai?",
+    "Tu kitna bhi VIP ban ja, bakchodi karega to dho daalunga!",
+    "Chal chal ziada hero mat ban, sidha bol kya scene hai!",
+    "Abe tu VIP role leke bakchodi kar raha hai? Baap ko mat sikhaye!"
 ];
 
 const politeFallbacks = [
@@ -90,7 +102,7 @@ client.once('ready', async () => {
     }
 });
 
-// Ticket System & Command Interactions
+// Ticket System & Interaction Handler
 client.on('interactionCreate', async interaction => {
     try {
         if (interaction.isButton()) {
@@ -169,7 +181,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// AI Response & Moderation Handler
+// Main AI & Auto-Moderation Engine
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
@@ -177,6 +189,14 @@ client.on('messageCreate', async message => {
     const isMentioned = message.mentions.has(client.user);
     const ownerId = process.env.OWNER_ID;
     const isOwner = ownerId ? (message.author.id === ownerId.trim()) : false;
+
+    // Special VIP Roles Check
+    const vipRoleIds = ['1529467733161283654', '1529467634956112083', '1529468137475543091'];
+    const hasVipRole = message.member ? message.member.roles.cache.some(role => vipRoleIds.includes(role.id)) : false;
+
+    // Bakchodi Detection Logic
+    const bakchodiWords = ["bsdk", "saale", "chutiye", "bakchodi", "chut", "gaand", "gand", "scam", "scammer", "lodu", "gandu", "behen", "maa", "pagal", "chutiya", "lawde", "lode"];
+    const isDoingBakchodi = bakchodiWords.some(w => new RegExp(`\\b${w}\\b`, 'i').test(lowerQuery));
 
     const scriptLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339';
     const setupLink = 'https://discord.com/channels/1529467083962843186/1529477486235226172';
@@ -276,21 +296,23 @@ client.on('messageCreate', async message => {
         await message.channel.sendTyping();
         const cleanUserQuery = message.content.replace(/<@!?\d+>/g, '').trim();
 
-        const isPoliteUser = ["bhai", "sir", "bro", "dear", "pyaare", "pyaar", "respect", "ji", "please", "pls", "pyare"].some(w => lowerQuery.includes(w));
+        const isPoliteUser = ["bhai", "sir", "bro", "dear", "pyaare", "pyaar", "respect", "ji", "please", "pls"].some(w => lowerQuery.includes(w));
 
-        const ownerPrompt = `You are HerryBot in HerryHacks Discord Server.
-The user is YOUR OWNER (Herry Sir).
-ALWAYS start your reply with "Herry Sir," or "Boss,". Answer his question directly. Never ask "What is your command" or repeat the same reply.`;
+        let activePrompt = "";
 
-        const politePrompt = `You are HerryBot in HerryHacks Discord Server.
-The user is asking politely using respectful words (bhai/sir/bro).
-Be friendly, helpful, polite, and respectful in short Roman Urdu or English. DO NOT roast them. Never repeat the exact same sentence twice.`;
-
-        const rudePrompt = `You are HerryBot in HerryHacks Discord Server.
-The user is a regular server member.
-Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, saale, chutiye). Vary your roasts every time!`;
-
-        let activePrompt = isOwner ? ownerPrompt : (isPoliteUser ? politePrompt : rudePrompt);
+        if (isOwner) {
+            activePrompt = `You are HerryBot in HerryHacks Server. The user is YOUR OWNER (Herry Sir). ALWAYS respond with highest respect starting with "Herry Sir," or "Boss,". Answer directly.`;
+        } else if (hasVipRole) {
+            if (isDoingBakchodi) {
+                activePrompt = `You are HerryBot in HerryHacks Server. The user holds a VIP Role but IS DOING BAKCHODI / TAUNTING YOU. Forget respect, roast them back with high attitude, funny roasts, and mild slangs (bsdk, saale) in Desi Roman Urdu!`;
+            } else {
+                activePrompt = `You are HerryBot in HerryHacks Server. The user holds a SPECIAL VIP ROLE. Treat them with immense respect, politeness, and dignity in Roman Urdu or English.`;
+            }
+        } else if (isPoliteUser) {
+            activePrompt = `You are HerryBot. User is asking politely. Be friendly and respectful in short Roman Urdu or English.`;
+        } else {
+            activePrompt = `You are HerryBot. User is a regular member. Speak with high attitude, short Desi Roman Urdu roasts, and mild slangs (bsdk, saale, chutiye)!`;
+        }
 
         const userMemoryKey = `${message.channel.id}_${message.author.id}`;
         let previousHistory = chatContextHistory.get(userMemoryKey) || [];
@@ -362,19 +384,18 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
             }
         }
 
-        // DYNAMIC HARD FALLBACK (NO REPETITION)
+        // DYNAMIC HARD FALLBACK
         if (!replyText) {
             if (isOwner) replyText = getRandomFallback(ownerFallbacks);
+            else if (hasVipRole && !isDoingBakchodi) replyText = getRandomFallback(vipRespectFallbacks);
+            else if (hasVipRole && isDoingBakchodi) replyText = getRandomFallback(bakchodiFallbacks);
             else if (isPoliteUser) replyText = getRandomFallback(politeFallbacks);
             else replyText = getRandomFallback(rudeFallbacks);
         }
 
-        // CLEANING INTERNAL THINKING LEAKS
         let cleanText = replyText
             .replace(/<think>[\s\S]*?<\/think>/gi, '')
             .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
-            .replace(/We need to respond[\s\S]*/gi, '')
-            .replace(/The user just typed[\s\S]*/gi, '')
             .replace(/`{1,3}[a-z]*\n?/gi, '')
             .replace(/`/g, '')
             .trim();
@@ -398,7 +419,7 @@ Speak with high attitude, short Desi/Roman Urdu roasts, and mild slangs (bsdk, s
     }
 });
 
-// Moderation Commands (.kick, .ban, .unban)
+// Moderation Prefix Commands (.kick, .ban, .unban, !timeout, !rto, !clear, !avatar)
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
     const content = message.content.trim();
@@ -506,3 +527,4 @@ client.on('guildMemberRemove', async (member) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
