@@ -1,69 +1,76 @@
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
-const path = './userKeys.json';
+const path = require('path');
+const crypto = require('crypto');
 
-// Check if database file exists, if not create it
-if (!fs.existsSync(path)) {
-    fs.writeFileSync(path, '{}');
+const DB_FILE = path.join(__dirname, '../keys_database.json');
+
+// Database loading function
+function loadDatabase() {
+    if (!fs.existsSync(DB_FILE)) {
+        fs.writeFileSync(DB_FILE, JSON.stringify({}));
+    }
+    try {
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    } catch (e) {
+        return {};
+    }
+}
+
+// Database saving function
+function saveDatabase(data) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getkey')
-        .setDescription('Get your 3-day HerryHacks VIP Key'),
+        .setDescription('Get your 3-day access key for GameGuardian script'),
 
     async execute(interaction) {
+        await interaction.deferReply({ ephemeral: true });
+
         const userId = interaction.user.id;
-        const currentTime = Date.now();
-        const THREE_DAYS = 3 * 24 * 60 * 60 * 1000; // 3 Days in MS
+        const db = loadDatabase();
+        const now = Date.now();
+        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 
-        let data = {};
-        try {
-            data = JSON.parse(fs.readFileSync(path, 'utf8'));
-        } catch (err) {
-            data = {};
+        let userRecord = db[userId];
+        let userKey = '';
+        let expiresAt = 0;
+
+        // Agar user ki key pehle se hai aur 3 din expire nahi hue
+        if (userRecord && now < userRecord.expiresAt) {
+            userKey = userRecord.key;
+            expiresAt = userRecord.expiresAt;
+        } else {
+            // New Key for 3 Days
+            userKey = "HERRY-" + crypto.randomBytes(4).toString('hex').toUpperCase();
+            expiresAt = now + THREE_DAYS_MS;
+
+            db[userId] = {
+                key: userKey,
+                expiresAt: expiresAt,
+                hwid: null,
+                createdAt: now
+            };
+            saveDatabase(db);
         }
 
-        // Check if user already has an active key
-        if (data[userId]) {
-            const user = data[userId];
-            const timePassed = currentTime - user.assignedAt;
+        const remainingHours = Math.round((expiresAt - now) / (1000 * 60 * 60));
 
-            // Agar 3 din (72 ghante) abhi poore NAHI hue
-            if (timePassed < THREE_DAYS) {
-                const timeLeft = THREE_DAYS - timePassed;
-                const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-                const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-
-                const existEmbed = new EmbedBuilder()
-                    .setTitle('🔑 Your Existing HerryHacks Key')
-                    .setColor('#FF9900')
-                    .setDescription(`Aapki key pehle se generated hai aur locked hai.\n\n**Key:** \`${user.key}\`\n\n⏰ **Nayi key test/generate karne me baaki time:** \`${hoursLeft} hours ${minutesLeft} mins\``)
-                    .setFooter({ text: 'Same key will remain active for 3 days.' });
-
-                return interaction.reply({ embeds: [existEmbed], ephemeral: true });
-            }
-        }
-
-        // 3 din poore ho gaye ya Naya user hai -> Generate New Key
-        const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const newKey = `HerryHacks-${randomString}`;
-
-        data[userId] = {
-            key: newKey,
-            assignedAt: currentTime
-        };
-
-        // Save back to JSON file
-        fs.writeFileSync(path, JSON.stringify(data, null, 2));
-
-        const newEmbed = new EmbedBuilder()
-            .setTitle('✅ New HerryHacks Key Generated')
+        const embed = new EmbedBuilder()
             .setColor('#00FF00')
-            .setDescription(`Aapki 3-Day Key successful generate ho gayi hai!\n\n**Key:** \`${newKey}\`\n\n⚠️ Ye key 3 din tak aapke Discord account par lock rahegi.`)
-            .setFooter({ text: 'HerryHacks Official System' });
+            .setTitle('🔑 Your Script Key')
+            .setDescription(`Here is your 3-day script access key. Use it in GameGuardian.`)
+            .addFields(
+                { name: 'Your Key', value: `\`\`\`${userKey}\`\`\`` },
+                { name: 'Valid For', value: `${remainingHours} Hours remaining`, inline: true },
+                { name: 'Device Bound', value: userRecord && userRecord.hwid ? '🔒 Locked to your device' : '🔓 Unlocked (Will lock on first use in GG)', inline: true }
+            )
+            .setFooter({ text: 'Note: Key cannot be shared with others!' });
 
-        return interaction.reply({ embeds: [newEmbed], ephemeral: true });
+        await interaction.editReply({ embeds: [embed] });
     }
 };
-
