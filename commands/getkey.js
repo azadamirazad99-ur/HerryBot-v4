@@ -1,12 +1,16 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-const DB_FILE = path.join(__dirname, '../keys_database.json');
-const KEYS_TXT_FILE = path.join(__dirname, '../keys.txt');
+// GitHub Credentials
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || 'YOUR_GITHUB_TOKEN_HERE';
+const REPO_OWNER = 'urdushahzaib111-ctrl';
+const REPO_NAME = 'HerryBot-v4';
+const FILE_PATH = 'keys.txt';
 
-// Load JSON database
+const DB_FILE = path.join(__dirname, '../keys_database.json');
+
 function loadDatabase() {
     if (!fs.existsSync(DB_FILE)) return {};
     try {
@@ -16,23 +20,54 @@ function loadDatabase() {
     }
 }
 
-// Save JSON database & update keys.txt for GameGuardian Loader
-function saveDatabase(data) {
+async function updateGitHubKeysFile(activeKeysString) {
+    try {
+        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+        
+        // 1. Get current file SHA
+        let sha = '';
+        try {
+            const getRes = await axios.get(url, {
+                headers: { Authorization: `token ${GITHUB_TOKEN}` }
+            });
+            sha = getRes.data.sha;
+        } catch (e) {
+            // File might be empty or new
+        }
+
+        // 2. Update file on GitHub
+        await axios.put(url, {
+            message: 'Auto-update keys.txt via Discord Bot',
+            content: Buffer.from(activeKeysString).toString('base64'),
+            sha: sha || undefined
+        }, {
+            headers: { 
+                Authorization: `token ${GITHUB_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('✅ Successfully updated keys.txt on GitHub via Axios!');
+    } catch (error) {
+        console.error('❌ Error updating GitHub keys.txt:', error.response?.data || error.message);
+    }
+}
+
+async function saveDatabase(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 
-    // Non-expired active keys extract karke keys.txt me line by line save karna
     const activeKeys = Object.values(data)
         .filter(item => Date.now() < item.expiresAt)
         .map(item => item.key)
         .join('\n');
 
-    fs.writeFileSync(KEYS_TXT_FILE, activeKeys);
+    await updateGitHubKeysFile(activeKeys);
 }
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getkey')
-        .setDescription('Get 3-Day Short Access Key for Posya Script'),
+        .setDescription('Get 3-Day Key for Posya & Herry Script'),
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
@@ -46,12 +81,10 @@ module.exports = {
         let userKey = '';
         let expiresAt = 0;
 
-        // Check if existing key is still valid
         if (userRecord && now < userRecord.expiresAt) {
             userKey = userRecord.key;
             expiresAt = userRecord.expiresAt;
         } else {
-            // Generate Key: Herry + 3 Digits (1 to 1000 e.g. Herry816, Herry042)
             const randomNum = Math.floor(Math.random() * 1000) + 1;
             const formattedNum = String(randomNum).padStart(3, '0');
             userKey = "Herry" + formattedNum;
@@ -62,21 +95,22 @@ module.exports = {
                 expiresAt: expiresAt,
                 createdAt: now
             };
-            saveDatabase(db);
+            await saveDatabase(db);
         }
 
         const remainingHours = Math.round((expiresAt - now) / (1000 * 60 * 60));
 
         const embed = new EmbedBuilder()
             .setColor('#00FF00')
-            .setTitle('🔑 Posya By Herry - Script Access Key')
+            .setTitle('🔑 HerryHacks - Script Key')
             .addFields(
                 { name: 'Your Script Key', value: `\`\`\`${userKey}\`\`\`` },
                 { name: 'Validity', value: `${remainingHours} Hours (3 Days)`, inline: true },
                 { name: 'Device Lock', value: '🔒 Locked to 1 Device on first use', inline: true }
             )
-            .setFooter({ text: 'Note: Single device only. Share karne par doosre phone par error aayega!' });
+            .setFooter({ text: 'Note: Correct key GameGuardian script me enter karein!' });
 
         await interaction.editReply({ embeds: [embed] });
     }
 };
+
