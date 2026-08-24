@@ -1,32 +1,31 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 const DB_FILE = path.join(__dirname, '../keys_database.json');
+const KEYS_TXT_FILE = path.join(__dirname, '../keys.txt');
 
-// Database loading function
 function loadDatabase() {
-    if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({}));
-    }
-    try {
-        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    } catch (e) {
-        return {};
-    }
+    if (!fs.existsSync(DB_FILE)) return {};
+    try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch (e) { return {}; }
 }
 
-// Database saving function
 function saveDatabase(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+
+    // keys.txt file generate/update karna GG loader ke verification ke liye
+    const keysList = Object.values(data)
+        .filter(item => Date.now() < item.expiresAt)
+        .map(item => item.key)
+        .join('\n');
+    
+    fs.writeFileSync(KEYS_TXT_FILE, keysList);
 }
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getkey')
-        .setDescription('Get your 3-day access key for GameGuardian script'),
+        .setDescription('Get 3-Day Short Access Key for Posya Script'),
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
@@ -40,19 +39,18 @@ module.exports = {
         let userKey = '';
         let expiresAt = 0;
 
-        // Agar user ki key pehle se hai aur 3 din expire nahi hue
         if (userRecord && now < userRecord.expiresAt) {
             userKey = userRecord.key;
             expiresAt = userRecord.expiresAt;
         } else {
-            // New Key for 3 Days
-            userKey = "HERRY-" + crypto.randomBytes(4).toString('hex').toUpperCase();
+            // Short Key Format: Herry + 2 Random Digits (e.g. Herry65)
+            const randomTwoDigits = Math.floor(10 + Math.random() * 90); 
+            userKey = "Herry" + randomTwoDigits;
             expiresAt = now + THREE_DAYS_MS;
 
             db[userId] = {
                 key: userKey,
                 expiresAt: expiresAt,
-                hwid: null,
                 createdAt: now
             };
             saveDatabase(db);
@@ -62,15 +60,14 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor('#00FF00')
-            .setTitle('🔑 Your Script Key')
-            .setDescription(`Here is your 3-day script access key. Use it in GameGuardian.`)
+            .setTitle('🔑 Your 3-Day Script Key')
             .addFields(
                 { name: 'Your Key', value: `\`\`\`${userKey}\`\`\`` },
-                { name: 'Valid For', value: `${remainingHours} Hours remaining`, inline: true },
-                { name: 'Device Bound', value: userRecord && userRecord.hwid ? '🔒 Locked to your device' : '🔓 Unlocked (Will lock on first use in GG)', inline: true }
+                { name: 'Valid For', value: `${remainingHours} Hours`, inline: true }
             )
-            .setFooter({ text: 'Note: Key cannot be shared with others!' });
+            .setFooter({ text: 'Locked to 1 device upon first use!' });
 
         await interaction.editReply({ embeds: [embed] });
     }
 };
+
