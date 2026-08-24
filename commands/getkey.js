@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 const fs = require('fs');
@@ -119,4 +120,3 @@ module.exports = {
         await interaction.editReply({ embeds: [embed] });
     }
 };
-        
