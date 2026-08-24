@@ -3,11 +3,11 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-// GitHub Credentials
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || 'YOUR_GITHUB_TOKEN_HERE';
+// GitHub Repo Configuration
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 const REPO_OWNER = 'urdushahzaib111-ctrl';
 const REPO_NAME = 'HerryBot-v4';
-const FILE_PATH = 'keys.txt';
+const FILE_PATH = 'keys.txt'; // Repository ki root directory me keys.txt file
 
 const DB_FILE = path.join(__dirname, '../keys_database.json');
 
@@ -20,7 +20,13 @@ function loadDatabase() {
     }
 }
 
+// GitHub API ke zariye direct keys.txt update karna
 async function updateGitHubKeysFile(activeKeysString) {
+    if (!GITHUB_TOKEN) {
+        console.error('❌ GITHUB_TOKEN Missing in Railway Environment Variables!');
+        return;
+    }
+
     try {
         const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
         
@@ -32,10 +38,10 @@ async function updateGitHubKeysFile(activeKeysString) {
             });
             sha = getRes.data.sha;
         } catch (e) {
-            // File might be empty or new
+            // File optional check
         }
 
-        // 2. Update file on GitHub
+        // 2. Commit & Push updated keys to GitHub
         await axios.put(url, {
             message: 'Auto-update keys.txt via Discord Bot',
             content: Buffer.from(activeKeysString).toString('base64'),
@@ -47,7 +53,7 @@ async function updateGitHubKeysFile(activeKeysString) {
             }
         });
 
-        console.log('✅ Successfully updated keys.txt on GitHub via Axios!');
+        console.log('✅ Successfully synced keys.txt to GitHub!');
     } catch (error) {
         console.error('❌ Error updating GitHub keys.txt:', error.response?.data || error.message);
     }
@@ -113,4 +119,4 @@ module.exports = {
         await interaction.editReply({ embeds: [embed] });
     }
 };
-
+        
