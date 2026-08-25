@@ -1,40 +1,42 @@
 
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { getOrCreateUserKey } = require('../keySystem');
+const { getOrCreateUserKey } = require('../keysystem');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getkey')
-        .setDescription('Get your 3-Day access key for scripts / Apni 3-Day key hasil karein'),
+        .setDescription('Get your 3-Day access key / 3-Day key hasil karein'),
 
     async execute(interaction) {
+        await interaction.deferReply({ ephemeral: true });
+
         const userId = interaction.user.id;
-        const result = getOrCreateUserKey(userId);
+        const result = await getOrCreateUserKey(userId);
 
         if (!result.isNew) {
-            // ALREADY HAVE KEY (English + Roman Urdu)
+            // User Already Has An Active Key
             const embed = new EmbedBuilder()
                 .setColor('#FF9900')
                 .setTitle('⚠️ Active Key Already Exists!')
                 .setDescription(
                     `**ENGLISH:**\nYou already have an active 3-day key. You cannot generate a new key right now.\n\n` +
                     `**ROMAN URDU:**\nAapke paas pehle se active key maujood hai. Aap nayi key generate nahi kar sakte.\n\n` +
-                    `🔑 **Your Existing Key (Aapki Old Key):**\n\`\`\`${result.key}\`\`\``
+                    `🔑 **Take this key (Your Old 3-Day Key):**\n\`\`\`${result.key}\`\`\``
                 )
                 .addFields(
                     { name: '⏳ Expiration / Time Remaining', value: `\`${result.hoursLeft} Hours\` left before you can claim a new key.`, inline: false }
                 )
                 .setFooter({ text: 'If you forgot your key, copy it from above! / Agar key bhool gaye the to upar se copy kar lein.' });
 
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.editReply({ embeds: [embed] });
         } else {
-            // NEW KEY GENERATED
+            // New Key Generated & Synced to GitHub
             const embed = new EmbedBuilder()
                 .setColor('#00FF00')
                 .setTitle('✅ New Access Key Generated!')
                 .setDescription(
-                    `**ENGLISH:**\nYour 3-day access key has been successfully created.\n\n` +
-                    `**ROMAN URDU:**\nAapki 3-day access key successfully ban gayi hai.\n\n` +
+                    `**ENGLISH:**\nYour 3-day access key has been created and synced with the script server!\n\n` +
+                    `**ROMAN URDU:**\nAapki 3-day key ban gayi hai aur script server par update ho gayi hai.\n\n` +
                     `🔑 **Your Access Key:**\n\`\`\`${result.key}\`\`\``
                 )
                 .addFields(
@@ -42,7 +44,7 @@ module.exports = {
                 )
                 .setFooter({ text: 'Do not share your key with anyone. / Apni key kisi ke sath share mat karein.' });
 
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.editReply({ embeds: [embed] });
         }
     }
 };
