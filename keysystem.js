@@ -1,3 +1,4 @@
+
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -10,16 +11,9 @@ const GITHUB_REPO = "HerryBot-v4";
 const GITHUB_PATH = "keys.txt";
 
 function loadKeys() {
-    if (!fs.existsSync(KEYS_FILE)) {
-        try {
-            fs.writeFileSync(KEYS_FILE, JSON.stringify({}, null, 2), 'utf8');
-        } catch (err) {
-            console.error("Error creating user_keys.json:", err);
-        }
-    }
+    if (!fs.existsSync(KEYS_FILE)) return {};
     try {
-        const data = fs.readFileSync(KEYS_FILE, 'utf8');
-        return JSON.parse(data);
+        return JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8'));
     } catch (e) {
         return {};
     }
@@ -28,21 +22,11 @@ function loadKeys() {
 function saveKeys(data) {
     try {
         fs.writeFileSync(KEYS_FILE, JSON.stringify(data, null, 2), 'utf8');
-    } catch (err) {
-        console.error("Error writing user_keys.json:", err);
-    }
-}
-
-function generateRandomKey() {
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    return `Herry${randomNum}`;
+    } catch (err) {}
 }
 
 async function appendKeyToGitHub(newKey) {
-    if (!GITHUB_TOKEN) {
-        console.error("❌ GITHUB_TOKEN missing in Environment Variables!");
-        return false;
-    }
+    if (!GITHUB_TOKEN) return false;
 
     try {
         const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
@@ -55,22 +39,26 @@ async function appendKeyToGitHub(newKey) {
         const sha = getRes.data.sha;
         const currentContent = Buffer.from(getRes.data.content, 'base64').toString('utf8');
 
-        if (currentContent.toLowerCase().includes(newKey.toLowerCase())) {
+        // Clean content & check if already exists
+        const lines = currentContent.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        
+        if (lines.some(l => l.toLowerCase() === newKey.toLowerCase())) {
             return true;
         }
 
-        const updatedContent = currentContent ? `${currentContent.trim()}\n${newKey}` : newKey;
+        lines.push(newKey.trim());
+        const updatedContent = lines.join('\n') + '\n';
         const base64Content = Buffer.from(updatedContent).toString('base64');
 
         await axios.put(url, {
-            message: `Auto Sync Key: ${newKey}`,
+            message: `Auto Add Key: ${newKey}`,
             content: base64Content,
             sha: sha
         }, { headers });
 
         return true;
     } catch (error) {
-        console.error("❌ GitHub Sync Error:", error.response ? error.response.data : error.message);
+        console.error("GitHub Sync Error:", error.message);
         return false;
     }
 }
@@ -80,38 +68,25 @@ async function getOrCreateUserKey(userId) {
     const now = Date.now();
     const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 
-    // Strict Check: Same key return karega jab tak 3 din pure na hon
     if (db[userId] && db[userId].key && db[userId].createdAt) {
-        const userRecord = db[userId];
-        const timePassed = now - userRecord.createdAt;
-
+        const timePassed = now - db[userId].createdAt;
         if (timePassed < THREE_DAYS_MS) {
             const timeLeftHours = Math.ceil((THREE_DAYS_MS - timePassed) / (1000 * 60 * 60));
             return {
                 isNew: false,
-                key: userRecord.key,
+                key: db[userId].key,
                 hoursLeft: timeLeftHours
             };
         }
     }
 
-    // 3 din ke baad naya key generate hoga
-    const newKey = generateRandomKey();
-    db[userId] = {
-        key: newKey,
-        createdAt: now
-    };
+    const newKey = `Herry${Math.floor(10000 + Math.random() * 90000)}`;
+    db[userId] = { key: newKey, createdAt: now };
 
     saveKeys(db);
     await appendKeyToGitHub(newKey);
 
-    return {
-        isNew: true,
-        key: newKey,
-        hoursLeft: 72
-    };
+    return { isNew: true, key: newKey, hoursLeft: 72 };
 }
 
 module.exports = { getOrCreateUserKey };
-
-
