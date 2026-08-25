@@ -12,7 +12,7 @@ const GITHUB_PATH = "keys.txt";
 function loadKeys() {
     if (!fs.existsSync(KEYS_FILE)) {
         try {
-            fs.writeFileSync(KEYS_FILE, JSON.stringify({}), 'utf8');
+            fs.writeFileSync(KEYS_FILE, JSON.stringify({}, null, 2), 'utf8');
         } catch (err) {
             console.error("Error creating user_keys.json:", err);
         }
@@ -55,7 +55,6 @@ async function appendKeyToGitHub(newKey) {
         const sha = getRes.data.sha;
         const currentContent = Buffer.from(getRes.data.content, 'base64').toString('utf8');
 
-        // Check if key already exists in keys.txt
         if (currentContent.includes(newKey)) {
             return true;
         }
@@ -79,15 +78,19 @@ async function appendKeyToGitHub(newKey) {
 async function getOrCreateUserKey(userId) {
     const db = loadKeys();
     const now = Date.now();
-    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000; // 3 Days in milliseconds
 
-    // Strict User Check: Agar pehle se key maujood hai aur 3 din poore nahi hue
-    if (db[userId] && db[userId].key) {
+    // Check karein kya user ki entry pehle se database me hai ya nahi
+    if (db[userId] && db[userId].key && db[userId].createdAt) {
         const userRecord = db[userId];
         const timePassed = now - userRecord.createdAt;
 
+        // Agar 3 din (72 hours) poore nahi hue hain
         if (timePassed < THREE_DAYS_MS) {
-            const timeLeftHours = Math.ceil((THREE_DAYS_MS - timePassed) / (1000 * 60 * 60));
+            const timeLeftMs = THREE_DAYS_MS - timePassed;
+            const timeLeftHours = Math.ceil(timeLeftMs / (1000 * 60 * 60));
+            
+            // Wahi same purani key return karega (isNew: false)
             return {
                 isNew: false,
                 key: userRecord.key,
@@ -96,7 +99,7 @@ async function getOrCreateUserKey(userId) {
         }
     }
 
-    // Nayi Key sirf tab hi banegi jab record na ho ya 3 din guzar chuke hon
+    // Agar user pehli baar aa raha hai YA uske 3 din khatam ho chuke hain, tabhi nayi key banegi
     const newKey = generateRandomKey();
     db[userId] = {
         key: newKey,
