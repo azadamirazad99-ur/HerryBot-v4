@@ -5,12 +5,8 @@ const GITHUB_OWNER = "urdushahzaib111-ctrl";
 const GITHUB_REPO = "HerryBot-v4";
 const GITHUB_PATH = "keys.txt";
 
-// GitHub se keys text read aur parse karne ka function
 async function getGitHubKeys() {
-    if (!GITHUB_TOKEN) {
-        console.error("❌ GITHUB_TOKEN missing in process.env");
-        return { sha: null, content: "" };
-    }
+    if (!GITHUB_TOKEN) return { sha: null, content: "" };
     try {
         const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
         const headers = {
@@ -21,63 +17,58 @@ async function getGitHubKeys() {
         const content = Buffer.from(res.data.content, 'base64').toString('utf8');
         return { sha: res.data.sha, content: content };
     } catch (e) {
-        console.error("❌ Fetch Error from GitHub:", e.message);
         return { sha: null, content: "" };
     }
 }
 
-// User key create ya fetch karne ka main function
 async function getOrCreateUserKey(userId) {
     const { sha, content } = await getGitHubKeys();
-    
-    // Check karein kya user ID ke sath koi key GitHub me pehle se hai
-    // Format: Herry12345_USERID
     const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    // Agar user ki key pehle se bani hui hai toh wahi do (Hum user tracking ke liye format check kar sakte hain ya simple persistent mapping rakh sakte hain)
+    // Lekin sabse asan tareeqa yeh hai ke hum check karein agar user pehle command chala chuka hai
+    // Chunki hum GitHub par sirf keys rakh rahe hain, hum user ko ek consistent key assign karenge uski ID ke hash/math se ya fir check karenge.
     
-    for (const line of lines) {
-        if (line.includes(`_${userId}`)) {
-            const existingKey = line.split('_')[0]; // Sirf key nikalega (e.g. Herry12345)
-            return {
-                isNew: false,
-                key: existingKey,
-                hoursLeft: "Active"
-            };
-        }
-    }
+    // Behtareen hal: User ID ke base par ek fixed key generate ho jo kabhi change na ho!
+    // Isse GitHub par baar baar nayi lines add hone ka ya mismatch ka masla hi khatam ho jayega.
+    
+    let userKey = "";
+    // User ID ke numbers se ek unique key banayein jo hamesha ussi user ke liye same rahegi
+    let numericId = parseInt(userId.replace(/\D/g, '')) || 12345;
+    let generatedKeyNum = (numericId % 90000) + 10000;
+    userKey = `Herry${generatedKeyNum}`;
 
-    // Agar key nahi mili to nayi key generate karein
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    const newKey = `Herry${randomNum}`;
-    const keyEntry = `${newKey}_${userId}`; // Save with User ID
+    // Ab check karein kya yeh key already GitHub ki `keys.txt` mein hai ya nahi
+    if (!lines.includes(userKey)) {
+        lines.push(userKey);
+        if (sha) {
+            try {
+                const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
+                const headers = {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                };
 
-    // GitHub me key sync karein
-    if (sha) {
-        try {
-            const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
-            const headers = {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'
-            };
+                const updatedContent = lines.join('\n') + '\n';
+                const base64Content = Buffer.from(updatedContent).toString('base64');
 
-            lines.push(keyEntry);
-            const updatedContent = lines.join('\n') + '\n';
-            const base64Content = Buffer.from(updatedContent).toString('base64');
-
-            await axios.put(url, {
-                message: `Add Key for ${userId}`,
-                content: base64Content,
-                sha: sha
-            }, { headers });
-        } catch (e) {
-            console.error("❌ GitHub Sync Write Error:", e.message);
+                await axios.put(url, {
+                    message: `Auto Sync Key for User`,
+                    content: base64Content,
+                    sha: sha
+                }, { headers });
+            } catch (e) {
+                console.error("GitHub Error:", e.message);
+            }
         }
     }
 
     return {
-        isNew: true,
-        key: newKey,
-        hoursLeft: 72
+        isNew: false,
+        key: userKey,
+        hoursLeft: "Active"
     };
 }
 
 module.exports = { getOrCreateUserKey };
+
