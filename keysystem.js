@@ -40,7 +40,7 @@ function generateRandomKey() {
 
 async function appendKeyToGitHub(newKey) {
     if (!GITHUB_TOKEN) {
-        console.error("❌ GITHUB_TOKEN process.env me missing hai!");
+        console.error("❌ GITHUB_TOKEN missing in Environment Variables!");
         return false;
     }
 
@@ -55,7 +55,7 @@ async function appendKeyToGitHub(newKey) {
         const sha = getRes.data.sha;
         const currentContent = Buffer.from(getRes.data.content, 'base64').toString('utf8');
 
-        if (currentContent.includes(newKey)) {
+        if (currentContent.toLowerCase().includes(newKey.toLowerCase())) {
             return true;
         }
 
@@ -63,14 +63,14 @@ async function appendKeyToGitHub(newKey) {
         const base64Content = Buffer.from(updatedContent).toString('base64');
 
         await axios.put(url, {
-            message: `Auto-add key: ${newKey}`,
+            message: `Auto Sync Key: ${newKey}`,
             content: base64Content,
             sha: sha
         }, { headers });
 
         return true;
     } catch (error) {
-        console.error("❌ GitHub Key Sync Error:", error.response ? error.response.data : error.message);
+        console.error("❌ GitHub Sync Error:", error.response ? error.response.data : error.message);
         return false;
     }
 }
@@ -78,19 +78,15 @@ async function appendKeyToGitHub(newKey) {
 async function getOrCreateUserKey(userId) {
     const db = loadKeys();
     const now = Date.now();
-    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000; // 3 Days in milliseconds
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 
-    // Check karein kya user ki entry pehle se database me hai ya nahi
+    // Strict Check: Same key return karega jab tak 3 din pure na hon
     if (db[userId] && db[userId].key && db[userId].createdAt) {
         const userRecord = db[userId];
         const timePassed = now - userRecord.createdAt;
 
-        // Agar 3 din (72 hours) poore nahi hue hain
         if (timePassed < THREE_DAYS_MS) {
-            const timeLeftMs = THREE_DAYS_MS - timePassed;
-            const timeLeftHours = Math.ceil(timeLeftMs / (1000 * 60 * 60));
-            
-            // Wahi same purani key return karega (isNew: false)
+            const timeLeftHours = Math.ceil((THREE_DAYS_MS - timePassed) / (1000 * 60 * 60));
             return {
                 isNew: false,
                 key: userRecord.key,
@@ -99,7 +95,7 @@ async function getOrCreateUserKey(userId) {
         }
     }
 
-    // Agar user pehli baar aa raha hai YA uske 3 din khatam ho chuke hain, tabhi nayi key banegi
+    // 3 din ke baad naya key generate hoga
     const newKey = generateRandomKey();
     db[userId] = {
         key: newKey,
@@ -117,4 +113,5 @@ async function getOrCreateUserKey(userId) {
 }
 
 module.exports = { getOrCreateUserKey };
+
 
