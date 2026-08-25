@@ -4,7 +4,6 @@ const axios = require('axios');
 
 const KEYS_FILE = path.join(__dirname, 'user_keys.json');
 
-// GitHub Credentials (Railway Variables se automatic fetch hongi)
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER = "urdushahzaib111-ctrl";
 const GITHUB_REPO = "HerryBot-v4";
@@ -12,26 +11,33 @@ const GITHUB_PATH = "keys.txt";
 
 function loadKeys() {
     if (!fs.existsSync(KEYS_FILE)) {
-        fs.writeFileSync(KEYS_FILE, JSON.stringify({}), 'utf8');
+        try {
+            fs.writeFileSync(KEYS_FILE, JSON.stringify({}), 'utf8');
+        } catch (err) {
+            console.error("Error creating user_keys.json:", err);
+        }
     }
     try {
-        return JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8'));
+        const data = fs.readFileSync(KEYS_FILE, 'utf8');
+        return JSON.parse(data);
     } catch (e) {
         return {};
     }
 }
 
 function saveKeys(data) {
-    fs.writeFileSync(KEYS_FILE, JSON.stringify(data, null, 2), 'utf8');
+    try {
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(data, null, 2), 'utf8');
+    } catch (err) {
+        console.error("Error writing user_keys.json:", err);
+    }
 }
 
-// Random Key Format: Herry + Random Numbers (e.g., Herry11296, Herry556, Herry826)
 function generateRandomKey() {
-    const randomNum = Math.floor(100 + Math.random() * 90000); // 3 to 5 digits random number
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
     return `Herry${randomNum}`;
 }
 
-// GitHub keys.txt update logic
 async function appendKeyToGitHub(newKey) {
     if (!GITHUB_TOKEN) {
         console.error("❌ GITHUB_TOKEN process.env me missing hai!");
@@ -49,6 +55,11 @@ async function appendKeyToGitHub(newKey) {
         const sha = getRes.data.sha;
         const currentContent = Buffer.from(getRes.data.content, 'base64').toString('utf8');
 
+        // Check if key already exists in keys.txt
+        if (currentContent.includes(newKey)) {
+            return true;
+        }
+
         const updatedContent = currentContent ? `${currentContent.trim()}\n${newKey}` : newKey;
         const base64Content = Buffer.from(updatedContent).toString('base64');
 
@@ -58,7 +69,6 @@ async function appendKeyToGitHub(newKey) {
             sha: sha
         }, { headers });
 
-        console.log(`✅ Key ${newKey} GitHub keys.txt me add ho gayi!`);
         return true;
     } catch (error) {
         console.error("❌ GitHub Key Sync Error:", error.response ? error.response.data : error.message);
@@ -71,7 +81,8 @@ async function getOrCreateUserKey(userId) {
     const now = Date.now();
     const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 
-    if (db[userId]) {
+    // Strict User Check: Agar pehle se key maujood hai aur 3 din poore nahi hue
+    if (db[userId] && db[userId].key) {
         const userRecord = db[userId];
         const timePassed = now - userRecord.createdAt;
 
@@ -85,6 +96,7 @@ async function getOrCreateUserKey(userId) {
         }
     }
 
+    // Nayi Key sirf tab hi banegi jab record na ho ya 3 din guzar chuke hon
     const newKey = generateRandomKey();
     db[userId] = {
         key: newKey,
