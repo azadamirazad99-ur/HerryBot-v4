@@ -342,7 +342,6 @@ client.on('messageCreate', async message => {
                         },
                         { headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, timeout: 6000 }
                     );
-
                     if (groqRes.data?.choices?.[0]?.message?.content) {
                         replyText = groqRes.data.choices[0].message.content.trim();
                         break;
