@@ -1,5 +1,5 @@
 // ===================================================
-// HERRY HACKS BOT - FULL COMPLETE INDEX.JS
+// HERRY HACKS BOT - COMPLETE & UPDATED INDEX.JS
 // ===================================================
 
 const { 
@@ -53,7 +53,7 @@ if (fs.existsSync(commandsPath)) {
 }
 
 // ---------------------------------------------------
-// 2. BOT READY & SLASH COMMAND REGISTRATION
+// 2. BOT READY & REGISTER SLASH COMMANDS
 // ---------------------------------------------------
 client.once('ready', async () => {
     console.log(`✅ [HERRY BOT] Logged in as ${client.user.tag}`);
@@ -74,12 +74,12 @@ client.once('ready', async () => {
 });
 
 // ---------------------------------------------------
-// 3. WELCOME & LEAVE EVENTS
+// 3. WELCOME & LEAVE SYSTEM
 // ---------------------------------------------------
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
-    const channel = member.guild.channels.cache.get(channelId);
+    const channel = member.guild.channels.cache.get(channelId.trim());
     if (!channel) return;
 
     const welcomeEmbed = new EmbedBuilder()
@@ -95,7 +95,7 @@ client.on('guildMemberAdd', async (member) => {
 client.on('guildMemberRemove', async (member) => {
     const channelId = process.env.LEAVE_CHANNEL_ID;
     if (!channelId) return;
-    const channel = member.guild.channels.cache.get(channelId);
+    const channel = member.guild.channels.cache.get(channelId.trim());
     if (!channel) return;
 
     const leaveEmbed = new EmbedBuilder()
@@ -108,11 +108,11 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ---------------------------------------------------
-// 4. MAIN INTERACTION HANDLER (COMMANDS & BUTTONS)
+// 4. MAIN INTERACTION HANDLER (COMMANDS & TICKET BUTTONS)
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
     
-    // Slash Command Execution
+    // Execute Slash Commands from commands/ folder
     if (interaction.isChatInputCommand()) {
         const command = client.commands.get(interaction.commandName);
         if (!command) return;
@@ -125,10 +125,10 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
-    // Ticket Buttons Action
+    // Button Click Interactions
     if (interaction.isButton()) {
 
-        // Open Ticket Action
+        // Open Ticket Button
         if (interaction.customId === 'create_ticket') {
             await interaction.deferReply({ ephemeral: true });
 
@@ -140,6 +140,7 @@ client.on('interactionCreate', async (interaction) => {
             }
 
             try {
+                // Safe Permission Overwrites
                 const permissionOverwrites = [
                     {
                         id: interaction.guild.roles.everyone.id,
@@ -155,6 +156,7 @@ client.on('interactionCreate', async (interaction) => {
                     }
                 ];
 
+                // Add Staff Role Permissions (Optional via ENV)
                 const rawStaff = process.env.STAFF_ROLE_ID;
                 if (rawStaff && rawStaff.trim().length >= 17) {
                     const cleanStaffId = rawStaff.trim();
@@ -166,19 +168,24 @@ client.on('interactionCreate', async (interaction) => {
                     }
                 }
 
+                // AUTOMATIC CATEGORY CREATION (No ID required)
+                let category = interaction.guild.channels.cache.find(
+                    c => c.name.toUpperCase() === 'TICKETS' && c.type === ChannelType.GuildCategory
+                );
+
+                if (!category) {
+                    category = await interaction.guild.channels.create({
+                        name: 'TICKETS',
+                        type: ChannelType.GuildCategory
+                    });
+                }
+
                 const channelOptions = {
                     name: cleanName,
                     type: ChannelType.GuildText,
+                    parent: category.id,
                     permissionOverwrites: permissionOverwrites
                 };
-
-                const rawCat = process.env.TICKET_CATEGORY_ID;
-                if (rawCat && rawCat.trim().length >= 17) {
-                    const cleanCatId = rawCat.trim();
-                    if (interaction.guild.channels.cache.has(cleanCatId)) {
-                        channelOptions.parent = cleanCatId;
-                    }
-                }
 
                 const ticketChannel = await interaction.guild.channels.create(channelOptions);
 
@@ -200,11 +207,11 @@ client.on('interactionCreate', async (interaction) => {
 
             } catch (err) {
                 console.error("Ticket Creation Error:", err);
-                await interaction.editReply({ content: '❌ Ticket create nahi ho saka! Check karein ki **HerryBot** Role Server Settings me sabse UPAR ho aur Administrator permission mili ho.' });
+                await interaction.editReply({ content: '❌ Ticket create nahi ho saka! Check karein ki **HerryBot** Role Server Settings me top par ho aur Administrator permission active ho.' });
             }
         }
 
-        // Close Ticket Action
+        // Close Ticket Button
         if (interaction.customId === 'close_ticket') {
             await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha hai...', ephemeral: true });
             setTimeout(() => {
@@ -215,7 +222,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. LEGACY/MODERATION COMMANDS
+// 5. LEGACY PREFIX & MODERATION COMMANDS
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
@@ -276,7 +283,7 @@ client.on('messageCreate', async (message) => {
 });
 
 // ---------------------------------------------------
-// 6. LOGIN
+// 6. BOT LOGIN
 // ---------------------------------------------------
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
