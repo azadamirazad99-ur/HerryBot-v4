@@ -1,11 +1,12 @@
 // ===================================================
-// HERRY HACKS BOT - ULTRA SAFE TICKET FIX
+// HERRY HACKS BOT - FULL COMPLETE INDEX.JS
 // ===================================================
 
 const { 
     Client, 
     GatewayIntentBits, 
     Partials, 
+    Collection, 
     EmbedBuilder, 
     ActionRowBuilder, 
     ButtonBuilder, 
@@ -13,9 +14,10 @@ const {
     PermissionsBitField, 
     ChannelType,
     REST,
-    Routes,
-    SlashCommandBuilder
+    Routes
 } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const client = new Client({
@@ -28,37 +30,51 @@ const client = new Client({
     partials: [Partials.Channel, Partials.Message, Partials.GuildMember]
 });
 
+client.commands = new Collection();
 const PREFIX = '!';
 
 // ---------------------------------------------------
-// 1. REGISTER SLASH COMMANDS ON READY
+// 1. LOAD SLASH COMMANDS FROM FOLDER
+// ---------------------------------------------------
+const commands = [];
+const commandsPath = path.join(__dirname, 'commands');
+
+if (fs.existsSync(commandsPath)) {
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command);
+            commands.push(command.data.toJSON());
+        }
+    }
+}
+
+// ---------------------------------------------------
+// 2. BOT READY & SLASH COMMAND REGISTRATION
 // ---------------------------------------------------
 client.once('ready', async () => {
-    console.log(`✅ [HERRY BOT] Connected as ${client.user.tag}`);
+    console.log(`✅ [HERRY BOT] Logged in as ${client.user.tag}`);
     client.user.setActivity('HerryHacks VIP | /ticketsetup', { type: 3 });
-
-    const slashCommands = [
-        new SlashCommandBuilder()
-            .setName('ticketsetup')
-            .setDescription('Deploy support ticket panel (Admin Only)')
-            .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
-    ];
 
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || process.env.DISCORD_TOKEN);
 
     try {
+        console.log('🔄 Registering Slash Commands...');
         await rest.put(
             Routes.applicationCommands(client.user.id),
-            { body: slashCommands }
+            { body: commands }
         );
-        console.log('✅ Slash Commands Registered!');
+        console.log('✅ All Slash Commands Registered Successfully!');
     } catch (error) {
-        console.error('❌ Slash Command Error:', error);
+        console.error('❌ Slash Command Registration Error:', error);
     }
 });
 
 // ---------------------------------------------------
-// 2. WELCOME & LEAVE SYSTEM
+// 3. WELCOME & LEAVE EVENTS
 // ---------------------------------------------------
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
@@ -84,7 +100,7 @@ client.on('guildMemberRemove', async (member) => {
 
     const leaveEmbed = new EmbedBuilder()
         .setTitle('👋 Member Left')
-        .setDescription(`**${member.user.tag}** left.`)
+        .setDescription(`**${member.user.tag}** left the server.`)
         .setColor('#FF0000')
         .setTimestamp();
 
@@ -92,51 +108,38 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ---------------------------------------------------
-// 3. INTERACTION HANDLER (SLASH + BUTTONS)
+// 4. MAIN INTERACTION HANDLER (COMMANDS & BUTTONS)
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
-
-    // A. Slash Command /ticketsetup
+    
+    // Slash Command Execution
     if (interaction.isChatInputCommand()) {
-        if (interaction.commandName === 'ticketsetup') {
-            if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-                return interaction.reply({ content: '❌ Admin access required!', ephemeral: true });
-            }
+        const command = client.commands.get(interaction.commandName);
+        if (!command) return;
 
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('create_ticket')
-                    .setLabel('📩 Open Ticket')
-                    .setStyle(ButtonStyle.Primary)
-            );
-
-            const setupEmbed = new EmbedBuilder()
-                .setTitle('🎫 HerryHacks Support Panel')
-                .setDescription('Help ya query ke liye niche button par click karke ticket open karein.')
-                .setColor('#0099FF');
-
-            await interaction.channel.send({ embeds: [setupEmbed], components: [row] });
-            return interaction.reply({ content: '✅ Panel deployed!', ephemeral: true });
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: '❌ Command execute karne me error aaya!', ephemeral: true });
         }
     }
 
-    // B. Button Interactions
+    // Ticket Buttons Action
     if (interaction.isButton()) {
-        
+
         // Open Ticket Action
         if (interaction.customId === 'create_ticket') {
             await interaction.deferReply({ ephemeral: true });
 
-            const cleanUsername = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const ticketChannelName = `ticket-${cleanUsername}`;
-            
-            const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
+            const cleanName = `ticket-${interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+            const existingChannel = interaction.guild.channels.cache.find(c => c.name === cleanName);
+
             if (existingChannel) {
                 return interaction.editReply({ content: `❌ Aapka ticket pehle se open hai: ${existingChannel}` });
             }
 
             try {
-                // Guaranteed Safe Overwrites
                 const permissionOverwrites = [
                     {
                         id: interaction.guild.roles.everyone.id,
@@ -152,7 +155,6 @@ client.on('interactionCreate', async (interaction) => {
                     }
                 ];
 
-                // Optional Staff Role Add
                 const rawStaff = process.env.STAFF_ROLE_ID;
                 if (rawStaff && rawStaff.trim().length >= 17) {
                     const cleanStaffId = rawStaff.trim();
@@ -165,12 +167,11 @@ client.on('interactionCreate', async (interaction) => {
                 }
 
                 const channelOptions = {
-                    name: ticketChannelName,
+                    name: cleanName,
                     type: ChannelType.GuildText,
                     permissionOverwrites: permissionOverwrites
                 };
 
-                // Optional Category Add
                 const rawCat = process.env.TICKET_CATEGORY_ID;
                 if (rawCat && rawCat.trim().length >= 17) {
                     const cleanCatId = rawCat.trim();
@@ -190,16 +191,16 @@ client.on('interactionCreate', async (interaction) => {
 
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein. Staff jald reply karega.`)
-                    .setColor('#5865F2')
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.`)
+                    .setColor('#00ffcc')
                     .setTimestamp();
 
                 await ticketChannel.send({ content: `${interaction.user}`, embeds: [ticketEmbed], components: [closeBtn] });
-                await interaction.editReply({ content: `✅ Ticket create ho gaya: ${ticketChannel}` });
+                await interaction.editReply({ content: `✅ Ticket ban gaya hai: ${ticketChannel}` });
 
-            } catch (error) {
-                console.error("CRITICAL TICKET ERROR:", error);
-                await interaction.editReply({ content: `❌ Bot ke paas Server me 'Manage Channels' permission nahi hai. Developer settings check karein.` });
+            } catch (err) {
+                console.error("Ticket Creation Error:", err);
+                await interaction.editReply({ content: '❌ Ticket create nahi ho saka! Check karein ki **HerryBot** Role Server Settings me sabse UPAR ho aur Administrator permission mili ho.' });
             }
         }
 
@@ -214,7 +215,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 4. MODERATION & UTILITY COMMANDS
+// 5. LEGACY/MODERATION COMMANDS
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
@@ -271,29 +272,11 @@ client.on('messageCreate', async (message) => {
                 setTimeout(() => msg.delete().catch(() => {}), 4000);
             } catch (e) {}
         }
-
-        if (command === 'timeout' || command === 'mute') {
-            if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
-            const target = message.mentions.members.first();
-            const minutes = parseInt(args[1]);
-            if (!target || !minutes) return message.reply('❌ Usage: `!timeout @user 10`');
-            try {
-                await target.timeout(minutes * 60 * 1000);
-                message.channel.send(`⏳ **${target.user.tag}** timed out for ${minutes} mins.`);
-            } catch (e) {}
-        }
-
-        if (command === 'rta') {
-            if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
-            const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Mention user.');
-            try {
-                await target.timeout(null);
-                message.channel.send(`✅ Timeout removed for **${target.user.tag}**.`);
-            } catch (e) {}
-        }
     }
 });
 
+// ---------------------------------------------------
+// 6. LOGIN
+// ---------------------------------------------------
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
