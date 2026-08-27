@@ -1,16 +1,13 @@
 {
   "name": "herryhacks-bot",
   "version": "1.0.0",
-  "description": "Official HerryHacks Discord Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.18.0",
+    "axios": "^1.7.7",
+    "discord.js": "^14.14.1",
     "dotenv": "^16.4.5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
