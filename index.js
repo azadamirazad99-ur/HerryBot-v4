@@ -218,7 +218,7 @@ client.on('interactionCreate', async (interaction) => {
 
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*Note: Ye ticket sirf aap ya Server Staff hi close kar sakte hain.*\n*(Write your issue here, Staff will reply soon. Only ticket owner or staff can close this.)*`)
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n**\n*(Write your issue here, Staff will reply soon. Only ticket owner or staff can close this.)*`)
                     .setColor('#00ffcc')
                     .setTimestamp();
 
@@ -255,7 +255,7 @@ client.on('interactionCreate', async (interaction) => {
                 });
             }
 
-            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha है / deleting in 5 seconds...', ephemeral: true });
+            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha / deleting in 5 seconds...', ephemeral: true });
             setTimeout(() => {
                 if (interaction.channel) interaction.channel.delete().catch(() => {});
             }, 5000);
