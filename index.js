@@ -1,5 +1,5 @@
 // ===================================================
-// HERRY HACKS BOT - SLASH COMMAND & TICKET SYSTEM FIX
+// HERRY HACKS BOT - ULTRA SAFE TICKET FIX
 // ===================================================
 
 const { 
@@ -37,7 +37,6 @@ client.once('ready', async () => {
     console.log(`✅ [HERRY BOT] Connected as ${client.user.tag}`);
     client.user.setActivity('HerryHacks VIP | /ticketsetup', { type: 3 });
 
-    // Register /ticketsetup slash command automatically
     const slashCommands = [
         new SlashCommandBuilder()
             .setName('ticketsetup')
@@ -48,69 +47,60 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || process.env.DISCORD_TOKEN);
 
     try {
-        console.log('🔄 Registering Slash Commands...');
         await rest.put(
             Routes.applicationCommands(client.user.id),
             { body: slashCommands }
         );
-        console.log('✅ Slash Commands Registered Globally!');
+        console.log('✅ Slash Commands Registered!');
     } catch (error) {
-        console.error('❌ Slash Command Registration Error:', error);
+        console.error('❌ Slash Command Error:', error);
     }
 });
 
 // ---------------------------------------------------
-// 2. WELCOME SYSTEM
+// 2. WELCOME & LEAVE SYSTEM
 // ---------------------------------------------------
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
-
     const channel = member.guild.channels.cache.get(channelId);
     if (!channel) return;
 
     const welcomeEmbed = new EmbedBuilder()
         .setTitle('👑 Welcome to HerryHacks Official! 👑')
-        .setDescription(`Hey ${member}, welcome to the server!\n\n🔑 Check rules and enjoy your stay!`)
+        .setDescription(`Hey ${member}, welcome to the server!`)
         .setColor('#00FF00')
-        .addFields({ name: '📊 Total Members', value: `${member.guild.memberCount}` })
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-        .setFooter({ text: 'HerryHacks Community' })
         .setTimestamp();
 
     channel.send({ content: `👋 Welcome ${member}!`, embeds: [welcomeEmbed] });
 });
 
-// ---------------------------------------------------
-// 3. LEAVE SYSTEM
-// ---------------------------------------------------
 client.on('guildMemberRemove', async (member) => {
     const channelId = process.env.LEAVE_CHANNEL_ID;
     if (!channelId) return;
-
     const channel = member.guild.channels.cache.get(channelId);
     if (!channel) return;
 
     const leaveEmbed = new EmbedBuilder()
         .setTitle('👋 Member Left')
-        .setDescription(`**${member.user.tag}** has left the server.`)
+        .setDescription(`**${member.user.tag}** left.`)
         .setColor('#FF0000')
-        .addFields({ name: '📊 Remaining Members', value: `${member.guild.memberCount}` })
         .setTimestamp();
 
     channel.send({ embeds: [leaveEmbed] });
 });
 
 // ---------------------------------------------------
-// 4. SLASH COMMAND & BUTTON INTERACTION HANDLER
+// 3. INTERACTION HANDLER (SLASH + BUTTONS)
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
 
-    // A. Handle /ticketsetup Slash Command
+    // A. Slash Command /ticketsetup
     if (interaction.isChatInputCommand()) {
         if (interaction.commandName === 'ticketsetup') {
             if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-                return interaction.reply({ content: '❌ Sirf Admin hi setup kar sakta hai!', ephemeral: true });
+                return interaction.reply({ content: '❌ Admin access required!', ephemeral: true });
             }
 
             const row = new ActionRowBuilder().addComponents(
@@ -126,18 +116,19 @@ client.on('interactionCreate', async (interaction) => {
                 .setColor('#0099FF');
 
             await interaction.channel.send({ embeds: [setupEmbed], components: [row] });
-            return interaction.reply({ content: '✅ Ticket panel successfully deployed!', ephemeral: true });
+            return interaction.reply({ content: '✅ Panel deployed!', ephemeral: true });
         }
     }
 
-    // B. Handle Ticket Buttons
+    // B. Button Interactions
     if (interaction.isButton()) {
         
         // Open Ticket Action
         if (interaction.customId === 'create_ticket') {
             await interaction.deferReply({ ephemeral: true });
 
-            const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-_]/g, '');
+            const cleanUsername = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const ticketChannelName = `ticket-${cleanUsername}`;
             
             const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
             if (existingChannel) {
@@ -145,16 +136,10 @@ client.on('interactionCreate', async (interaction) => {
             }
 
             try {
-                // Safe handling of environment variables
-                const rawCategoryId = process.env.TICKET_CATEGORY_ID;
-                const categoryId = (rawCategoryId && rawCategoryId.length > 10) ? rawCategoryId.trim() : null;
-                
-                const rawStaffRoleId = process.env.STAFF_ROLE_ID;
-                const staffRoleId = (rawStaffRoleId && rawStaffRoleId.length > 10) ? rawStaffRoleId.trim() : null;
-
+                // Guaranteed Safe Overwrites
                 const permissionOverwrites = [
                     {
-                        id: interaction.guild.id,
+                        id: interaction.guild.roles.everyone.id,
                         deny: [PermissionsBitField.Flags.ViewChannel]
                     },
                     {
@@ -167,11 +152,16 @@ client.on('interactionCreate', async (interaction) => {
                     }
                 ];
 
-                if (staffRoleId && interaction.guild.roles.cache.has(staffRoleId)) {
-                    permissionOverwrites.push({
-                        id: staffRoleId,
-                        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
-                    });
+                // Optional Staff Role Add
+                const rawStaff = process.env.STAFF_ROLE_ID;
+                if (rawStaff && rawStaff.trim().length >= 17) {
+                    const cleanStaffId = rawStaff.trim();
+                    if (interaction.guild.roles.cache.has(cleanStaffId)) {
+                        permissionOverwrites.push({
+                            id: cleanStaffId,
+                            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
+                        });
+                    }
                 }
 
                 const channelOptions = {
@@ -180,8 +170,13 @@ client.on('interactionCreate', async (interaction) => {
                     permissionOverwrites: permissionOverwrites
                 };
 
-                if (categoryId && interaction.guild.channels.cache.has(categoryId)) {
-                    channelOptions.parent = categoryId;
+                // Optional Category Add
+                const rawCat = process.env.TICKET_CATEGORY_ID;
+                if (rawCat && rawCat.trim().length >= 17) {
+                    const cleanCatId = rawCat.trim();
+                    if (interaction.guild.channels.cache.has(cleanCatId)) {
+                        channelOptions.parent = cleanCatId;
+                    }
                 }
 
                 const ticketChannel = await interaction.guild.channels.create(channelOptions);
@@ -195,16 +190,16 @@ client.on('interactionCreate', async (interaction) => {
 
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein. Admin/Staff jald hi reply karega.`)
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein. Staff jald reply karega.`)
                     .setColor('#5865F2')
                     .setTimestamp();
 
                 await ticketChannel.send({ content: `${interaction.user}`, embeds: [ticketEmbed], components: [closeBtn] });
-                await interaction.editReply({ content: `✅ Ticket create ho gaya hai: ${ticketChannel}` });
+                await interaction.editReply({ content: `✅ Ticket create ho gaya: ${ticketChannel}` });
 
             } catch (error) {
-                console.error("Ticket Creation Detailed Error:", error);
-                await interaction.editReply({ content: `❌ Ticket error: Bot Role ko Discord Server Settings -> Roles me sabse UPAR rakhein aur 'Manage Channels' permission check karein.` });
+                console.error("CRITICAL TICKET ERROR:", error);
+                await interaction.editReply({ content: `❌ Bot ke paas Server me 'Manage Channels' permission nahi hai. Developer settings check karein.` });
             }
         }
 
@@ -219,12 +214,11 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. OTHER UTILITY & MODERATION COMMANDS
+// 4. MODERATION & UTILITY COMMANDS
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    // Dot Moderation Commands (.kick, .ban, .unban)
     if (message.content.startsWith('.')) {
         const args = message.content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
@@ -233,9 +227,8 @@ client.on('messageCreate', async (message) => {
             if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return;
             const target = message.mentions.members.first();
             if (!target) return message.reply('❌ Member mention karein.');
-            const reason = args.slice(1).join(' ') || 'No reason';
             try {
-                await target.kick(reason);
+                await target.kick();
                 message.channel.send(`👞 **${target.user.tag}** kick ho gaya.`);
             } catch (e) {}
         }
@@ -244,9 +237,8 @@ client.on('messageCreate', async (message) => {
             if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return;
             const target = message.mentions.members.first();
             if (!target) return message.reply('❌ Member mention karein.');
-            const reason = args.slice(1).join(' ') || 'No reason';
             try {
-                await target.ban({ reason });
+                await target.ban();
                 message.channel.send(`🔨 **${target.user.tag}** ban ho gaya.`);
             } catch (e) {}
         }
@@ -262,29 +254,11 @@ client.on('messageCreate', async (message) => {
         }
     }
 
-    // Exclamation Commands
     if (message.content.startsWith(PREFIX)) {
         const args = message.content.slice(PREFIX.length).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 
-        if (command === 'help') {
-            const helpEmbed = new EmbedBuilder()
-                .setTitle('👑 Herry Bot Commands')
-                .setColor('#FFD700')
-                .addFields(
-                    { name: '/ticketsetup', value: 'Deploy ticket panel (Slash command)' },
-                    { name: '!ping', value: 'Latency check' },
-                    { name: '!clear [1-100]', value: 'Delete messages' },
-                    { name: '!timeout @user [mins]', value: 'Mute user' },
-                    { name: '!rta @user', value: 'Remove mute' },
-                    { name: '.kick / .ban / .unban', value: 'Moderation' }
-                );
-            return message.reply({ embeds: [helpEmbed] });
-        }
-
-        if (command === 'ping') {
-            return message.reply(`🏓 Latency: **${client.ws.ping}ms**.`);
-        }
+        if (command === 'ping') return message.reply(`🏓 Latency: **${client.ws.ping}ms**`);
 
         if (command === 'clear') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return;
@@ -302,7 +276,7 @@ client.on('messageCreate', async (message) => {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
             const target = message.mentions.members.first();
             const minutes = parseInt(args[1]);
-            if (!target || !minutes || isNaN(minutes)) return message.reply('❌ Usage: `!timeout @user 10`');
+            if (!target || !minutes) return message.reply('❌ Usage: `!timeout @user 10`');
             try {
                 await target.timeout(minutes * 60 * 1000);
                 message.channel.send(`⏳ **${target.user.tag}** timed out for ${minutes} mins.`);
@@ -321,6 +295,5 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-// Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
