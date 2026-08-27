@@ -140,7 +140,7 @@ client.on('interactionCreate', async (interaction) => {
             }
 
             try {
-                // Strict Permission Overwrites (Deny Manage Channels and Delete permissions for everyone except owner/bot/staff)
+                // Strict Permission Overwrites
                 const permissionOverwrites = [
                     {
                         id: interaction.guild.roles.everyone.id,
@@ -158,7 +158,7 @@ client.on('interactionCreate', async (interaction) => {
                             PermissionsBitField.Flags.ReadMessageHistory
                         ],
                         deny: [
-                            PermissionsBitField.Flags.ManageChannels // Explicitly block user from deleting/managing the channel directly via settings
+                            PermissionsBitField.Flags.ManageChannels
                         ]
                     },
                     {
@@ -204,7 +204,7 @@ client.on('interactionCreate', async (interaction) => {
                     type: ChannelType.GuildText,
                     parent: category.id,
                     permissionOverwrites: permissionOverwrites,
-                    topic: `ticket_owner_${interaction.user.id}` // Storing Owner ID safely in channel topic
+                    topic: `ticket_owner_${interaction.user.id}`
                 };
 
                 const ticketChannel = await interaction.guild.channels.create(channelOptions);
@@ -218,11 +218,18 @@ client.on('interactionCreate', async (interaction) => {
 
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n**\n*(Write your issue here, Staff will reply soon. Only ticket owner or staff can close this.)*`)
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*Note: Ye ticket sirf aap ya Server Staff hi close kar sakte hain.*\n*(Write your issue here, Staff will reply soon. Only ticket owner or staff can close this.)*`)
                     .setColor('#00ffcc')
                     .setTimestamp();
 
-                await ticketChannel.send({ content: `${interaction.user}`, embeds: [ticketEmbed], components: [closeBtn] });
+                // TAGGING ADMIN ROLE ALONG WITH USER IN TICKET CHANNEL
+                const adminRoleId = '1529467733161283654';
+                await ticketChannel.send({ 
+                    content: `${interaction.user} | <@&${adminRoleId}>`, 
+                    embeds: [ticketEmbed], 
+                    components: [closeBtn] 
+                });
+
                 await interaction.editReply({ content: `✅ Ticket ban gaya hai / Ticket created: ${ticketChannel}` });
 
             } catch (err) {
@@ -255,7 +262,7 @@ client.on('interactionCreate', async (interaction) => {
                 });
             }
 
-            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha / deleting in 5 seconds...', ephemeral: true });
+            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha hai / deleting in 5 seconds...', ephemeral: true });
             setTimeout(() => {
                 if (interaction.channel) interaction.channel.delete().catch(() => {});
             }, 5000);
