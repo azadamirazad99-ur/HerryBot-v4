@@ -1,5 +1,5 @@
 // ===================================================
-// HERRY HACKS BOT - COMPLETE & UPDATED INDEX.JS
+// HERRY HACKS BOT - COMPLETE & SECURED INDEX.JS
 // ===================================================
 
 const { 
@@ -121,7 +121,7 @@ client.on('interactionCreate', async (interaction) => {
             await command.execute(interaction);
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: '❌ Command execute karne me error aaya!', ephemeral: true });
+            await interaction.reply({ content: '❌ Command execute karne me error aaya! / An error occurred while executing the command!', ephemeral: true });
         }
     }
 
@@ -136,23 +136,38 @@ client.on('interactionCreate', async (interaction) => {
             const existingChannel = interaction.guild.channels.cache.find(c => c.name === cleanName);
 
             if (existingChannel) {
-                return interaction.editReply({ content: `❌ Aapka ticket pehle se open hai: ${existingChannel}` });
+                return interaction.editReply({ content: `❌ Aapka ticket pehle se open hai: ${existingChannel} / Your ticket is already open: ${existingChannel}` });
             }
 
             try {
-                // Safe Permission Overwrites
+                // Strict Permission Overwrites (Deny Manage Channels and Delete permissions for everyone except owner/bot/staff)
                 const permissionOverwrites = [
                     {
                         id: interaction.guild.roles.everyone.id,
-                        deny: [PermissionsBitField.Flags.ViewChannel]
+                        deny: [
+                            PermissionsBitField.Flags.ViewChannel,
+                            PermissionsBitField.Flags.ManageChannels,
+                            PermissionsBitField.Flags.ManageWebhooks
+                        ]
                     },
                     {
                         id: interaction.user.id,
-                        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
+                        allow: [
+                            PermissionsBitField.Flags.ViewChannel, 
+                            PermissionsBitField.Flags.SendMessages, 
+                            PermissionsBitField.Flags.ReadMessageHistory
+                        ],
+                        deny: [
+                            PermissionsBitField.Flags.ManageChannels // Explicitly block user from deleting/managing the channel directly via settings
+                        ]
                     },
                     {
                         id: client.user.id,
-                        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels]
+                        allow: [
+                            PermissionsBitField.Flags.ViewChannel, 
+                            PermissionsBitField.Flags.SendMessages, 
+                            PermissionsBitField.Flags.ManageChannels
+                        ]
                     }
                 ];
 
@@ -163,7 +178,11 @@ client.on('interactionCreate', async (interaction) => {
                     if (interaction.guild.roles.cache.has(cleanStaffId)) {
                         permissionOverwrites.push({
                             id: cleanStaffId,
-                            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
+                            allow: [
+                                PermissionsBitField.Flags.ViewChannel, 
+                                PermissionsBitField.Flags.SendMessages, 
+                                PermissionsBitField.Flags.ReadMessageHistory
+                            ]
                         });
                     }
                 }
@@ -184,7 +203,8 @@ client.on('interactionCreate', async (interaction) => {
                     name: cleanName,
                     type: ChannelType.GuildText,
                     parent: category.id,
-                    permissionOverwrites: permissionOverwrites
+                    permissionOverwrites: permissionOverwrites,
+                    topic: `ticket_owner_${interaction.user.id}` // Storing Owner ID safely in channel topic
                 };
 
                 const ticketChannel = await interaction.guild.channels.create(channelOptions);
@@ -198,12 +218,12 @@ client.on('interactionCreate', async (interaction) => {
 
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*Note: Ye ticket sirf aap ya Server Staff hi close kar sakte hain.*`)
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*Note: Ye ticket sirf aap ya Server Staff hi close kar sakte hain.*\n*(Write your issue here, Staff will reply soon. Only ticket owner or staff can close this.)*`)
                     .setColor('#00ffcc')
                     .setTimestamp();
 
                 await ticketChannel.send({ content: `${interaction.user}`, embeds: [ticketEmbed], components: [closeBtn] });
-                await interaction.editReply({ content: `✅ Ticket ban gaya hai: ${ticketChannel}` });
+                await interaction.editReply({ content: `✅ Ticket ban gaya hai / Ticket created: ${ticketChannel}` });
 
             } catch (err) {
                 console.error("Ticket Creation Error:", err);
@@ -211,28 +231,31 @@ client.on('interactionCreate', async (interaction) => {
             }
         }
 
-        // Close Ticket Button (SECURED)
+        // Close Ticket Button (ULTRA SECURED)
         if (interaction.customId === 'close_ticket') {
             const channel = interaction.channel;
             const member = interaction.member;
 
-            // Check if user is Admin / Staff or if the channel name contains user's ticket name
-            // (Discord channel topics ya permission se check kar sakte hain, ya phir channel name me user ka naam match kare)
+            // Check if user is Admin or Staff
             const isAdminOrStaff = member.permissions.has(PermissionsBitField.Flags.Administrator) || 
                                    (process.env.STAFF_ROLE_ID && member.roles.cache.has(process.env.STAFF_ROLE_ID.trim()));
 
-            // Channel name format: ticket-username hota hai, agar user ka username channel name me match nahi hota aur wo staff bhi nahi hai, toh block kar do
-            const cleanUserName = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const isTicketOwner = channel.name.includes(cleanUserName);
+            // Check if user is the exact ticket owner using channel topic
+            const channelTopic = channel.topic || '';
+            const isTicketOwner = channelTopic === `ticket_owner_${interaction.user.id}`;
 
-            if (!isAdminOrStaff && !isTicketOwner) {
+            // Fallback check via channel name if topic is missing
+            const cleanUserName = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const isNameMatch = channel.name.includes(cleanUserName);
+
+            if (!isAdminOrStaff && !isTicketOwner && !isNameMatch) {
                 return interaction.reply({ 
-                    content: '❌ Aap ye ticket close nahi kar sakte! Sirf ticket banane wala user ya Server Staff hi ise close kar sakta hai.', 
+                    content: '❌ Aap ye ticket close nahi kar sakte! Sirf ticket banane wala user ya Server Staff hi ise close kar sakta hai.\n*(You cannot close this ticket! Only the ticket creator or Server Staff can close it.)*', 
                     ephemeral: true 
                 });
             }
 
-            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha hai...', ephemeral: true });
+            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha है / deleting in 5 seconds...', ephemeral: true });
             setTimeout(() => {
                 if (interaction.channel) interaction.channel.delete().catch(() => {});
             }, 5000);
@@ -253,30 +276,30 @@ client.on('messageCreate', async (message) => {
         if (command === 'kick') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return;
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Member mention karein.');
+            if (!target) return message.reply('❌ Member mention karein / Please mention a member.');
             try {
                 await target.kick();
-                message.channel.send(`👞 **${target.user.tag}** kick ho gaya.`);
+                message.channel.send(`👞 **${target.user.tag}** kick ho gaya / has been kicked.`);
             } catch (e) {}
         }
 
         if (command === 'ban') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return;
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Member mention karein.');
+            if (!target) return message.reply('❌ Member mention karein / Please mention a member.');
             try {
                 await target.ban();
-                message.channel.send(`🔨 **${target.user.tag}** ban ho gaya.`);
+                message.channel.send(`🔨 **${target.user.tag}** ban ho gaya / has been banned.`);
             } catch (e) {}
         }
 
         if (command === 'unban') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return;
             const userId = args[0];
-            if (!userId) return message.reply('❌ User ID dein.');
+            if (!userId) return message.reply('❌ User ID dein / Please provide a User ID.');
             try {
                 await message.guild.members.unban(userId);
-                message.channel.send(`✅ ID: **${userId}** unban ho gaya.`);
+                message.channel.send(`✅ ID: **${userId}** unban ho gaya / unbanned.`);
             } catch (e) {}
         }
     }
@@ -290,7 +313,7 @@ client.on('messageCreate', async (message) => {
         if (command === 'clear') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return;
             const amount = parseInt(args[0]);
-            if (!amount || amount < 1 || amount > 100) return message.reply('❌ 1-100 number dein.');
+            if (!amount || amount < 1 || amount > 100) return message.reply('❌ 1-100 number dein / Provide a number between 1-100.');
             try {
                 await message.delete().catch(() => {});
                 const deleted = await message.channel.bulkDelete(amount, true);
