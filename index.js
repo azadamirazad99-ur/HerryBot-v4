@@ -198,7 +198,7 @@ client.on('interactionCreate', async (interaction) => {
 
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.`)
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*Note: Ye ticket sirf aap ya Server Staff hi close kar sakte hain.*`)
                     .setColor('#00ffcc')
                     .setTimestamp();
 
@@ -211,8 +211,27 @@ client.on('interactionCreate', async (interaction) => {
             }
         }
 
-        // Close Ticket Button
+        // Close Ticket Button (SECURED)
         if (interaction.customId === 'close_ticket') {
+            const channel = interaction.channel;
+            const member = interaction.member;
+
+            // Check if user is Admin / Staff or if the channel name contains user's ticket name
+            // (Discord channel topics ya permission se check kar sakte hain, ya phir channel name me user ka naam match kare)
+            const isAdminOrStaff = member.permissions.has(PermissionsBitField.Flags.Administrator) || 
+                                   (process.env.STAFF_ROLE_ID && member.roles.cache.has(process.env.STAFF_ROLE_ID.trim()));
+
+            // Channel name format: ticket-username hota hai, agar user ka username channel name me match nahi hota aur wo staff bhi nahi hai, toh block kar do
+            const cleanUserName = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const isTicketOwner = channel.name.includes(cleanUserName);
+
+            if (!isAdminOrStaff && !isTicketOwner) {
+                return interaction.reply({ 
+                    content: '❌ Aap ye ticket close nahi kar sakte! Sirf ticket banane wala user ya Server Staff hi ise close kar sakta hai.', 
+                    ephemeral: true 
+                });
+            }
+
             await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha hai...', ephemeral: true });
             setTimeout(() => {
                 if (interaction.channel) interaction.channel.delete().catch(() => {});
