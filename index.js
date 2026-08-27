@@ -215,21 +215,20 @@ client.on('interactionCreate', async (interaction) => {
                         .setStyle(ButtonStyle.Danger)
                 );
 
-                // Clean Ticket Embed (Note removed)
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
                     .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*(Please state your issue here, Staff will assist you shortly.)*`)
                     .setColor('#00ffcc')
                     .setTimestamp();
 
-                // 1. Send Welcome Message inside the Ticket Channel
+                // 1. Send Welcome Message inside Ticket Channel
                 await ticketChannel.send({ 
                     content: `Welcome ${interaction.user}!`, 
                     embeds: [ticketEmbed], 
                     components: [closeBtn] 
                 });
 
-                // 2. Alert Admin in specific Admin Channel (1529478417907716178)
+                // 2. Alert Admin in Admin Channel (1529478417907716178)
                 const adminRoleId = '1529467733161283654';
                 const adminChannelId = '1529478417907716178';
                 const adminChannel = interaction.guild.channels.cache.get(adminChannelId);
@@ -287,7 +286,7 @@ client.on('messageCreate', async (message) => {
             if (!target) return message.reply('❌ Member mention karein / Please mention a member.');
             try {
                 await target.kick();
-                message.channel.send(``👞 **${target.user.tag}** kick ho gaya / has been kicked.`);
+                message.channel.send(`👞 **${target.user.tag}** kick ho gaya / has been kicked.`);
             } catch (e) {}
         }
 
