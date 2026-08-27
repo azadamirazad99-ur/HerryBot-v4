@@ -136,11 +136,11 @@ client.on('interactionCreate', async (interaction) => {
             const existingChannel = interaction.guild.channels.cache.find(c => c.name === cleanName);
 
             if (existingChannel) {
-                return interaction.editReply({ content: `❌ Aapka ticket pehle se open hai: ${existingChannel} / Your ticket is already open: ${existingChannel}` });
+                return interaction.editReply({ content: `❌ Aapka ticket pehle se open hai / Your ticket is already open: ${existingChannel}` });
             }
 
             try {
-                // Strict Permission Overwrites
+                // Permission Overwrites
                 const permissionOverwrites = [
                     {
                         id: interaction.guild.roles.everyone.id,
@@ -187,7 +187,7 @@ client.on('interactionCreate', async (interaction) => {
                     }
                 }
 
-                // AUTOMATIC CATEGORY CREATION (No ID required)
+                // AUTOMATIC CATEGORY CREATION
                 let category = interaction.guild.channels.cache.find(
                     c => c.name.toUpperCase() === 'TICKETS' && c.type === ChannelType.GuildCategory
                 );
@@ -203,8 +203,7 @@ client.on('interactionCreate', async (interaction) => {
                     name: cleanName,
                     type: ChannelType.GuildText,
                     parent: category.id,
-                    permissionOverwrites: permissionOverwrites,
-                    topic: `ticket_owner_${interaction.user.id}`
+                    permissionOverwrites: permissionOverwrites
                 };
 
                 const ticketChannel = await interaction.guild.channels.create(channelOptions);
@@ -216,19 +215,30 @@ client.on('interactionCreate', async (interaction) => {
                         .setStyle(ButtonStyle.Danger)
                 );
 
+                // Clean Ticket Embed (Note removed)
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*Note: Ye ticket sirf aap ya Server Staff hi close kar sakte hain.*\n*(Write your issue here, Staff will reply soon. Only ticket owner or staff can close this.)*`)
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*(Please state your issue here, Staff will assist you shortly.)*`)
                     .setColor('#00ffcc')
                     .setTimestamp();
 
-                // TAGGING ADMIN ROLE ALONG WITH USER IN TICKET CHANNEL
-                const adminRoleId = '1529467733161283654';
+                // 1. Send Welcome Message inside the Ticket Channel
                 await ticketChannel.send({ 
-                    content: `${interaction.user} | <@&${adminRoleId}>`, 
+                    content: `Welcome ${interaction.user}!`, 
                     embeds: [ticketEmbed], 
                     components: [closeBtn] 
                 });
+
+                // 2. Alert Admin in specific Admin Channel (1529478417907716178)
+                const adminRoleId = '1529467733161283654';
+                const adminChannelId = '1529478417907716178';
+                const adminChannel = interaction.guild.channels.cache.get(adminChannelId);
+
+                if (adminChannel) {
+                    await adminChannel.send({
+                        content: `<@&${adminRoleId}> **New Ticket Alert!**\nUser ${interaction.user} has created a new ticket.\n👉 **Reach out here for help:** ${ticketChannel}`
+                    });
+                }
 
                 await interaction.editReply({ content: `✅ Ticket ban gaya hai / Ticket created: ${ticketChannel}` });
 
@@ -238,26 +248,17 @@ client.on('interactionCreate', async (interaction) => {
             }
         }
 
-        // Close Ticket Button (ULTRA SECURED)
+        // Close Ticket Button (ADMIN / STAFF ONLY)
         if (interaction.customId === 'close_ticket') {
-            const channel = interaction.channel;
             const member = interaction.member;
 
-            // Check if user is Admin or Staff
+            // Strict Admin or Staff Check
             const isAdminOrStaff = member.permissions.has(PermissionsBitField.Flags.Administrator) || 
                                    (process.env.STAFF_ROLE_ID && member.roles.cache.has(process.env.STAFF_ROLE_ID.trim()));
 
-            // Check if user is the exact ticket owner using channel topic
-            const channelTopic = channel.topic || '';
-            const isTicketOwner = channelTopic === `ticket_owner_${interaction.user.id}`;
-
-            // Fallback check via channel name if topic is missing
-            const cleanUserName = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const isNameMatch = channel.name.includes(cleanUserName);
-
-            if (!isAdminOrStaff && !isTicketOwner && !isNameMatch) {
+            if (!isAdminOrStaff) {
                 return interaction.reply({ 
-                    content: '❌ Aap ye ticket close nahi kar sakte! Sirf ticket banane wala user ya Server Staff hi ise close kar sakta hai.\n*(You cannot close this ticket! Only the ticket creator or Server Staff can close it.)*', 
+                    content: '❌ Aap ye ticket close nahi kar sakte! Sirf Admin / Staff hi ticket close kar sakte hain.\n*(You cannot close this ticket! Only Admin / Staff can close it.)*', 
                     ephemeral: true 
                 });
             }
@@ -286,7 +287,7 @@ client.on('messageCreate', async (message) => {
             if (!target) return message.reply('❌ Member mention karein / Please mention a member.');
             try {
                 await target.kick();
-                message.channel.send(`👞 **${target.user.tag}** kick ho gaya / has been kicked.`);
+                message.channel.send(``👞 **${target.user.tag}** kick ho gaya / has been kicked.`);
             } catch (e) {}
         }
 
