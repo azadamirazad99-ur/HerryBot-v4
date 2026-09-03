@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getOrCreateUserKey } = require('../keysystem');
 
@@ -21,7 +20,7 @@ module.exports = {
                 .setDescription(
                     `**ENGLISH:**\nYou already have an active 3-day key. You cannot generate a new key right now.\n\n` +
                     `**ROMAN URDU:**\nAapke paas pehle se active key maujood hai. Aap nayi key generate nahi kar sakte.\n\n` +
-                    `🔑 **Take this key (Your Old 3-Day Key):**\n\`\`\`${result.key}\`\`\``
+                    `🔑 **Take this key (Your Active Key):**\n\`\`\`${result.key}\`\`\``
                 )
                 .addFields(
                     { name: '⏳ Expiration / Time Remaining', value: `\`${result.hoursLeft} Hours\` left before you can claim a new key.`, inline: false }
