@@ -26,7 +26,7 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessageReactions // Added for Reaction Role
+        GatewayIntentBits.GuildMessageReactions
     ],
     partials: [Partials.Channel, Partials.Message, Partials.GuildMember, Partials.Reaction, Partials.User]
 });
@@ -34,12 +34,17 @@ const client = new Client({
 client.commands = new Collection();
 const PREFIX = '!';
 
-// REACTION ROLE CONFIGURATION (Yahan Apni Details Adjust Karein)
-const REACTION_CONFIG = {
-    messageId: process.env.REACTION_MESSAGE_ID || "123456789012345678", // Command se setup karne par auto-update bhi hoga
-    emoji: "✅",                                                        // Emoji jo click karna hai
-    roleId: process.env.REACTION_ROLE_ID || "1529467733161283654"      // Role Jo Dena Hai
-};
+// DROPDOWN MENU ROLES CONFIGURATION (Apni Role IDs Se Replace Karein)
+const MENU_ROLE_IDS = [
+    '1529467733161283654', // VIP Access / Staff
+    'ROLE_ID_2',          // Grand Mobile Player
+    'ROLE_ID_3',          // Script Developer
+    'ROLE_ID_4',          // Announcements Ping
+    'ROLE_ID_5',          // Giveaways Ping
+    'ROLE_ID_6',          // Grand RP Member
+    'ROLE_ID_7',          // Updates Ping
+    'ROLE_ID_8'           // Community Member
+];
 
 // ---------------------------------------------------
 // 1. LOAD SLASH COMMANDS FROM FOLDER
@@ -116,68 +121,11 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ---------------------------------------------------
-// 4. REACTION ROLE SYSTEM (ADD & REMOVE)
-// ---------------------------------------------------
-client.on('messageReactionAdd', async (reaction, user) => {
-    if (user.bot) return;
-
-    if (reaction.partial) {
-        try {
-            await reaction.fetch();
-        } catch (error) {
-            console.error('Error fetching reaction message:', error);
-            return;
-        }
-    }
-
-    if (reaction.message.id === REACTION_CONFIG.messageId && reaction.emoji.name === REACTION_CONFIG.emoji) {
-        try {
-            const guild = reaction.message.guild;
-            const member = await guild.members.fetch(user.id);
-            const role = guild.roles.cache.get(REACTION_CONFIG.roleId);
-
-            if (role && member) {
-                await member.roles.add(role);
-                console.log(`✅ [ReactionRole] Added ${role.name} to ${user.tag}`);
-            }
-        } catch (err) {
-            console.error('Reaction Role Add Error:', err);
-        }
-    }
-});
-
-client.on('messageReactionRemove', async (reaction, user) => {
-    if (user.bot) return;
-
-    if (reaction.partial) {
-        try {
-            await reaction.fetch();
-        } catch (error) {
-            return;
-        }
-    }
-
-    if (reaction.message.id === REACTION_CONFIG.messageId && reaction.emoji.name === REACTION_CONFIG.emoji) {
-        try {
-            const guild = reaction.message.guild;
-            const member = await guild.members.fetch(user.id);
-            const role = guild.roles.cache.get(REACTION_CONFIG.roleId);
-
-            if (role && member) {
-                await member.roles.remove(role);
-                console.log(`🗑️ [ReactionRole] Removed ${role.name} from ${user.tag}`);
-            }
-        } catch (err) {
-            console.error('Reaction Role Remove Error:', err);
-        }
-    }
-});
-
-// ---------------------------------------------------
-// 5. MAIN INTERACTION HANDLER (COMMANDS & TICKET BUTTONS)
+// 4. MAIN INTERACTION HANDLER (SLASH, BUTTONS & SELECT MENU)
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
 
+    // 1. Execute Slash Commands
     if (interaction.isChatInputCommand()) {
         const command = client.commands.get(interaction.commandName);
         if (!command) return;
@@ -190,6 +138,34 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
+    // 2. Dropdown Select Menu Role Handler
+    if (interaction.isStringSelectMenu()) {
+        if (interaction.customId === 'role_select_menu') {
+            await interaction.deferReply({ ephemeral: true });
+
+            const selectedRoles = interaction.values;
+            const member = interaction.member;
+
+            try {
+                for (const roleId of MENU_ROLE_IDS) {
+                    if (roleId.startsWith('ROLE_ID')) continue; // Dummy IDs ignore karein
+
+                    if (selectedRoles.includes(roleId)) {
+                        if (!member.roles.cache.has(roleId)) await member.roles.add(roleId).catch(() => {});
+                    } else {
+                        if (member.roles.cache.has(roleId)) await member.roles.remove(roleId).catch(() => {});
+                    }
+                }
+
+                await interaction.editReply({ content: '✅ Aapke selected roles update ho gaye hain!' });
+            } catch (err) {
+                console.error('Role Update Error:', err);
+                await interaction.editReply({ content: '❌ Roles update nahi ho sake! Bot role position Top par rakhein.' });
+            }
+        }
+    }
+
+    // 3. Button Click Interactions (Ticket System)
     if (interaction.isButton()) {
 
         if (interaction.customId === 'create_ticket') {
@@ -277,7 +253,7 @@ client.on('interactionCreate', async (interaction) => {
 
                 const ticketEmbed = new EmbedBuilder()
                     .setTitle('🎫 Support Ticket')
-                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.\n\n*(Please state your issue here, Staff will assist you shortly.)*`)
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla yahan likhein, Staff jald reply karega.`)
                     .setColor('#00ffcc')
                     .setTimestamp();
 
@@ -327,30 +303,10 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 6. LEGACY PREFIX, MODERATION & SETUP COMMANDS
+// 5. LEGACY PREFIX & MODERATION COMMANDS
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
-
-    // REACTION ROLE SETUP COMMAND (.rrsetup)
-    if (message.content.startsWith('.rrsetup')) {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-            return message.reply('❌ System: Aapke paas permissions nahi hain!');
-        }
-
-        const embed = new EmbedBuilder()
-            .setTitle('🎭 Get Member Role')
-            .setDescription(`Click on the ${REACTION_CONFIG.emoji} reaction below to get your role!`)
-            .setColor('#00FFCC');
-
-        const msg = await message.channel.send({ embeds: [embed] });
-        await msg.react(REACTION_CONFIG.emoji);
-
-        // Update active message ID dynamically
-        REACTION_CONFIG.messageId = msg.id;
-        console.log(`✅ Reaction Role setup created. Message ID: ${msg.id}`);
-        return;
-    }
 
     if (message.content.startsWith('.')) {
         const args = message.content.slice(1).trim().split(/ +/);
@@ -408,7 +364,7 @@ client.on('messageCreate', async (message) => {
 });
 
 // ---------------------------------------------------
-// 7. BOT LOGIN
+// 6. BOT LOGIN
 // ---------------------------------------------------
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
