@@ -34,18 +34,6 @@ const client = new Client({
 client.commands = new Collection();
 const PREFIX = '!';
 
-// DROPDOWN MENU ROLES CONFIGURATION (Apni Role IDs Se Replace Karein)
-const MENU_ROLE_IDS = [
-    '1529467733161283654', // VIP Access / Staff
-    'ROLE_ID_2',          // Grand Mobile Player
-    'ROLE_ID_3',          // Script Developer
-    'ROLE_ID_4',          // Announcements Ping
-    'ROLE_ID_5',          // Giveaways Ping
-    'ROLE_ID_6',          // Grand RP Member
-    'ROLE_ID_7',          // Updates Ping
-    'ROLE_ID_8'           // Community Member
-];
-
 // ---------------------------------------------------
 // 1. LOAD SLASH COMMANDS FROM FOLDER
 // ---------------------------------------------------
@@ -138,29 +126,36 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
-    // 2. Dropdown Select Menu Role Handler
+    // 2. Dynamic Dropdown Select Menu Role Handler (Up to 19+ Roles Support)
     if (interaction.isStringSelectMenu()) {
         if (interaction.customId === 'role_select_menu') {
             await interaction.deferReply({ ephemeral: true });
 
-            const selectedRoles = interaction.values;
+            const selectedRoleIds = interaction.values;
             const member = interaction.member;
+            
+            // Collect all role IDs configured in the dropdown menu
+            const allMenuRoleIds = interaction.component.options.map(opt => opt.value);
 
             try {
-                for (const roleId of MENU_ROLE_IDS) {
-                    if (roleId.startsWith('ROLE_ID')) continue; // Dummy IDs ignore karein
-
-                    if (selectedRoles.includes(roleId)) {
-                        if (!member.roles.cache.has(roleId)) await member.roles.add(roleId).catch(() => {});
+                for (const roleId of allMenuRoleIds) {
+                    if (selectedRoleIds.includes(roleId)) {
+                        // User selected role -> Add role if not present
+                        if (!member.roles.cache.has(roleId)) {
+                            await member.roles.add(roleId).catch(() => {});
+                        }
                     } else {
-                        if (member.roles.cache.has(roleId)) await member.roles.remove(roleId).catch(() => {});
+                        // User unselected role -> Remove role if present
+                        if (member.roles.cache.has(roleId)) {
+                            await member.roles.remove(roleId).catch(() => {});
+                        }
                     }
                 }
 
-                await interaction.editReply({ content: '✅ Aapke selected roles update ho gaye hain!' });
+                await interaction.editReply({ content: '✅ Aapke selected roles successfully appoint (update) ho gaye hain!' });
             } catch (err) {
                 console.error('Role Update Error:', err);
-                await interaction.editReply({ content: '❌ Roles update nahi ho sake! Bot role position Top par rakhein.' });
+                await interaction.editReply({ content: '❌ Role appoint karne me error aaya! Bot position Discord Roles me TOP par rakhein.' });
             }
         }
     }
