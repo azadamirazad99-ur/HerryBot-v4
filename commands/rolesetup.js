@@ -9,36 +9,52 @@ const {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('rolesetup')
-        .setDescription('7-8 custom roles ke liye dropdown select menu setup karein')
-        .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator),
+        .setDescription('Custom roles ke liye dropdown menu setup karein')
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
+        .addRoleOption(option => option.setName('role1').setDescription('Pehla Role').setRequired(true))
+        .addRoleOption(option => option.setName('role2').setDescription('Doosra Role').setRequired(false))
+        .addRoleOption(option => option.setName('role3').setDescription('Teesra Role').setRequired(false))
+        .addRoleOption(option => option.setName('role4').setDescription('Choutha Role').setRequired(false))
+        .addRoleOption(option => option.setName('role5').setDescription('Panchwa Role').setRequired(false))
+        .addRoleOption(option => option.setName('role6').setDescription('Chata Role').setRequired(false))
+        .addRoleOption(option => option.setName('role7').setDescription('Satwa Role').setRequired(false))
+        .addRoleOption(option => option.setName('role8').setDescription('Aatwa Role').setRequired(false)),
 
     async execute(interaction) {
+        const roles = [];
+        
+        // Command inputs se roles collect karna
+        for (let i = 1; i <= 8; i++) {
+            const role = interaction.options.getRole(`role${i}`);
+            if (role) {
+                roles.push({
+                    label: role.name,
+                    value: role.id,
+                    description: `${role.name} role lene ke liye select karein`
+                });
+            }
+        }
+
+        if (roles.length === 0) {
+            return interaction.reply({ content: '❌ Kam se kam 1 role select karein!', ephemeral: true });
+        }
+
         const embed = new EmbedBuilder()
             .setTitle('🎭 Select Your Roles')
-            .setDescription('Apne pasandida roles lene ke liye niche dropdown menu se select karein!')
+            .setDescription('Niche diye gaye dropdown menu se apne roles choose karein!')
             .setColor('#00FFCC')
-            .setFooter({ text: 'HerryHacks VIP Role System' });
+            .setFooter({ text: 'HerryHacks Role System' });
 
-        // 7-8 Roles ki list (In IDs aur Labels ko apne server ke hisab se badlein)
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId('role_select_menu')
             .setPlaceholder('👉 Choose your roles here...')
-            .setMinValues(0)  // User 0 select karega toh role remove hoga
-            .setMaxValues(8)  // Single time me 8 roles tak select kar sakta hai
-            .addOptions([
-                { label: 'VIP Access', description: 'VIP features ke liye', value: '1529467733161283654', emoji: '👑' },
-                { label: 'Grand Mobile Player', description: 'Grand Mobile Role', value: 'ROLE_ID_2', emoji: '🚗' },
-                { label: 'Script Developer', description: 'Lua/Script Access', value: 'ROLE_ID_3', emoji: '💻' },
-                { label: 'Announcements', description: 'Pings & News', value: 'ROLE_ID_4', emoji: '🔔' },
-                { label: 'Giveaways', description: 'Events & Giveaways', value: 'ROLE_ID_5', emoji: '🎉' },
-                { label: 'Grand RP Member', description: 'Grand RP Server Role', value: 'ROLE_ID_6', emoji: '🎮' },
-                { label: 'Updates Ping', description: 'Bot Updates', value: 'ROLE_ID_7', emoji: '🚀' },
-                { label: 'Community Friend', description: 'General Member', value: 'ROLE_ID_8', emoji: '💬' },
-            ]);
+            .setMinValues(0)
+            .setMaxValues(roles.length)
+            .addOptions(roles);
 
         const row = new ActionRowBuilder().addComponents(selectMenu);
 
         await interaction.channel.send({ embeds: [embed], components: [row] });
-        await interaction.reply({ content: '✅ Role Dropdown Menu Post ho gaya!', ephemeral: true });
+        await interaction.reply({ content: '✅ Role Menu successfully send ho gaya hai!', ephemeral: true });
     }
 };
