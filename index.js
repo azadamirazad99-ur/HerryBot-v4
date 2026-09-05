@@ -25,13 +25,21 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessageReactions // Added for Reaction Role
     ],
-    partials: [Partials.Channel, Partials.Message, Partials.GuildMember]
+    partials: [Partials.Channel, Partials.Message, Partials.GuildMember, Partials.Reaction, Partials.User]
 });
 
 client.commands = new Collection();
 const PREFIX = '!';
+
+// REACTION ROLE CONFIGURATION (Yahan Apni Details Adjust Karein)
+const REACTION_CONFIG = {
+    messageId: process.env.REACTION_MESSAGE_ID || "123456789012345678", // Command se setup karne par auto-update bhi hoga
+    emoji: "✅",                                                        // Emoji jo click karna hai
+    roleId: process.env.REACTION_ROLE_ID || "1529467733161283654"      // Role Jo Dena Hai
+};
 
 // ---------------------------------------------------
 // 1. LOAD SLASH COMMANDS FROM FOLDER
@@ -108,11 +116,68 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ---------------------------------------------------
-// 4. MAIN INTERACTION HANDLER (COMMANDS & TICKET BUTTONS)
+// 4. REACTION ROLE SYSTEM (ADD & REMOVE)
+// ---------------------------------------------------
+client.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot) return;
+
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (error) {
+            console.error('Error fetching reaction message:', error);
+            return;
+        }
+    }
+
+    if (reaction.message.id === REACTION_CONFIG.messageId && reaction.emoji.name === REACTION_CONFIG.emoji) {
+        try {
+            const guild = reaction.message.guild;
+            const member = await guild.members.fetch(user.id);
+            const role = guild.roles.cache.get(REACTION_CONFIG.roleId);
+
+            if (role && member) {
+                await member.roles.add(role);
+                console.log(`✅ [ReactionRole] Added ${role.name} to ${user.tag}`);
+            }
+        } catch (err) {
+            console.error('Reaction Role Add Error:', err);
+        }
+    }
+});
+
+client.on('messageReactionRemove', async (reaction, user) => {
+    if (user.bot) return;
+
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (error) {
+            return;
+        }
+    }
+
+    if (reaction.message.id === REACTION_CONFIG.messageId && reaction.emoji.name === REACTION_CONFIG.emoji) {
+        try {
+            const guild = reaction.message.guild;
+            const member = await guild.members.fetch(user.id);
+            const role = guild.roles.cache.get(REACTION_CONFIG.roleId);
+
+            if (role && member) {
+                await member.roles.remove(role);
+                console.log(`🗑️ [ReactionRole] Removed ${role.name} from ${user.tag}`);
+            }
+        } catch (err) {
+            console.error('Reaction Role Remove Error:', err);
+        }
+    }
+});
+
+// ---------------------------------------------------
+// 5. MAIN INTERACTION HANDLER (COMMANDS & TICKET BUTTONS)
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
-    
-    // Execute Slash Commands from commands/ folder
+
     if (interaction.isChatInputCommand()) {
         const command = client.commands.get(interaction.commandName);
         if (!command) return;
@@ -121,14 +186,12 @@ client.on('interactionCreate', async (interaction) => {
             await command.execute(interaction);
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: '❌ Command execute karne me error aaya! / An error occurred while executing the command!', ephemeral: true });
+            await interaction.reply({ content: '❌ Command execute karne me error aaya!', ephemeral: true });
         }
     }
 
-    // Button Click Interactions
     if (interaction.isButton()) {
 
-        // Open Ticket Button
         if (interaction.customId === 'create_ticket') {
             await interaction.deferReply({ ephemeral: true });
 
@@ -136,11 +199,10 @@ client.on('interactionCreate', async (interaction) => {
             const existingChannel = interaction.guild.channels.cache.find(c => c.name === cleanName);
 
             if (existingChannel) {
-                return interaction.editReply({ content: `❌ Aapka ticket pehle se open hai / Your ticket is already open: ${existingChannel}` });
+                return interaction.editReply({ content: `❌ Aapka ticket pehle se open hai: ${existingChannel}` });
             }
 
             try {
-                // Permission Overwrites
                 const permissionOverwrites = [
                     {
                         id: interaction.guild.roles.everyone.id,
@@ -171,7 +233,6 @@ client.on('interactionCreate', async (interaction) => {
                     }
                 ];
 
-                // Add Staff Role Permissions (Optional via ENV)
                 const rawStaff = process.env.STAFF_ROLE_ID;
                 if (rawStaff && rawStaff.trim().length >= 17) {
                     const cleanStaffId = rawStaff.trim();
@@ -187,7 +248,6 @@ client.on('interactionCreate', async (interaction) => {
                     }
                 }
 
-                // AUTOMATIC CATEGORY CREATION
                 let category = interaction.guild.channels.cache.find(
                     c => c.name.toUpperCase() === 'TICKETS' && c.type === ChannelType.GuildCategory
                 );
@@ -221,14 +281,12 @@ client.on('interactionCreate', async (interaction) => {
                     .setColor('#00ffcc')
                     .setTimestamp();
 
-                // 1. Send Welcome Message inside Ticket Channel
                 await ticketChannel.send({ 
                     content: `Welcome ${interaction.user}!`, 
                     embeds: [ticketEmbed], 
                     components: [closeBtn] 
                 });
 
-                // 2. Alert Admin in Admin Channel (1529478417907716178)
                 const adminRoleId = '1529467733161283654';
                 const adminChannelId = '1529478417907716178';
                 const adminChannel = interaction.guild.channels.cache.get(adminChannelId);
@@ -239,30 +297,28 @@ client.on('interactionCreate', async (interaction) => {
                     });
                 }
 
-                await interaction.editReply({ content: `✅ Ticket ban gaya hai / Ticket created: ${ticketChannel}` });
+                await interaction.editReply({ content: `✅ Ticket ban gaya hai: ${ticketChannel}` });
 
             } catch (err) {
                 console.error("Ticket Creation Error:", err);
-                await interaction.editReply({ content: '❌ Ticket create nahi ho saka! Check karein ki **HerryBot** Role Server Settings me top par ho aur Administrator permission active ho.' });
+                await interaction.editReply({ content: '❌ Ticket create nahi ho saka!' });
             }
         }
 
-        // Close Ticket Button (ADMIN / STAFF ONLY)
         if (interaction.customId === 'close_ticket') {
             const member = interaction.member;
 
-            // Strict Admin or Staff Check
             const isAdminOrStaff = member.permissions.has(PermissionsBitField.Flags.Administrator) || 
                                    (process.env.STAFF_ROLE_ID && member.roles.cache.has(process.env.STAFF_ROLE_ID.trim()));
 
             if (!isAdminOrStaff) {
                 return interaction.reply({ 
-                    content: '❌ Aap ye ticket close nahi kar sakte! Sirf Admin / Staff hi ticket close kar sakte hain.\n*(You cannot close this ticket! Only Admin / Staff can close it.)*', 
+                    content: '❌ Aap ye ticket close nahi kar sakte! Sirf Admin / Staff hi ticket close kar sakte hain.', 
                     ephemeral: true 
                 });
             }
 
-            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha hai / deleting in 5 seconds...', ephemeral: true });
+            await interaction.reply({ content: '🔒 Ticket 5 seconds me delete ho raha hai...', ephemeral: true });
             setTimeout(() => {
                 if (interaction.channel) interaction.channel.delete().catch(() => {});
             }, 5000);
@@ -271,10 +327,30 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. LEGACY PREFIX & MODERATION COMMANDS
+// 6. LEGACY PREFIX, MODERATION & SETUP COMMANDS
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
+
+    // REACTION ROLE SETUP COMMAND (.rrsetup)
+    if (message.content.startsWith('.rrsetup')) {
+        if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+            return message.reply('❌ System: Aapke paas permissions nahi hain!');
+        }
+
+        const embed = new EmbedBuilder()
+            .setTitle('🎭 Get Member Role')
+            .setDescription(`Click on the ${REACTION_CONFIG.emoji} reaction below to get your role!`)
+            .setColor('#00FFCC');
+
+        const msg = await message.channel.send({ embeds: [embed] });
+        await msg.react(REACTION_CONFIG.emoji);
+
+        // Update active message ID dynamically
+        REACTION_CONFIG.messageId = msg.id;
+        console.log(`✅ Reaction Role setup created. Message ID: ${msg.id}`);
+        return;
+    }
 
     if (message.content.startsWith('.')) {
         const args = message.content.slice(1).trim().split(/ +/);
@@ -283,30 +359,30 @@ client.on('messageCreate', async (message) => {
         if (command === 'kick') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return;
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Member mention karein / Please mention a member.');
+            if (!target) return message.reply('❌ Member mention karein.');
             try {
                 await target.kick();
-                message.channel.send(`👞 **${target.user.tag}** kick ho gaya / has been kicked.`);
+                message.channel.send(`👞 **${target.user.tag}** kick ho gaya.`);
             } catch (e) {}
         }
 
         if (command === 'ban') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return;
             const target = message.mentions.members.first();
-            if (!target) return message.reply('❌ Member mention karein / Please mention a member.');
+            if (!target) return message.reply('❌ Member mention karein.');
             try {
                 await target.ban();
-                message.channel.send(`🔨 **${target.user.tag}** ban ho gaya / has been banned.`);
+                message.channel.send(`🔨 **${target.user.tag}** ban ho gaya.`);
             } catch (e) {}
         }
 
         if (command === 'unban') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return;
             const userId = args[0];
-            if (!userId) return message.reply('❌ User ID dein / Please provide a User ID.');
+            if (!userId) return message.reply('❌ User ID dein.');
             try {
                 await message.guild.members.unban(userId);
-                message.channel.send(`✅ ID: **${userId}** unban ho gaya / unbanned.`);
+                message.channel.send(`✅ ID: **${userId}** unban ho gaya.`);
             } catch (e) {}
         }
     }
@@ -320,7 +396,7 @@ client.on('messageCreate', async (message) => {
         if (command === 'clear') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return;
             const amount = parseInt(args[0]);
-            if (!amount || amount < 1 || amount > 100) return message.reply('❌ 1-100 number dein / Provide a number between 1-100.');
+            if (!amount || amount < 1 || amount > 100) return message.reply('❌ 1-100 number dein.');
             try {
                 await message.delete().catch(() => {});
                 const deleted = await message.channel.bulkDelete(amount, true);
@@ -332,7 +408,7 @@ client.on('messageCreate', async (message) => {
 });
 
 // ---------------------------------------------------
-// 6. BOT LOGIN
+// 7. BOT LOGIN
 // ---------------------------------------------------
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
