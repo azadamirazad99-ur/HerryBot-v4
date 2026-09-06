@@ -3,7 +3,7 @@
 // ===================================================
 
 const { 
-    Client, 
+    Client,
     GatewayIntentBits, 
     Partials, 
     Collection, 
