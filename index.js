@@ -77,22 +77,40 @@ client.once('ready', async () => {
 // ---------------------------------------------------
 // 3. WELCOME & LEAVE SYSTEM
 // ---------------------------------------------------
+// ---------------------------------------------------
+// 3. WELCOME & LEAVE SYSTEM
+// ---------------------------------------------------
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
     if (!channelId) return;
+
     const channel = member.guild.channels.cache.get(channelId.trim());
     if (!channel) return;
 
+    const memberCount = member.guild.memberCount;
+
     const welcomeEmbed = new EmbedBuilder()
-        .setTitle('👑 Welcome to HerryHacks Official! 👑')
-        .setDescription(`Hey ${member}, welcome to the server!`)
+        .setTitle('👑 Welcome To HerryHacks Official 👑')
+        .setDescription(`
+**SOME WARNING IN THIS SERVER**
+
+🚫 LEAVE ALL OTHER HACK SERVERS  
+OR BAN FROM THIS SERVER
+
+⚠️ FOLLOW THE RULES OR BAN
+
+👥 YOU ARE THE **${memberCount}** MEMBER
+        `)
         .setColor('#00FF00')
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setFooter({ text: 'HerryHacks Official' })
         .setTimestamp();
 
-    channel.send({ content: `👋 Welcome ${member}!`, embeds: [welcomeEmbed] });
+    channel.send({
+        content: `👋 Welcome ${member}!`,
+        embeds: [welcomeEmbed]
+    });
 });
-
 client.on('guildMemberRemove', async (member) => {
     const channelId = process.env.LEAVE_CHANNEL_ID;
     if (!channelId) return;
