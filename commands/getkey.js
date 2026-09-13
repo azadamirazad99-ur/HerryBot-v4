@@ -9,48 +9,48 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
-        const userId = interaction.user.id;
-        const result = await getOrCreateUserKey(userId);
+        try {
+            const userId = interaction.user.id;
+            const result = await getOrCreateUserKey(userId);
 
-        if (result.error) {
-            const errorEmbed = new EmbedBuilder()
-                .setColor('#FF0000')
-                .setTitle('❌ Key Generation Failed!')
-                .setDescription(
-                    `**System Error:** Could not sync with GitHub repository.\n\n` +
-                    `*Please check if \`GITHUB_TOKEN\` is set in Railway/hosting environment variables.*`
-                );
-            return interaction.editReply({ embeds: [errorEmbed] });
-        }
+            if (!result.isNew) {
+                // Active Key Pehle Se Maujood Hai
+                const embed = new EmbedBuilder()
+                    .setColor('#FF9900')
+                    .setTitle('⚠️ Active Key Already Exists!')
+                    .setDescription(
+                        `**ENGLISH:**\nYou already have an active key. You cannot generate a new key right now.\n\n` +
+                        `**ROMAN URDU:**\nAapke paas pehle se active key maujood hai. Aap abhi nayi key generate nahi kar sakte.\n\n` +
+                        `🔑 **Your Active Key:**\n\`\`\`${result.key}\`\`\``
+                    )
+                    .addFields(
+                        { name: '⏳ Expiration Status', value: `\`${result.hoursLeft}\` left before this key expires.`, inline: false }
+                    )
+                    .setFooter({ text: 'If you forgot your key, copy it from above. / Key bhool gaye hain to upar se copy kar lein.' });
 
-        if (!result.isNew) {
-            const embed = new EmbedBuilder()
-                .setColor('#FF9900')
-                .setTitle('⚠️ Active Key Already Exists!')
-                .setDescription(
-                    `**ENGLISH:**\nYou already have an active 3-day key.\n\n` +
-                    `**ROMAN URDU:**\nAapke paas pehle se active key maujood hai.\n\n` +
-                    `🔑 **Your Active Key:**\n\`\`\`${result.key}\`\`\``
-                )
-                .addFields(
-                    { name: '⏳ Time Remaining', value: `\`${result.hoursLeft} Hours\` left.`, inline: false }
-                );
+                return interaction.editReply({ embeds: [embed] });
+            } else {
+                // Nayi Key Ban Gayi Aur GitHub Repo (Herry-Script) Me Sync Ho Gayi
+                const embed = new EmbedBuilder()
+                    .setColor('#00FF00')
+                    .setTitle('✅ New Access Key Generated!')
+                    .setDescription(
+                        `**ENGLISH:**\nYour 3-day access key has been created and synced with the GitHub repository!\n\n` +
+                        `**ROMAN URDU:**\nAapki 3-day key ban gayi hai aur GitHub server par update ho gayi hai.\n\n` +
+                        `🔑 **Your Access Key:**\n\`\`\`${result.key}\`\`\``
+                    )
+                    .addFields(
+                        { name: '⏳ Validity Period', value: `Valid for **72 Hours (3 Days)**.`, inline: false }
+                    )
+                    .setFooter({ text: 'Do not share your key with anyone. / Apni key kisi ke sath share mat karein.' });
 
-            return interaction.editReply({ embeds: [embed] });
-        } else {
-            const embed = new EmbedBuilder()
-                .setColor('#00FF00')
-                .setTitle('✅ New Access Key Generated!')
-                .setDescription(
-                    `**ENGLISH:**\nYour 3-day access key has been generated and saved!\n\n` +
-                    `**ROMAN URDU:**\nAapki 3-day key ban gayi hai aur server par save ho gayi hai.\n\n` +
-                    `🔑 **Your Access Key:**\n\`\`\`${result.key}\`\`\``
-                )
-                .addFields(
-                    { name: '⏳ Validity', value: `Valid for **72 Hours (3 Days)**.`, inline: false }
-                );
-
-            return interaction.editReply({ embeds: [embed] });
+                return interaction.editReply({ embeds: [embed] });
+            }
+        } catch (error) {
+            console.error("Getkey Command Error:", error);
+            return interaction.editReply({
+                content: "❌ **Error:** Unable to process key generation right now. ."
+            });
         }
     }
 };
