@@ -150,7 +150,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. MESSAGE EVENT (GETKEY DM WARNING & AUTO-DELETE)
+// 5. MESSAGE EVENT (GETKEY DM WARNING & FAST AUTO-DELETE)
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     // Bot Ke Apne Messages Ya DMs Ko Ignore Karein
@@ -162,25 +162,25 @@ client.on('messageCreate', async (message) => {
     // Check agar message GetKey Channel me bheja gaya hai
     if (getKeyChannelId && String(message.channel.id) === getKeyChannelId) {
 
-        try {
-            // 1. User Ka Message Delete Karo
-            if (message.deletable) {
-                await message.delete();
+        // Background me run hoga taaki event loop block na ho aur Slash Command fast respond kare
+        setImmediate(async () => {
+            try {
+                // 1. Delete message
+                if (message.deletable) {
+                    await message.delete().catch(() => {});
+                }
+
+                // 2. Send DM to User
+                await message.author.send(
+                    "dont send Msgs in getkey channel That use for Get the key of script Not for talking use there. getkey Command\nYour Msg Is deleted Form getkey channel dont try next time"
+                ).catch(() => {});
+
+            } catch (err) {
+                console.error("❌ GetKey Filter Error:", err.message);
             }
+        });
 
-            // 2. User Ko DM (Direct Message) Bhejo
-            await message.author.send(
-                "dont send Msgs in getkey channel That use for Get the key of script Not for talking use there. getkey Command\nYour Msg Is deleted Form getkey channel dont try next time"
-            ).catch(() => {
-                // User ke DMs off hone par error console me handle hoga
-                console.log(`Could not send DM to ${message.author.tag} (DMs disabled).`);
-            });
-
-        } catch (err) {
-            console.error("❌ GetKey Auto-Clean Error:", err.message);
-        }
-
-        return; // Aage ke commands block ho jayein
+        return; // Aage ke prefix commands block karein
     }
 
     // Dot Commands (.kick, .ban, .unban)
@@ -195,7 +195,7 @@ client.on('messageCreate', async (message) => {
             const reason = args.slice(1).join(' ') || 'No reason';
             try {
                 await target.kick(reason);
-                message.channel.send(`👞 **${target.user.tag}** was kicked!`);
+                message.channel.send(``👞 **${target.user.tag}** was kicked!`);
             } catch (e) {}
         }
 
