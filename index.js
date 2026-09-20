@@ -11,7 +11,10 @@ const {
     ButtonBuilder, 
     ButtonStyle, 
     PermissionsBitField, 
-    ChannelType 
+    ChannelType,
+    REST,
+    Routes,
+    SlashCommandBuilder
 } = require('discord.js');
 require('dotenv').config();
 
@@ -19,7 +22,7 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent, // Message Content Intent Required!
+        GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers
     ],
     partials: [Partials.Channel, Partials.Message, Partials.GuildMember]
@@ -29,15 +32,37 @@ const client = new Client({
 const PREFIX = '!';
 
 // ---------------------------------------------------
-// 1. BOT READY EVENT
+// 1. SLASH COMMANDS REGISTRATION
 // ---------------------------------------------------
-client.once('ready', () => {
+const commands = [
+    new SlashCommandBuilder()
+        .setName('getkey')
+        .setDescription('Get your VIP Key for HerryHacks VIP')
+].map(command => command.toJSON());
+
+const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || process.env.DISCORD_TOKEN);
+
+// ---------------------------------------------------
+// 2. BOT READY EVENT & REGISTER SLASH COMMANDS
+// ---------------------------------------------------
+client.once('ready', async () => {
     console.log(`✅ [HERRY BOT] Connected as ${client.user.tag}`);
     client.user.setActivity('HerryHacks VIP | !help', { type: 3 });
+
+    try {
+        console.log('🔄 Registering Slash Commands...');
+        await rest.put(
+            Routes.applicationCommands(client.user.id),
+            { body: commands }
+        );
+        console.log('✅ Slash Commands Registered Successfully!');
+    } catch (error) {
+        console.error('❌ Slash Command Registration Error:', error);
+    }
 });
 
 // ---------------------------------------------------
-// 2. WELCOME SYSTEM
+// 3. WELCOME SYSTEM
 // ---------------------------------------------------
 client.on('guildMemberAdd', async (member) => {
     const channelId = process.env.WELCOME_CHANNEL_ID;
@@ -59,7 +84,7 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 // ---------------------------------------------------
-// 3. LEAVE SYSTEM
+// 4. LEAVE SYSTEM
 // ---------------------------------------------------
 client.on('guildMemberRemove', async (member) => {
     const channelId = process.env.LEAVE_CHANNEL_ID;
@@ -79,113 +104,144 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ---------------------------------------------------
-// 4. TICKET BUTTON INTERACTION
+// 5. INTERACTION HANDLER (SLASH COMMANDS & BUTTONS)
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isButton()) return;
 
-    // Create Ticket
-    if (interaction.customId === 'create_ticket') {
-        const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-_]/g, '');
-        
-        const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
-        if (existingChannel) {
-            return interaction.reply({ content: `❌ Aapka ticket already open he: ${existingChannel}`, ephemeral: true });
-        }
+    // ---------------------------------------------------
+    // A. SLASH COMMAND: /getkey
+    // ---------------------------------------------------
+    if (interaction.isChatInputCommand()) {
+        if (interaction.commandName === 'getkey') {
+            const rawGetKeyChannelId = process.env.GETKEY_CHANNEL_ID;
+            const getKeyChannelId = rawGetKeyChannelId ? String(rawGetKeyChannelId).trim() : null;
 
-        try {
-            const rawCategoryId = process.env.TICKET_CATEGORY_ID;
-            const categoryId = (rawCategoryId && rawCategoryId.length > 5) ? rawCategoryId : null;
-            const staffRoleId = process.env.STAFF_ROLE_ID;
-
-            const permissionOverwrites = [
-                { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-                { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
-                { id: client.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels] }
-            ];
-
-            if (staffRoleId && staffRoleId.length > 10) {
-                permissionOverwrites.push({ id: staffRoleId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] });
+            // Optional: Agar aap restrict karna chahte ho ke /getkey sirf specific channel me hi chale
+            if (getKeyChannelId && String(interaction.channel.id) !== getKeyChannelId) {
+                return interaction.reply({ 
+                    content: `❌ Ye command sirf <#${getKeyChannelId}> channel me hi use kar sakte hain!`, 
+                    ephemeral: true 
+                });
             }
 
-            const channelOptions = {
-                name: ticketChannelName,
-                type: ChannelType.GuildText,
-                permissionOverwrites: permissionOverwrites
-            };
-
-            if (categoryId) channelOptions.parent = categoryId;
-
-            const ticketChannel = await interaction.guild.channels.create(channelOptions);
-
-            const closeBtn = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('close_ticket')
-                    .setLabel('🔒 Close Ticket')
-                    .setStyle(ButtonStyle.Danger)
-            );
-
-            const ticketEmbed = new EmbedBuilder()
-                .setTitle('🎫 Support Ticket')
-                .setDescription(`Welcome ${interaction.user}!\nApna masla ya query yahan likhein. Admin/Staff jald hi reply karega.`)
-                .setColor('#5865F2')
+            // GETKEY RESPONSE LOGIC
+            const keyEmbed = new EmbedBuilder()
+                .setTitle('🔑 HerryHacks VIP Key Generated')
+                .setDescription(`Hello ${interaction.user},\nHere is your active VIP Key / Link:`)
+                .addFields({ name: '🔑 Key:', value: '`HERRY-VIP-KEY-2026-ACTIVE`' })
+                .setColor('#00FF00')
+                .setFooter({ text: 'Do not share this key with anyone!' })
                 .setTimestamp();
 
-            await ticketChannel.send({ content: `${interaction.user}`, embeds: [ticketEmbed], components: [closeBtn] });
-            await interaction.reply({ content: `✅ Ticket created successfully: ${ticketChannel}`, ephemeral: true });
-
-        } catch (error) {
-            console.error("Ticket Creation Error:", error);
-            await interaction.reply({ content: `❌ Ticket banane me error aaya! Bot permissions check karein.`, ephemeral: true });
+            // Ephemeral: true - taaki sirf command chalane wale banda dekh sake
+            return interaction.reply({ embeds: [keyEmbed], ephemeral: true });
         }
     }
 
-    // Close Ticket
-    if (interaction.customId === 'close_ticket') {
-        await interaction.reply('🔒 Closing this ticket in 5 seconds...');
-        setTimeout(() => {
-            if (interaction.channel) interaction.channel.delete().catch(() => {});
-        }, 5000);
+    // ---------------------------------------------------
+    // B. BUTTON INTERACTIONS (TICKETS)
+    // ---------------------------------------------------
+    if (interaction.isButton()) {
+        // Create Ticket
+        if (interaction.customId === 'create_ticket') {
+            const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-_]/g, '');
+            
+            const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
+            if (existingChannel) {
+                return interaction.reply({ content: `❌ Aapka ticket already open he: ${existingChannel}`, ephemeral: true });
+            }
+
+            try {
+                const rawCategoryId = process.env.TICKET_CATEGORY_ID;
+                const categoryId = (rawCategoryId && rawCategoryId.length > 5) ? rawCategoryId : null;
+                const staffRoleId = process.env.STAFF_ROLE_ID;
+
+                const permissionOverwrites = [
+                    { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+                    { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
+                    { id: client.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels] }
+                ];
+
+                if (staffRoleId && staffRoleId.length > 10) {
+                    permissionOverwrites.push({ id: staffRoleId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] });
+                }
+
+                const channelOptions = {
+                    name: ticketChannelName,
+                    type: ChannelType.GuildText,
+                    permissionOverwrites: permissionOverwrites
+                };
+
+                if (categoryId) channelOptions.parent = categoryId;
+
+                const ticketChannel = await interaction.guild.channels.create(channelOptions);
+
+                const closeBtn = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('close_ticket')
+                        .setLabel('🔒 Close Ticket')
+                        .setStyle(ButtonStyle.Danger)
+                );
+
+                const ticketEmbed = new EmbedBuilder()
+                    .setTitle('🎫 Support Ticket')
+                    .setDescription(`Welcome ${interaction.user}!\nApna masla ya query yahan likhein. Admin/Staff jald hi reply karega.`)
+                    .setColor('#5865F2')
+                    .setTimestamp();
+
+                await ticketChannel.send({ content: `${interaction.user}`, embeds: [ticketEmbed], components: [closeBtn] });
+                await interaction.reply({ content: `✅ Ticket created successfully: ${ticketChannel}`, ephemeral: true });
+
+            } catch (error) {
+                console.error("Ticket Creation Error:", error);
+                await interaction.reply({ content: `❌ Ticket banane me error aaya! Bot permissions check karein.`, ephemeral: true });
+            }
+        }
+
+        // Close Ticket
+        if (interaction.customId === 'close_ticket') {
+            await interaction.reply('🔒 Closing this ticket in 5 seconds...');
+            setTimeout(() => {
+                if (interaction.channel) interaction.channel.delete().catch(() => {});
+            }, 5000);
+        }
     }
 });
 
 // ---------------------------------------------------
-// 5. MESSAGE EVENT & GETKEY AUTO-CLEAN SYSTEM
+// 6. MESSAGE EVENT (AUTO-CLEAN ONLY FOR CHAT)
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
-    // Ignore Bot Messages & DMs
+    // Bot Ke Apne Messages Aur DMs Ko Block Karo
     if (message.author.bot || !message.guild) return;
 
-    // Fetch Getkey Channel ID from Environment Variable
     const rawGetKeyChannelId = process.env.GETKEY_CHANNEL_ID;
     const getKeyChannelId = rawGetKeyChannelId ? String(rawGetKeyChannelId).trim() : null;
 
-    // Check if message is in the target channel
+    // Check Agar Massage GetKey Channel Me Aaya Hai
     if (getKeyChannelId && String(message.channel.id) === getKeyChannelId) {
-        console.log(`🚨 [GETKEY FILTER TRIGGERED] User: ${message.author.tag} | Message: "${message.content}"`);
 
         try {
-            // Step 1: Delete User Message Immediately
+            // 1. User Message Delete Karo Immediately
             await message.delete();
-            console.log(`🗑️ Deleted message from ${message.author.tag}`);
 
-            // Step 2: Send Warning Embed
+            // 2. Warning Embed Send Karo
             const warnEmbed = new EmbedBuilder()
                 .setColor('#FF0000')
-                .setDescription(`⚠️ ${message.author}, **This channel is for Getkey! Use /slash Command to get key. Do not chat or use prefix commands here!**`);
+                .setDescription(`⚠️ ${message.author}, **This channel is only for \`/getkey\` command! Normal chat or prefix commands are not allowed here.**`);
 
             const warnMsg = await message.channel.send({ embeds: [warnEmbed] });
 
-            // Step 3: Delete Warning Embed after 4 Seconds
+            // 3. Warning Ko 4 Seconds Baad Delete Karo
             setTimeout(async () => {
                 await warnMsg.delete().catch(() => {});
             }, 4000);
 
         } catch (err) {
-            console.error("❌ [GETKEY ERROR] Permission Missing or API Error:", err.message);
+            console.error("❌ GetKey Auto-Clean Error:", err.message);
         }
 
-        return; // Stop further command execution for this message
+        return;
     }
 
     // Dot Commands (.kick, .ban, .unban)
