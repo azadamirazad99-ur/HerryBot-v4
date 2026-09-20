@@ -1,3 +1,4 @@
+
 // ===================================================
 // HERRY HACKS BOT - CLEAN UTILITY & SUPPORT SYSTEM
 // ===================================================
@@ -123,7 +124,7 @@ client.on('interactionCreate', async (interaction) => {
 
             const channelOptions = {
                 name: ticketChannelName,
-                type: ChannelType.GuildType,
+                type: ChannelType.GuildText,
                 permissionOverwrites: permissionOverwrites
             };
 
@@ -166,33 +167,7 @@ client.on('interactionCreate', async (interaction) => {
 // 5. PREFIX COMMANDS & MODERATION SYSTEM
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
-    // Bots, DMs aur Slash Command System Messages ko skip karo
-    if (message.author.bot || !message.guild || message.interaction) return;
-
-    // --- GETKEY CHANNEL CLEANUP & DM SYSTEM ---
-    const rawGetKeyChannelId = process.env.GETKEY_CHANNEL_ID;
-    const getKeyChannelId = rawGetKeyChannelId ? String(rawGetKeyChannelId).trim() : null;
-
-    if (getKeyChannelId && String(message.channel.id) === getKeyChannelId) {
-        setImmediate(async () => {
-            try {
-                // 1. Message Delete Karo
-                if (message.deletable) {
-                    await message.delete().catch(() => {});
-                }
-
-                // 2. User ko DM me Warning Bhejo
-                await message.author.send(
-                    "⚠️ **Warning:** Yahan Getkey Command ke ilava kuch or message mat send karo. Sirf getkey Command chalao otherwise next time timeout!"
-                ).catch(() => {});
-
-            } catch (err) {
-                console.error("❌ GetKey Auto-Clean Error:", err.message);
-            }
-        });
-
-        return; // GetKey channel me koi prefix command execute na ho
-    }
+    if (message.author.bot || !message.guild) return;
 
     // Dot Commands (.kick, .ban, .unban)
     if (message.content.startsWith('.')) {
