@@ -162,7 +162,6 @@ client.on('messageCreate', async (message) => {
     // Check agar message GetKey Channel me bheja gaya hai
     if (getKeyChannelId && String(message.channel.id) === getKeyChannelId) {
 
-        // Background me run hoga taaki event loop block na ho aur Slash Command fast respond kare
         setImmediate(async () => {
             try {
                 // 1. Delete message
@@ -180,7 +179,7 @@ client.on('messageCreate', async (message) => {
             }
         });
 
-        return; // Aage ke prefix commands block karein
+        return; // Normal commands to skip
     }
 
     // Dot Commands (.kick, .ban, .unban)
@@ -195,7 +194,7 @@ client.on('messageCreate', async (message) => {
             const reason = args.slice(1).join(' ') || 'No reason';
             try {
                 await target.kick(reason);
-                message.channel.send(``👞 **${target.user.tag}** was kicked!`);
+                message.channel.send(`👞 **${target.user.tag}** was kicked!`);
             } catch (e) {}
         }
 
