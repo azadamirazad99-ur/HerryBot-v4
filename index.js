@@ -171,7 +171,9 @@ client.on('messageCreate', async (message) => {
 
                 // 2. Send DM to User
                 await message.author.send(
-                    "dont send Msgs in getkey channel That use for Get the key of script Not for talking use there. getkey Command\nYour Msg Is deleted Form getkey channel dont try next time"
+                    "⚠️Dont Send Massages In Get-key Channel ⚠️
+
+Dont Try To send Again Massage There🤬"
                 ).catch(() => {});
 
             } catch (err) {
