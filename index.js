@@ -150,7 +150,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. MESSAGE EVENT (GETKEY CHANNEL CHAT FILTER)
+// 5. MESSAGE EVENT (GETKEY DM WARNING & AUTO-DELETE)
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     // Bot Ke Apne Messages Ya DMs Ko Ignore Karein
@@ -163,28 +163,24 @@ client.on('messageCreate', async (message) => {
     if (getKeyChannelId && String(message.channel.id) === getKeyChannelId) {
 
         try {
-            // 1. User Message Immediate Delete Karo
+            // 1. User Ka Message Delete Karo
             if (message.deletable) {
                 await message.delete();
             }
 
-            // 2. Warning Embed Send Karo
-            const warnEmbed = new EmbedBuilder()
-                .setColor('#FF0000')
-                .setDescription(`⚠️ ${message.author}, **This channel is only for Slash Commands! Normal chat or prefix commands are not allowed here.**`);
-
-            const warnMsg = await message.channel.send({ embeds: [warnEmbed] });
-
-            // 3. Warning Ko 4 Seconds Baad Delete Karo
-            setTimeout(async () => {
-                await warnMsg.delete().catch(() => {});
-            }, 4000);
+            // 2. User Ko DM (Direct Message) Bhejo
+            await message.author.send(
+                "dont send Msgs in getkey channel That use for Get the key of script Not for talking use there. getkey Command\nYour Msg Is deleted Form getkey channel dont try next time"
+            ).catch(() => {
+                // User ke DMs off hone par error console me handle hoga
+                console.log(`Could not send DM to ${message.author.tag} (DMs disabled).`);
+            });
 
         } catch (err) {
             console.error("❌ GetKey Auto-Clean Error:", err.message);
         }
 
-        return; // Next commands ko block kar do
+        return; // Aage ke commands block ho jayein
     }
 
     // Dot Commands (.kick, .ban, .unban)
@@ -199,7 +195,7 @@ client.on('messageCreate', async (message) => {
             const reason = args.slice(1).join(' ') || 'No reason';
             try {
                 await target.kick(reason);
-                message.channel.send(``👞 **${target.user.tag}** was kicked!`);
+                message.channel.send(`👞 **${target.user.tag}** was kicked!`);
             } catch (e) {}
         }
 
@@ -232,7 +228,7 @@ client.on('messageCreate', async (message) => {
 
         if (command === 'ticketsetup') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-                return message.reply('❌ Keyewal Admin hi ticket panel setup kar sakta he!');
+                return message.reply('❌ Keval Admin hi ticket panel setup kar sakta he!');
             }
 
             const row = new ActionRowBuilder().addComponents(
