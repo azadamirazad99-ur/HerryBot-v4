@@ -79,15 +79,16 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ---------------------------------------------------
-// 4. BUTTON INTERACTIONS (TICKETS)
+// 4. FIXED TICKET BUTTON INTERACTION
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isButton()) return;
 
-    // Create Ticket
+    // Create Ticket Button Action
     if (interaction.customId === 'create_ticket') {
         const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-_]/g, '');
         
+        // Duplicate ticket check
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
         if (existingChannel) {
             return interaction.reply({ content: `❌ Aapka ticket already open he: ${existingChannel}`, ephemeral: true });
@@ -99,18 +100,30 @@ client.on('interactionCreate', async (interaction) => {
             const staffRoleId = process.env.STAFF_ROLE_ID;
 
             const permissionOverwrites = [
-                { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-                { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
-                { id: client.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels] }
+                {
+                    id: interaction.guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel]
+                },
+                {
+                    id: interaction.user.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
+                },
+                {
+                    id: client.user.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels]
+                }
             ];
 
             if (staffRoleId && staffRoleId.length > 10) {
-                permissionOverwrites.push({ id: staffRoleId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] });
+                permissionOverwrites.push({
+                    id: staffRoleId,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
+                });
             }
 
             const channelOptions = {
                 name: ticketChannelName,
-                type: ChannelType.GuildText,
+                type: ChannelType.GuildType,
                 permissionOverwrites: permissionOverwrites
             };
 
@@ -140,7 +153,7 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
-    // Close Ticket
+    // Close Ticket Button Action
     if (interaction.customId === 'close_ticket') {
         await interaction.reply('🔒 Closing this ticket in 5 seconds...');
         setTimeout(() => {
@@ -150,38 +163,35 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. MESSAGE EVENT (GETKEY DM WARNING & FAST AUTO-DELETE)
+// 5. PREFIX COMMANDS & MODERATION SYSTEM
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
-    // Bot Ke Apne Messages Ya DMs Ko Ignore Karein
-    if (message.author.bot || !message.guild) return;
+    // Bots, DMs aur Slash Command System Messages ko skip karo
+    if (message.author.bot || !message.guild || message.interaction) return;
 
+    // --- GETKEY CHANNEL CLEANUP & DM SYSTEM ---
     const rawGetKeyChannelId = process.env.GETKEY_CHANNEL_ID;
     const getKeyChannelId = rawGetKeyChannelId ? String(rawGetKeyChannelId).trim() : null;
 
-    // Check agar message GetKey Channel me bheja gaya hai
     if (getKeyChannelId && String(message.channel.id) === getKeyChannelId) {
-
         setImmediate(async () => {
             try {
-                // 1. Delete message
+                // 1. Message Delete Karo
                 if (message.deletable) {
                     await message.delete().catch(() => {});
                 }
 
-                // 2. Send DM to User
+                // 2. User ko DM me Warning Bhejo
                 await message.author.send(
-                    "⚠️Dont Send Massages In Get-key Channel ⚠️
-
-Dont Try To send Again Massage There🤬"
+                    "⚠️ **Warning:** Yahan Getkey Command ke ilava kuch or message mat send karo. Sirf getkey Command chalao otherwise next time timeout!"
                 ).catch(() => {});
 
             } catch (err) {
-                console.error("❌ GetKey Filter Error:", err.message);
+                console.error("❌ GetKey Auto-Clean Error:", err.message);
             }
         });
 
-        return; // Normal commands to skip
+        return; // GetKey channel me koi prefix command execute na ho
     }
 
     // Dot Commands (.kick, .ban, .unban)
@@ -227,9 +237,10 @@ Dont Try To send Again Massage There🤬"
         const args = message.content.slice(PREFIX.length).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 
+        // Ticket Panel Setup Command (Admin Only)
         if (command === 'ticketsetup') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-                return message.reply('❌ Keval Admin hi ticket panel setup kar sakta he!');
+                return message.reply('❌ Keyewal Admin hi ticket panel setup kar sakta he!');
             }
 
             const row = new ActionRowBuilder().addComponents(
@@ -248,6 +259,7 @@ Dont Try To send Again Massage There🤬"
             return message.delete().catch(() => {});
         }
 
+        // !help Command
         if (command === 'help') {
             const helpEmbed = new EmbedBuilder()
                 .setTitle('👑 Herry Bot Commands Panel')
@@ -263,10 +275,12 @@ Dont Try To send Again Massage There🤬"
             return message.reply({ embeds: [helpEmbed] });
         }
 
+        // !ping Command
         if (command === 'ping') {
             return message.reply(`🏓 Pong! API Latency is **${client.ws.ping}ms**.`);
         }
 
+        // !clear Command
         if (command === 'clear') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return;
             const amount = parseInt(args[0]);
@@ -279,6 +293,7 @@ Dont Try To send Again Massage There🤬"
             } catch (e) {}
         }
 
+        // !timeout / !mute Command
         if (command === 'timeout' || command === 'mute') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
             const target = message.mentions.members.first();
@@ -290,6 +305,7 @@ Dont Try To send Again Massage There🤬"
             } catch (e) {}
         }
 
+        // !rta Command (Remove Timeout)
         if (command === 'rta') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
             const target = message.mentions.members.first();
