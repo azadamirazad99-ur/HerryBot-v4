@@ -1,6 +1,6 @@
 
 // ===================================================
-// HERRY HACKS BOT - FULL INTEGRATED SYSTEM
+// HERRY HACKS BOT - CLEAN UTILITY & SUPPORT SYSTEM
 // ===================================================
 
 const { 
@@ -12,10 +12,7 @@ const {
     ButtonBuilder, 
     ButtonStyle, 
     PermissionsBitField, 
-    ChannelType,
-    REST,
-    Routes,
-    SlashCommandBuilder
+    ChannelType 
 } = require('discord.js');
 require('dotenv').config();
 
@@ -33,30 +30,11 @@ const client = new Client({
 const PREFIX = '!';
 
 // ---------------------------------------------------
-// 1. REGISTER SLASH COMMANDS & READY EVENT
+// 1. BOT READY EVENT
 // ---------------------------------------------------
-const commands = [
-    new SlashCommandBuilder()
-        .setName('getkey')
-        .setDescription('Get your VIP Script Access Key')
-].map(command => command.toJSON());
-
-client.once('ready', async () => {
+client.once('ready', () => {
     console.log(`✅ [HERRY BOT] Connected as ${client.user.tag}`);
     client.user.setActivity('HerryHacks VIP | !help', { type: 3 });
-
-    // Automatically Register /getkey Slash Command
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || process.env.DISCORD_TOKEN);
-    try {
-        console.log('🔄 Registering Slash Commands...');
-        await rest.put(
-            Routes.applicationCommands(client.user.id),
-            { body: commands }
-        );
-        console.log('✅ Slash Commands Registered Successfully!');
-    } catch (error) {
-        console.error('❌ Slash Command Registration Error:', error);
-    }
 });
 
 // ---------------------------------------------------
@@ -102,48 +80,16 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ---------------------------------------------------
-// 4. INTERACTION EVENT (GETKEY SLASH COMMAND + TICKETS)
+// 4. FIXED TICKET BUTTON INTERACTION
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
-
-    // --- A. /GETKEY SLASH COMMAND ---
-    if (interaction.isChatInputCommand()) {
-        if (interaction.commandName === 'getkey') {
-            try {
-                // Instantly acknowledge interaction to prevent "Application didn't respond" error
-                await interaction.deferReply({ ephemeral: true });
-
-                // Dynamic Key Generation / Response
-                const userKey = `HERRY-VIP-${interaction.user.id.slice(-4)}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-                const keyEmbed = new EmbedBuilder()
-                    .setTitle('🔑 HerryHacks Script VIP Key')
-                    .setDescription(`Hello ${interaction.user}, here is your script access key:\n\n\`\`\`${userKey}\`\`\``)
-                    .setColor('#00FF00')
-                    .addFields(
-                        { name: '📌 Note', value: 'This key is bound to your account. Do not share it with anyone.' }
-                    )
-                    .setFooter({ text: 'HerryHacks Official Guard System' })
-                    .setTimestamp();
-
-                await interaction.editReply({ embeds: [keyEmbed] });
-
-            } catch (err) {
-                console.error("GetKey Slash Command Error:", err);
-                if (interaction.deferred) {
-                    await interaction.editReply({ content: '❌ Key generate karne me error aaya!' }).catch(() => {});
-                }
-            }
-        }
-        return;
-    }
-
-    // --- B. TICKET BUTTON ACTIONS ---
     if (!interaction.isButton()) return;
 
+    // Create Ticket Button Action
     if (interaction.customId === 'create_ticket') {
         const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-_]/g, '');
         
+        // Duplicate ticket check
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
         if (existingChannel) {
             return interaction.reply({ content: `❌ Aapka ticket already open he: ${existingChannel}`, ephemeral: true });
@@ -155,13 +101,25 @@ client.on('interactionCreate', async (interaction) => {
             const staffRoleId = process.env.STAFF_ROLE_ID;
 
             const permissionOverwrites = [
-                { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-                { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
-                { id: client.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels] }
+                {
+                    id: interaction.guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel]
+                },
+                {
+                    id: interaction.user.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
+                },
+                {
+                    id: client.user.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ManageChannels]
+                }
             ];
 
             if (staffRoleId && staffRoleId.length > 10) {
-                permissionOverwrites.push({ id: staffRoleId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] });
+                permissionOverwrites.push({
+                    id: staffRoleId,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
+                });
             }
 
             const channelOptions = {
@@ -196,6 +154,7 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
+    // Close Ticket Button Action
     if (interaction.customId === 'close_ticket') {
         await interaction.reply('🔒 Closing this ticket in 5 seconds...');
         setTimeout(() => {
@@ -205,33 +164,10 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. MESSAGE EVENT (GETKEY AUTO-DELETE & PREFIX COMMANDS)
+// 5. PREFIX COMMANDS & MODERATION SYSTEM
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
-    if (message.author.bot || !message.guild || message.interaction) return;
-
-    // --- GETKEY CHANNEL AUTO-DELETE & DM WARNING ---
-    const rawGetKeyChannelId = process.env.GETKEY_CHANNEL_ID;
-    const getKeyChannelId = rawGetKeyChannelId ? String(rawGetKeyChannelId).trim() : null;
-
-    if (getKeyChannelId && String(message.channel.id) === getKeyChannelId) {
-        setImmediate(async () => {
-            try {
-                if (message.deletable) {
-                    await message.delete().catch(() => {});
-                }
-
-                await message.author.send(
-                    "⚠️ **Warning:** Yahan Getkey Command ke ilava kuch or message mat send karo. Sirf /getkey Command chalao otherwise next time timeout!"
-                ).catch(() => {});
-
-            } catch (err) {
-                console.error("❌ GetKey Filter Error:", err.message);
-            }
-        });
-
-        return; 
-    }
+    if (message.author.bot || !message.guild) return;
 
     // Dot Commands (.kick, .ban, .unban)
     if (message.content.startsWith('.')) {
@@ -276,6 +212,7 @@ client.on('messageCreate', async (message) => {
         const args = message.content.slice(PREFIX.length).trim().split(/ +/);
         const command = args.shift().toLowerCase();
 
+        // Ticket Panel Setup Command (Admin Only)
         if (command === 'ticketsetup') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
                 return message.reply('❌ Keyewal Admin hi ticket panel setup kar sakta he!');
@@ -297,12 +234,12 @@ client.on('messageCreate', async (message) => {
             return message.delete().catch(() => {});
         }
 
+        // !help Command
         if (command === 'help') {
             const helpEmbed = new EmbedBuilder()
                 .setTitle('👑 Herry Bot Commands Panel')
                 .setColor('#FFD700')
                 .addFields(
-                    { name: '/getkey', value: 'Generate VIP Script Access Key' },
                     { name: '!ticketsetup', value: 'Deploy ticket creation button (Admin Only)' },
                     { name: '!ping', value: 'Check bot latency' },
                     { name: '!clear [amount]', value: 'Delete bulk messages (1-100)' },
@@ -313,10 +250,12 @@ client.on('messageCreate', async (message) => {
             return message.reply({ embeds: [helpEmbed] });
         }
 
+        // !ping Command
         if (command === 'ping') {
             return message.reply(`🏓 Pong! API Latency is **${client.ws.ping}ms**.`);
         }
 
+        // !clear Command
         if (command === 'clear') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return;
             const amount = parseInt(args[0]);
@@ -329,6 +268,7 @@ client.on('messageCreate', async (message) => {
             } catch (e) {}
         }
 
+        // !timeout / !mute Command
         if (command === 'timeout' || command === 'mute') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
             const target = message.mentions.members.first();
@@ -340,6 +280,7 @@ client.on('messageCreate', async (message) => {
             } catch (e) {}
         }
 
+        // !rta Command (Remove Timeout)
         if (command === 'rta') {
             if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
             const target = message.mentions.members.first();
