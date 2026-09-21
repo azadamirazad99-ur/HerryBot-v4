@@ -31,3 +31,4 @@ const rest = new REST().setToken(process.env.TOKEN);
         console.error(error);
     }
 })(); 
+ 
