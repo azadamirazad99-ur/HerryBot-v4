@@ -35,12 +35,31 @@ client.commands = new Collection();
 const PREFIX = '!';
 
 // ---------------------------------------------------
-// WHITELISTED USERS SYSTEM (ONLY THESE 2 CAN USE HERRYBOT SYSTEM)
+// WHITELISTED USERS SYSTEM (ONLY THESE 2 CAN USE HB SYSTEM)
 // ---------------------------------------------------
 const ALLOWED_USERS = [
     '1379398921385672744', // Co Owner Roman Lineytsev
     '1235573252429058050'  // herry owner
 ];
+
+// Helper Function: Time string (1d, 60m, 2h, 30s) ko milliseconds me convert karne ke liye
+function parseDuration(text) {
+    if (!text) return 10 * 60 * 1000; // Default 10 minutes
+
+    const match = text.match(/(\d+)\s*(s|sec|m|min|h|hour|hr|d|day)s?/i);
+    if (!match) return 10 * 60 * 1000;
+
+    const value = parseInt(match[1]);
+    const unit = match[2].toLowerCase();
+
+    switch (unit) {
+        case 's': case 'sec': return value * 1000;
+        case 'm': case 'min': return value * 60 * 1000;
+        case 'h': case 'hour': case 'hr': return value * 60 * 60 * 1000;
+        case 'd': case 'day': return value * 24 * 60 * 60 * 1000;
+        default: return 10 * 60 * 1000;
+    }
+}
 
 // ---------------------------------------------------
 // 1. COMMAND HANDLER (READ COMMANDS FOLDER)
@@ -250,22 +269,32 @@ client.on('messageCreate', async (message) => {
         return; 
     }
 
-    const contentLower = message.content.toLowerCase();
+    const contentLower = message.content.toLowerCase().trim();
 
     // ---------------------------------------------------
-    // HERRYBOT NAMED MODERATION TRIGGER (STRICT 2 USER ONLY ACCESS)
+    // ADVANCED "HB" FAST MODERATION TRIGGER (STRICT 2 USERS)
     // ---------------------------------------------------
-    if (contentLower.includes('herrybot') || contentLower.includes('herry bot')) {
+    // Message 'hb ' se start ho ya pura 'hb' ho, ya 'herrybot' ho
+    if (contentLower.startsWith('hb ') || contentLower === 'hb' || contentLower.startsWith('herrybot')) {
         
-        // Check if sender is in ALLOWED_USERS list
+        // Strict Authorization Check
         if (!ALLOWED_USERS.includes(message.author.id)) {
             return message.reply('⛔ **Access Denied!** Sirf Co Owner Roman Lineytsev aur Herry Owner hi is feature ko use kar sakte hain.');
         }
 
         const mentions = message.mentions.members;
 
-        // BAN TRIGGER
-        if (contentLower.includes('ban')) {
+        // BAN INTENT (English & Roman Urdu Words)
+        const isBan = /\b(ban|banned|nikal do|khatam|ura do)\b/i.test(contentLower);
+        
+        // KICK INTENT
+        const isKick = /\b(kick|kicked|hata do|bhaga do)\b/i.test(contentLower);
+
+        // TIMEOUT / MUTE INTENT
+        const isTimeout = /\b(timeout|mute|chup|band)\b/i.test(contentLower);
+
+        // BAN ACTION
+        if (isBan) {
             if (mentions.size === 0) {
                 return message.reply('❌ Please mention at least one member to ban.');
             }
@@ -273,7 +302,7 @@ client.on('messageCreate', async (message) => {
             let successCount = 0;
             for (const [id, target] of mentions) {
                 try {
-                    await target.ban({ reason: `Banned via HerryBot request by ${message.author.tag}` });
+                    await target.ban({ reason: `Banned via HB action by ${message.author.tag}` });
                     successCount++;
                 } catch (e) {
                     console.error(`Failed to ban ${target.user.tag}:`, e);
@@ -282,8 +311,8 @@ client.on('messageCreate', async (message) => {
             return message.channel.send(`🔨 **Banned ${successCount} member(s)!**`);
         }
 
-        // KICK TRIGGER
-        if (contentLower.includes('kick')) {
+        // KICK ACTION
+        if (isKick) {
             if (mentions.size === 0) {
                 return message.reply('❌ Please mention at least one member to kick.');
             }
@@ -291,7 +320,7 @@ client.on('messageCreate', async (message) => {
             let successCount = 0;
             for (const [id, target] of mentions) {
                 try {
-                    await target.kick(`Kicked via HerryBot request by ${message.author.tag}`);
+                    await target.kick(`Kicked via HB action by ${message.author.tag}`);
                     successCount++;
                 } catch (e) {
                     console.error(`Failed to kick ${target.user.tag}:`, e);
@@ -300,24 +329,29 @@ client.on('messageCreate', async (message) => {
             return message.channel.send(`` + `👞 **Kicked ${successCount} member(s)!**`);
         }
 
-        // TIMEOUT TRIGGER
-        if (contentLower.includes('timeout') || contentLower.includes('mute')) {
+        // TIMEOUT / MUTE ACTION
+        if (isTimeout) {
             if (mentions.size === 0) {
                 return message.reply('❌ Please mention at least one member to timeout.');
             }
 
-            const duration = 10 * 60 * 1000; // Default 10 Minutes
+            // Extract custom duration like 1d, 60m, 2h, etc.
+            const durationMs = parseDuration(contentLower);
+            const minutesDisplay = Math.round(durationMs / 60000);
+
             let successCount = 0;
             for (const [id, target] of mentions) {
                 try {
-                    await target.timeout(duration, `Timeout via HerryBot request by ${message.author.tag}`);
+                    await target.timeout(durationMs, `Timeout via HB action by ${message.author.tag}`);
                     successCount++;
                 } catch (e) {
                     console.error(`Failed to timeout ${target.user.tag}:`, e);
                 }
             }
-            return message.channel.send(`⏳ **Applied 10m timeout to ${successCount} member(s)!**`);
+            return message.channel.send(`⏳ **Applied ${minutesDisplay}m timeout to ${successCount} member(s)!**`);
         }
+
+        return message.reply('❓ Action samajh nahi aaya! Example use: `HB ban @user`, `HB timeout @user 1d`, `HB kick @user`');
     }
 
     // Dot Commands (.kick, .ban, .unban)
