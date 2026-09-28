@@ -4,42 +4,48 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('checkmembers')
         .setDescription('Checks common members between HerryHacks and current server')
-        // Direct Enums Values (UserInstall: 1, GuildInstall: 0)
-        .setIntegrationTypes([0, 1])
-        // Direct Context Values (Guild: 0, BotDM: 1, PrivateChannel: 2)
-        .setContexts([0, 1, 2]),
+        .setIntegrationTypes([0, 1]) // 0: Guild Install, 1: User Install
+        .setContexts([0, 1, 2]), // 0: Guild, 1: Bot DM, 2: Private Channel
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
-        const HERRY_GUILD_ID = process.env.GUILD_ID || '1379398921385672744'; 
-        const herryGuild = interaction.client.guilds.cache.get(HERRY_GUILD_ID);
+        // HerryHacks Server ID
+        const HERRY_GUILD_ID = '1379398921385672744'; 
 
-        if (!herryGuild) {
-            return interaction.editReply({ content: '❌ HerryHacks server load nahi ho saka!' });
+        // 1. Force Fetch Server from API (Cache ka masla khatam)
+        let herryGuild;
+        try {
+            herryGuild = await interaction.client.guilds.fetch(HERRY_GUILD_ID);
+        } catch (error) {
+            return interaction.editReply({ content: `❌ HerryHacks server fetch karne me error aaya! ID check kar: ${HERRY_GUILD_ID}` });
         }
 
+        // 2. Fetch HerryHacks Members
         let herryMembers;
         try {
             herryMembers = await herryGuild.members.fetch();
         } catch (e) {
-            return interaction.editReply({ content: '❌ HerryHacks ke members fetch karne me error aaya.' });
+            return interaction.editReply({ content: '❌ HerryHacks ke members ka data nahi nikal saka.' });
         }
 
+        // 3. Current Server Check
         const currentGuild = interaction.guild;
         if (!currentGuild) {
-            return interaction.editReply({ content: '❌ Ye command sirf kisi server ke andar chalayein!' });
+            return interaction.editReply({ content: '❌ Ye command kisi server ke chat me chalao, DM me nahi!' });
         }
 
+        // 4. Fetch Current Server Members (Yahan wahi restriction aayegi agar bot added nahi he)
         let currentMembers;
         try {
             currentMembers = await currentGuild.members.fetch();
         } catch (e) {
             return interaction.editReply({ 
-                content: '⚠️ **Discord Security Block:** Bot is server me added nahi hai, is waja se Discord API ne is server ke members ka data dene se deny kar diya!' 
+                content: `⚠️ Error: Bot ko is server (${currentGuild.name}) ke members list read karne ka access nahi hai (Discord Security).` 
             });
         }
 
+        // 5. Comparison
         const commonMembers = [];
         currentMembers.forEach(member => {
             if (!member.user.bot && herryMembers.has(member.id)) {
@@ -48,16 +54,16 @@ module.exports = {
         });
 
         if (commonMembers.length === 0) {
-            return interaction.editReply({ content: '✅ Is server me koi common member nahi mila.' });
+            return interaction.editReply({ content: '✅ Is server me HerryHacks ka koi member nahi mila.' });
         }
 
-        const tags = commonMembers.map(m => `• <@${m.id}> (${m.user.tag} - \`${m.id}\`)`).slice(0, 30).join('\n');
+        // Tags banana (Max 30 members warna limit cross ho jayegi)
+        const tags = commonMembers.map(m => `• <@${m.id}> (${m.user.tag})`).slice(0, 30).join('\n');
 
         const embed = new EmbedBuilder()
             .setTitle(`🔍 Common Members Found (${commonMembers.length})`)
             .setDescription(tags)
-            .setColor('#FF0000')
-            .setFooter({ text: 'Only visible to you (Ephemeral)' });
+            .setColor('#FF0000');
 
         return interaction.editReply({ embeds: [embed] });
     }
