@@ -439,3 +439,4 @@ client.on('messageCreate', async (message) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
+
