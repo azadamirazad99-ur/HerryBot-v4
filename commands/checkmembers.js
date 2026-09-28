@@ -1,17 +1,17 @@
-const { SlashCommandBuilder, IntegrationType, InteractionContextType, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('checkmembers')
         .setDescription('Checks common members between HerryHacks and current server')
-        // External User App Settings
-        .setIntegrationTypes([IntegrationType.UserInstall, IntegrationType.GuildInstall])
-        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel]),
+        // Direct Enums Values (UserInstall: 1, GuildInstall: 0)
+        .setIntegrationTypes([0, 1])
+        // Direct Context Values (Guild: 0, BotDM: 1, PrivateChannel: 2)
+        .setContexts([0, 1, 2]),
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
-        // 1. HerryHacks Server ID (Jahan Bot present hai)
         const HERRY_GUILD_ID = process.env.GUILD_ID || '1379398921385672744'; 
         const herryGuild = interaction.client.guilds.cache.get(HERRY_GUILD_ID);
 
@@ -19,7 +19,6 @@ module.exports = {
             return interaction.editReply({ content: '❌ HerryHacks server load nahi ho saka!' });
         }
 
-        // 2. Fetch Members of HerryHacks
         let herryMembers;
         try {
             herryMembers = await herryGuild.members.fetch();
@@ -27,13 +26,11 @@ module.exports = {
             return interaction.editReply({ content: '❌ HerryHacks ke members fetch karne me error aaya.' });
         }
 
-        // 3. Current Server (Where Command is Triggered)
         const currentGuild = interaction.guild;
         if (!currentGuild) {
             return interaction.editReply({ content: '❌ Ye command sirf kisi server ke andar chalayein!' });
         }
 
-        // 4. Try Fetching Current Server Members
         let currentMembers;
         try {
             currentMembers = await currentGuild.members.fetch();
@@ -43,7 +40,6 @@ module.exports = {
             });
         }
 
-        // 5. Compare Members
         const commonMembers = [];
         currentMembers.forEach(member => {
             if (!member.user.bot && herryMembers.has(member.id)) {
