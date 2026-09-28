@@ -34,6 +34,10 @@ const client = new Client({
 client.commands = new Collection();
 const PREFIX = '!';
 
+// Memory Stores
+const pendingRolesMap = new Map(); 
+const warningsMap = new Map(); // Store user warnings in memory
+
 // ---------------------------------------------------
 // WHITELISTED USERS SYSTEM (ONLY THESE 2 CAN USE HB SYSTEM)
 // ---------------------------------------------------
@@ -42,12 +46,12 @@ const ALLOWED_USERS = [
     '1235573252429058050'  // herry owner
 ];
 
-// Helper Function: Time string (1d, 60m, 2h, 30s) ko milliseconds me convert karne ke liye
+// Helper Function: Parse Time Strings
 function parseDuration(text) {
-    if (!text) return 10 * 60 * 1000; // Default 10 minutes
+    if (!text) return null;
 
     const match = text.match(/(\d+)\s*(s|sec|m|min|h|hour|hr|d|day)s?/i);
-    if (!match) return 10 * 60 * 1000;
+    if (!match) return null;
 
     const value = parseInt(match[1]);
     const unit = match[2].toLowerCase();
@@ -57,7 +61,7 @@ function parseDuration(text) {
         case 'm': case 'min': return value * 60 * 1000;
         case 'h': case 'hour': case 'hr': return value * 60 * 60 * 1000;
         case 'd': case 'day': return value * 24 * 60 * 60 * 1000;
-        default: return 10 * 60 * 1000;
+        default: return null;
     }
 }
 
@@ -92,9 +96,8 @@ if (fs.existsSync(commandsPath)) {
 // ---------------------------------------------------
 client.once('ready', async () => {
     console.log(`✅ [HERRY BOT] Connected as ${client.user.tag}`);
-    client.user.setActivity('HerryHacks VIP | !help', { type: 3 });
+    client.user.setActivity('HerryHacks VIP | HB Action List', { type: 3 });
 
-    // Register Slash Commands globally
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || process.env.DISCORD_TOKEN);
     try {
         console.log('🔄 Registering Slash Commands to Discord...');
@@ -152,7 +155,6 @@ client.on('guildMemberRemove', async (member) => {
 // ---------------------------------------------------
 client.on('interactionCreate', async (interaction) => {
 
-    // --- A. EXECUTE SLASH COMMANDS FROM FOLDER ---
     if (interaction.isChatInputCommand()) {
         const command = client.commands.get(interaction.commandName);
 
@@ -174,7 +176,6 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    // --- B. TICKET BUTTON ACTIONS ---
     if (!interaction.isButton()) return;
 
     if (interaction.customId === 'create_ticket') {
@@ -272,9 +273,8 @@ client.on('messageCreate', async (message) => {
     const contentLower = message.content.toLowerCase().trim();
 
     // ---------------------------------------------------
-    // ADVANCED "HB" FAST MODERATION TRIGGER (STRICT 2 USERS)
+    // FULL ADVANCED "HB" MODERATION ENGINE (2 ALLOWED USERS)
     // ---------------------------------------------------
-    // Message 'hb ' se start ho ya pura 'hb' ho, ya 'herrybot' ho
     if (contentLower.startsWith('hb ') || contentLower === 'hb' || contentLower.startsWith('herrybot')) {
         
         // Strict Authorization Check
@@ -283,60 +283,102 @@ client.on('messageCreate', async (message) => {
         }
 
         const mentions = message.mentions.members;
+        const roleMentions = message.mentions.roles;
 
-        // BAN INTENT (English & Roman Urdu Words)
-        const isBan = /\b(ban|banned|nikal do|khatam|ura do)\b/i.test(contentLower);
-        
-        // KICK INTENT
-        const isKick = /\b(kick|kicked|hata do|bhaga do)\b/i.test(contentLower);
+        // --- ACTION LIST MENU ---
+        if (contentLower === 'hb action list' || contentLower === 'hb actions' || contentLower === 'hb help') {
+            const listEmbed = new EmbedBuilder()
+                .setTitle('⚙️ HerryHacks HB Fast Moderation Actions Menu')
+                .setDescription('Niche diye gaye saare actions `HB <action>` karke use kiye ja sakte hain:')
+                .setColor('#FF0055')
+                .addFields(
+                    { name: '🔨 Ban & Kick System', value: '• `HB ban @user` - Ban user\n• `HB softban @user` - Ban & instantly unban (clears msgs)\n• `HB unban <UserID>` - Unban user by ID\n• `HB kick @user` - Kick user', inline: false },
+                    { name: '⏳ Timeout / Mute System', value: '• `HB timeout @user 10m` - Apply timeout (10m, 2h, 1d)\n• `HB remove timeout @user` - Remove timeout/unmute', inline: false },
+                    { name: '🎭 Role Management', value: '• `HB give role @user @role` - Assign role\n• `HB remove role @user @role` - Permanent remove\n• `HB remove role @user @role 5m` - Temp remove for 5 mins\n• `HB remove role @user @role till i ask` - Save for giveback\n• `HB giveback role @user` - Restore saved roles', inline: false },
+                    { name: '⚠️ Warning System', value: '• `HB warn @user <reason>` - Give warning\n• `HB unwarn @user` - Remove warning', inline: false },
+                    { name: '🔒 Channel Moderation', value: '• `HB clear 20` - Purge up to 100 messages\n• `HB lock channel` - Lock current channel\n• `HB unlock channel` - Unlock current channel\n• `HB slowmode 10s` - Set slowmode (e.g. 5s, 10s, off)', inline: false },
+                    { name: '🏷️ User & Nickname System', value: '• `HB nick @user <NewName>` - Change Nickname\n• `HB reset nick @user` - Reset to original name\n• `HB userinfo @user` - View user details', inline: false }
+                )
+                .setFooter({ text: 'Authorized: Co-Owner Roman & Herry Owner' })
+                .setTimestamp();
 
-        // TIMEOUT / MUTE INTENT
-        const isTimeout = /\b(timeout|mute|chup|band)\b/i.test(contentLower);
+            return message.reply({ embeds: [listEmbed] });
+        }
 
-        // BAN ACTION
-        if (isBan) {
-            if (mentions.size === 0) {
-                return message.reply('❌ Please mention at least one member to ban.');
+        // --- 1. UNBAN ACTION ---
+        if (/\b(unban|pardon|un-ban)\b/i.test(contentLower)) {
+            const userIdMatch = message.content.match(/\d{17,19}/);
+            if (!userIdMatch) return message.reply('❌ Please specify a valid User ID to unban.');
+            
+            try {
+                await message.guild.members.unban(userIdMatch[0]);
+                return message.channel.send(`✅ **Unbanned User ID:** ${userIdMatch[0]}`);
+            } catch (e) {
+                return message.reply(`❌ Could not unban user: ${e.message}`);
             }
+        }
+
+        // --- 2. SOFTBAN ACTION ---
+        if (/\b(softban|soft ban)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Mention member to softban.');
+            const target = mentions.first();
+            try {
+                await target.ban({ deleteMessageSeconds: 7 * 24 * 60 * 60, reason: 'Softban via HB' });
+                await message.guild.members.unban(target.id);
+                return message.channel.send(`🧹 **Softbanned ${target.user.tag}! (Messages cleared & unbanned)**`);
+            } catch (e) {
+                return message.reply(`❌ Softban failed: ${e.message}`);
+            }
+        }
+
+        // --- 3. BAN ACTION ---
+        if (/\b(ban|banned|nikal do|khatam|ura do)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Please mention at least one member to ban.');
 
             let successCount = 0;
             for (const [id, target] of mentions) {
                 try {
                     await target.ban({ reason: `Banned via HB action by ${message.author.tag}` });
                     successCount++;
-                } catch (e) {
-                    console.error(`Failed to ban ${target.user.tag}:`, e);
-                }
+                } catch (e) {}
             }
             return message.channel.send(`🔨 **Banned ${successCount} member(s)!**`);
         }
 
-        // KICK ACTION
-        if (isKick) {
-            if (mentions.size === 0) {
-                return message.reply('❌ Please mention at least one member to kick.');
-            }
+        // --- 4. KICK ACTION ---
+        if (/\b(kick|kicked|hata do|bhaga do)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Please mention at least one member to kick.');
 
             let successCount = 0;
             for (const [id, target] of mentions) {
                 try {
                     await target.kick(`Kicked via HB action by ${message.author.tag}`);
                     successCount++;
-                } catch (e) {
-                    console.error(`Failed to kick ${target.user.tag}:`, e);
-                }
+                } catch (e) {}
             }
-            return message.channel.send(`` + `👞 **Kicked ${successCount} member(s)!**`);
+            return message.channel.send(`MB **Kicked ${successCount} member(s)!**`);
         }
 
-        // TIMEOUT / MUTE ACTION
-        if (isTimeout) {
-            if (mentions.size === 0) {
-                return message.reply('❌ Please mention at least one member to timeout.');
-            }
+        // --- 5. REMOVE TIMEOUT / UNTIMEOUT ---
+        if (/\b(remove timeout|untimeout|unmute|remove mute)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Please mention member to remove timeout.');
 
-            // Extract custom duration like 1d, 60m, 2h, etc.
-            const durationMs = parseDuration(contentLower);
+            let successCount = 0;
+            for (const [id, target] of mentions) {
+                try {
+                    await target.timeout(null);
+                    successCount++;
+                } catch (e) {}
+            }
+            return message.channel.send(`🔓 **Removed timeout for ${successCount} member(s)!**`);
+        }
+
+        // --- 6. GIVE TIMEOUT / MUTE ---
+        if (/\b(timeout|mute|chup|band)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Please mention member to timeout.');
+
+            const parsedTime = parseDuration(contentLower);
+            const durationMs = parsedTime ? parsedTime : (10 * 60 * 1000); // Default 10m
             const minutesDisplay = Math.round(durationMs / 60000);
 
             let successCount = 0;
@@ -344,14 +386,213 @@ client.on('messageCreate', async (message) => {
                 try {
                     await target.timeout(durationMs, `Timeout via HB action by ${message.author.tag}`);
                     successCount++;
-                } catch (e) {
-                    console.error(`Failed to timeout ${target.user.tag}:`, e);
-                }
+                } catch (e) {}
             }
             return message.channel.send(`⏳ **Applied ${minutesDisplay}m timeout to ${successCount} member(s)!**`);
         }
 
-        return message.reply('❓ Action samajh nahi aaya! Example use: `HB ban @user`, `HB timeout @user 1d`, `HB kick @user`');
+        // --- 7. GIVEBACK ROLE ---
+        if (/\b(giveback|give back|role back)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Mention user to give back role.');
+
+            let count = 0;
+            for (const [id, target] of mentions) {
+                if (pendingRolesMap.has(target.id)) {
+                    const roleIds = pendingRolesMap.get(target.id);
+                    for (const rId of roleIds) {
+                        try {
+                            await target.roles.add(rId);
+                        } catch (e) {}
+                    }
+                    pendingRolesMap.delete(target.id);
+                    count++;
+                }
+            }
+            return message.channel.send(`🔄 **Gave back stored roles to ${count} user(s)!**`);
+        }
+
+        // --- 8. GIVE / ADD ROLE ---
+        if (/\b(give role|add role|role give|role add)\b/i.test(contentLower)) {
+            if (mentions.size === 0 || roleMentions.size === 0) {
+                return message.reply('❌ Mention at least one member AND one role. Example: `HB give role @user @role`');
+            }
+
+            const role = roleMentions.first();
+            let count = 0;
+            for (const [id, target] of mentions) {
+                try {
+                    await target.roles.add(role);
+                    count++;
+                } catch (e) {}
+            }
+            return message.channel.send(`✅ **Added role ${role.name} to ${count} user(s)!**`);
+        }
+
+        // --- 9. REMOVE ROLE (PERMANENT / TEMPORARY / TILL I ASK) ---
+        if (/\b(remove role|take role|role remove)\b/i.test(contentLower)) {
+            if (mentions.size === 0 || roleMentions.size === 0) {
+                return message.reply('❌ Mention member AND role. Example: `HB remove role @user @role`');
+            }
+
+            const role = roleMentions.first();
+            const tempTimeMs = parseDuration(contentLower);
+            const isTillIAsk = contentLower.includes('till i ask') || contentLower.includes('jab tak');
+
+            let count = 0;
+            for (const [id, target] of mentions) {
+                try {
+                    await target.roles.remove(role);
+                    count++;
+
+                    if (tempTimeMs) {
+                        setTimeout(async () => {
+                            try {
+                                await target.roles.add(role);
+                                message.channel.send(`⏰ **Time up! Restored role ${role.name} to ${target.user.tag}**`);
+                            } catch (err) {}
+                        }, tempTimeMs);
+                    }
+
+                    if (isTillIAsk) {
+                        const existing = pendingRolesMap.get(target.id) || [];
+                        existing.push(role.id);
+                        pendingRolesMap.set(target.id, existing);
+                    }
+
+                } catch (e) {}
+            }
+
+            if (tempTimeMs) {
+                const mins = Math.round(tempTimeMs / 60000);
+                return message.channel.send(`⏳ **Temporarily removed role ${role.name} from ${count} member(s) for ${mins} minute(s)!**`);
+            } else if (isTillIAsk) {
+                return message.channel.send(`📌 **Removed role ${role.name} from ${count} member(s). Saved for 'giveback'!**`);
+            } else {
+                return message.channel.send(`🗑️ **Removed role ${role.name} from ${count} member(s)!**`);
+            }
+        }
+
+        // --- 10. WARN SYSTEM ---
+        if (/\b(warn|warning)\b/i.test(contentLower) && !contentLower.includes('unwarn')) {
+            if (mentions.size === 0) return message.reply('❌ Mention user to warn.');
+            const target = mentions.first();
+            const reason = message.content.split(/ +/).slice(3).join(' ') || 'No reason provided';
+
+            const currentWarns = (warningsMap.get(target.id) || 0) + 1;
+            warningsMap.set(target.id, currentWarns);
+
+            return message.channel.send(`⚠️ **Warned ${target.user.tag}!** Total Warnings: **${currentWarns}** | Reason: ${reason}`);
+        }
+
+        // --- 11. UNWARN SYSTEM ---
+        if (/\b(unwarn|remove warn)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Mention user to unwarn.');
+            const target = mentions.first();
+            
+            warningsMap.set(target.id, 0);
+            return message.channel.send(`✅ **Cleared all warnings for ${target.user.tag}!**`);
+        }
+
+        // --- 12. LOCK CHANNEL ---
+        if (/\b(lock channel|lockdown|lock)\b/i.test(contentLower) && !contentLower.includes('unlock')) {
+            try {
+                await message.channel.permissionOverwrites.edit(message.guild.roles.everyone, { SendMessages: false });
+                return message.channel.send('🔒 **Channel has been locked!**');
+            } catch (e) {
+                return message.reply(`❌ Lock failed: ${e.message}`);
+            }
+        }
+
+        // --- 13. UNLOCK CHANNEL ---
+        if (/\b(unlock channel|unlock)\b/i.test(contentLower)) {
+            try {
+                await message.channel.permissionOverwrites.edit(message.guild.roles.everyone, { SendMessages: null });
+                return message.channel.send('🔓 **Channel has been unlocked!**');
+            } catch (e) {
+                return message.reply(`❌ Unlock failed: ${e.message}`);
+            }
+        }
+
+        // --- 14. SLOWMODE ---
+        if (/\b(slowmode|slow mode)\b/i.test(contentLower)) {
+            if (contentLower.includes('off') || contentLower.includes('0')) {
+                await message.channel.setRateLimitPerUser(0);
+                return message.channel.send('🚀 **Slowmode disabled!**');
+            }
+
+            const parsed = parseDuration(contentLower);
+            const seconds = parsed ? Math.round(parsed / 1000) : 5;
+
+            try {
+                await message.channel.setRateLimitPerUser(seconds);
+                return message.channel.send(`⏳ **Slowmode set to ${seconds} seconds!**`);
+            } catch (e) {
+                return message.reply(`❌ Failed to set slowmode: ${e.message}`);
+            }
+        }
+
+        // --- 15. PURGE / CLEAR MESSAGES ---
+        if (/\b(clear|delete|clean|purge)\b/i.test(contentLower)) {
+            const amountMatch = contentLower.match(/\d+/);
+            const amount = amountMatch ? parseInt(amountMatch[0]) : 10;
+
+            if (amount < 1 || amount > 100) return message.reply('❌ Specify message count between 1 and 100.');
+
+            try {
+                await message.delete().catch(() => {});
+                const deleted = await message.channel.bulkDelete(amount, true);
+                const r = await message.channel.send(`🧹 Cleared **${deleted.size}** messages.`);
+                setTimeout(() => r.delete().catch(() => {}), 3000);
+                return;
+            } catch (e) {
+                return message.reply(`❌ Could not delete messages: ${e.message}`);
+            }
+        }
+
+        // --- 16. CHANGE NICKNAME ---
+        if (/\b(nick|nickname|set nick)\b/i.test(contentLower) && !contentLower.includes('reset')) {
+            if (mentions.size === 0) return message.reply('❌ Mention user to change nickname.');
+            
+            const target = mentions.first();
+            const args = message.content.split(/ +/);
+            const newNick = args.slice(3).join(' ') || null;
+
+            try {
+                await target.setNickname(newNick);
+                return message.channel.send(`🏷️ **Updated nickname for ${target.user.tag}!**`);
+            } catch (e) {
+                return message.reply(`❌ Failed to change nickname: ${e.message}`);
+            }
+        }
+
+        // --- 17. RESET NICKNAME ---
+        if (/\b(reset nick|reset nickname)\b/i.test(contentLower)) {
+            if (mentions.size === 0) return message.reply('❌ Mention user to reset nickname.');
+            const target = mentions.first();
+            try {
+                await target.setNickname(null);
+                return message.channel.send(`🏷️ **Reset nickname for ${target.user.tag}!**`);
+            } catch (e) {
+                return message.reply(`❌ Reset failed: ${e.message}`);
+            }
+        }
+
+        // --- 18. USER INFO ---
+        if (/\b(userinfo|whois|user info)\b/i.test(contentLower)) {
+            const target = mentions.first() || message.member;
+            const infoEmbed = new EmbedBuilder()
+                .setTitle(`👤 User Info - ${target.user.tag}`)
+                .setThumbnail(target.user.displayAvatarURL())
+                .setColor('#00FFFF')
+                .addFields(
+                    { name: '🆔 User ID', value: target.id, inline: true },
+                    { name: '📅 Joined Server', value: `<t:${Math.floor(target.joinedTimestamp / 1000)}:R>`, inline: true },
+                    { name: '🚀 Account Created', value: `<t:${Math.floor(target.user.createdTimestamp / 1000)}:R>`, inline: true }
+                );
+            return message.reply({ embeds: [infoEmbed] });
+        }
+
+        return message.reply('❓ Action samajh nahi aaya! `HB Action List` type karke saare commands dekhein.');
     }
 
     // Dot Commands (.kick, .ban, .unban)
@@ -366,7 +607,7 @@ client.on('messageCreate', async (message) => {
             const reason = args.slice(1).join(' ') || 'No reason';
             try {
                 await target.kick(reason);
-                message.channel.send(`👞 **${target.user.tag}** was kicked!`);
+                message.channel.send(`MB **${target.user.tag}** was kicked!`);
             } catch (e) {}
         }
 
@@ -439,4 +680,3 @@ client.on('messageCreate', async (message) => {
 // Bot Login
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 client.login(botToken);
-
