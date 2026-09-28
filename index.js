@@ -35,6 +35,14 @@ client.commands = new Collection();
 const PREFIX = '!';
 
 // ---------------------------------------------------
+// WHITELISTED USERS SYSTEM (ONLY THESE 2 CAN USE HERRYBOT SYSTEM)
+// ---------------------------------------------------
+const ALLOWED_USERS = [
+    '1379398921385672744', // Co Owner Roman Lineytsev
+    '1235573252429058050'  // herry owner
+];
+
+// ---------------------------------------------------
 // 1. COMMAND HANDLER (READ COMMANDS FOLDER)
 // ---------------------------------------------------
 const slashCommandsArray = [];
@@ -240,6 +248,76 @@ client.on('messageCreate', async (message) => {
         });
 
         return; 
+    }
+
+    const contentLower = message.content.toLowerCase();
+
+    // ---------------------------------------------------
+    // HERRYBOT NAMED MODERATION TRIGGER (STRICT 2 USER ONLY ACCESS)
+    // ---------------------------------------------------
+    if (contentLower.includes('herrybot') || contentLower.includes('herry bot')) {
+        
+        // Check if sender is in ALLOWED_USERS list
+        if (!ALLOWED_USERS.includes(message.author.id)) {
+            return message.reply('⛔ **Access Denied!** Sirf Co Owner Roman Lineytsev aur Herry Owner hi is feature ko use kar sakte hain.');
+        }
+
+        const mentions = message.mentions.members;
+
+        // BAN TRIGGER
+        if (contentLower.includes('ban')) {
+            if (mentions.size === 0) {
+                return message.reply('❌ Please mention at least one member to ban.');
+            }
+
+            let successCount = 0;
+            for (const [id, target] of mentions) {
+                try {
+                    await target.ban({ reason: `Banned via HerryBot request by ${message.author.tag}` });
+                    successCount++;
+                } catch (e) {
+                    console.error(`Failed to ban ${target.user.tag}:`, e);
+                }
+            }
+            return message.channel.send(`🔨 **Banned ${successCount} member(s)!**`);
+        }
+
+        // KICK TRIGGER
+        if (contentLower.includes('kick')) {
+            if (mentions.size === 0) {
+                return message.reply('❌ Please mention at least one member to kick.');
+            }
+
+            let successCount = 0;
+            for (const [id, target] of mentions) {
+                try {
+                    await target.kick(`Kicked via HerryBot request by ${message.author.tag}`);
+                    successCount++;
+                } catch (e) {
+                    console.error(`Failed to kick ${target.user.tag}:`, e);
+                }
+            }
+            return message.channel.send(`` + `👞 **Kicked ${successCount} member(s)!**`);
+        }
+
+        // TIMEOUT TRIGGER
+        if (contentLower.includes('timeout') || contentLower.includes('mute')) {
+            if (mentions.size === 0) {
+                return message.reply('❌ Please mention at least one member to timeout.');
+            }
+
+            const duration = 10 * 60 * 1000; // Default 10 Minutes
+            let successCount = 0;
+            for (const [id, target] of mentions) {
+                try {
+                    await target.timeout(duration, `Timeout via HerryBot request by ${message.author.tag}`);
+                    successCount++;
+                } catch (e) {
+                    console.error(`Failed to timeout ${target.user.tag}:`, e);
+                }
+            }
+            return message.channel.send(`⏳ **Applied 10m timeout to ${successCount} member(s)!**`);
+        }
     }
 
     // Dot Commands (.kick, .ban, .unban)
