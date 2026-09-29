@@ -242,7 +242,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ---------------------------------------------------
-// 5. MESSAGE EVENT (SMART ORDER ENGINE)
+// 5. MESSAGE EVENT (SMART ORDER ENGINE & AUTO TUTORIALS)
 // ---------------------------------------------------
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild || message.interaction) return;
@@ -271,6 +271,38 @@ client.on('messageCreate', async (message) => {
     }
 
     const contentLower = message.content.toLowerCase().trim();
+
+    // ---------------------------------------------------
+    // AUTO APP & SCRIPT DOWNLOAD TUTORIAL SYSTEM
+    // ---------------------------------------------------
+    const isRequesting = /(download|link|give|give me|how to|de do|dedo|chahiye|chahiye link|kahagani)/i.test(contentLower);
+
+    if (isRequesting) {
+        let appName = null;
+        let appLink = null;
+
+        if (contentLower.includes('devvir')) {
+            appName = 'Devvir';
+            appLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339/1529527533660405790';
+        } else if (contentLower.includes('reversoqzz')) {
+            appName = 'Reversoqzz';
+            appLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339/1529524492450402506';
+        } else if (contentLower.includes('herry-script') || contentLower.includes('herry script')) {
+            appName = 'Herry-Script';
+            appLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339/1545775588923678790';
+        } else if (contentLower.includes('lulu box') || contentLower.includes('lulubox')) {
+            appName = 'Lulu Box';
+            appLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339/1529527842097074206';
+        } else if (contentLower.includes('multispace') || contentLower.includes('script run')) {
+            appName = 'Multispace And Script Run';
+            appLink = 'https://discord.com/channels/1529467083962843186/1529477377917452339/1531705203487932597';
+        }
+
+        if (appName && appLink) {
+            const tutorialMessage = `${appName} download tutorial\n\nFirst Go Here:${appLink}\n\nClick on Link And download\nSimple and Easy.`;
+            return message.reply(tutorialMessage);
+        }
+    }
 
     // ---------------------------------------------------
     // SMART ORDER BASED "HB" SYSTEM (2 ALLOWED USERS)
@@ -387,7 +419,7 @@ client.on('messageCreate', async (message) => {
                     count++;
                 } catch (e) {}
             }
-            return message.channel.send(`⏳ **Applied ${minutesDisplay}m timeout to ${count} member(s)!**`);
+            return message.channel.send(`⏳ **Applied ${minutesDisplay}m timeout to${count} member(s)!**`);
         }
 
         // --- 7. GIVEBACK ROLE SYSTEM ---
@@ -430,7 +462,7 @@ client.on('messageCreate', async (message) => {
                         setTimeout(async () => {
                             try {
                                 await target.roles.add(role);
-                                message.channel.send(`⏰ **Time up! Restored role ${role.name} to ${target.user.tag}**`);
+                                message.channel.send(`⏰ **Time up! Restored role ${role.name} to${target.user.tag}**`);
                             } catch (err) {}
                         }, tempTimeMs);
                     }
@@ -446,11 +478,11 @@ client.on('messageCreate', async (message) => {
 
             if (tempTimeMs) {
                 const mins = Math.round(tempTimeMs / 60000);
-                return message.channel.send(`⏳ **Temporarily removed role ${role.name} from ${count} member(s) for ${mins}m!**`);
+                return message.channel.send(`⏳ **Temporarily removed role ${role.name} from ${count} member(s) for${mins}m!**`);
             } else if (isTillIAsk) {
-                return message.channel.send(`📌 **Removed role ${role.name} from ${count} member(s). Saved for 'giveback'!**`);
+                return message.channel.send(`📌 **Removed role ${role.name} from${count} member(s). Saved for 'giveback'!**`);
             } else {
-                return message.channel.send(`🗑️ **Removed role ${role.name} from ${count} member(s)!**`);
+                return message.channel.send(`🗑️ **Removed role ${role.name} from${count} member(s)!**`);
             }
         }
 
@@ -468,7 +500,7 @@ client.on('messageCreate', async (message) => {
                     count++;
                 } catch (e) {}
             }
-            return message.channel.send(`✅ **Added role ${role.name} to ${count} user(s)!**`);
+            return message.channel.send(`✅ **Added role ${role.name} to${count} user(s)!**`);
         }
 
         // --- 10. WARN SYSTEM ---
@@ -480,7 +512,7 @@ client.on('messageCreate', async (message) => {
             const currentWarns = (warningsMap.get(target.id) || 0) + 1;
             warningsMap.set(target.id, currentWarns);
 
-            return message.channel.send(`⚠️ **Warned ${target.user.tag}!** Total Warnings: **${currentWarns}** | Reason: ${reason}`);
+            return message.channel.send(`⚠️ **Warned ${target.user.tag}!** Total Warnings: **${currentWarns}** \vert{} Reason:${reason}`);
         }
 
         // --- 11. UNWARN SYSTEM ---
@@ -606,7 +638,7 @@ client.on('messageCreate', async (message) => {
             const reason = args.slice(1).join(' ') || 'No reason';
             try {
                 await target.kick(reason);
-                message.channel.send(`👞 **${target.user.tag}** was kicked!`);
+                message.channel.send(`` + "👞 **" + target.user.tag + "** was kicked!");
             } catch (e) {}
         }
 
@@ -617,7 +649,7 @@ client.on('messageCreate', async (message) => {
             const reason = args.slice(1).join(' ') || 'No reason';
             try {
                 await target.ban({ reason });
-                message.channel.send(`🔨 **${target.user.tag}** was banned!`);
+                message.channel.send(`` + "🔨 **" + target.user.tag + "** was banned!");
             } catch (e) {}
         }
 
