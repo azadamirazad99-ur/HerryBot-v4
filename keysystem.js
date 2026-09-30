@@ -1,12 +1,21 @@
 const axios = require('axios');
 
 // Automatically checks GITHUB_TOKEN2 or GITHUB_TOKEN
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN2
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN2 || process.env.GITHUB_TOKEN;
 
 // GitHub Repository Configuration
 const GITHUB_OWNER = "azadamirazad99-ur";
 const GITHUB_REPO = "Herry-Script";
 const GITHUB_PATH = "keys.txt";
+
+// Custom Axios Instance for fast connections & avoiding delays
+const githubAxios = axios.create({
+    timeout: 10000,
+    headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'HerryBot-KeySystem'
+    }
+});
 
 // Helper function to fetch raw content and SHA from GitHub API
 async function getGitHubKeys() {
@@ -15,12 +24,12 @@ async function getGitHubKeys() {
         return { sha: null, content: "" };
     }
     try {
-        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
+        // Added timestamp query to bypass GitHub API internal cache delay
+        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?t=${Date.now()}`;
         const headers = {
-            'Authorization': `token ${GITHUB_TOKEN}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': `token ${GITHUB_TOKEN}`
         };
-        const res = await axios.get(url, { headers });
+        const res = await githubAxios.get(url, { headers });
         const content = Buffer.from(res.data.content, 'base64').toString('utf8');
         return { sha: res.data.sha, content: content };
     } catch (e) {
@@ -35,12 +44,11 @@ async function updateGitHubKeys(sha, contentString, commitMessage) {
     try {
         const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
         const headers = {
-            'Authorization': `token ${GITHUB_TOKEN}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': `token ${GITHUB_TOKEN}`
         };
         const base64Content = Buffer.from(contentString).toString('base64');
 
-        const response = await axios.put(url, {
+        const response = await githubAxios.put(url, {
             message: commitMessage || "Auto Sync Keys",
             content: base64Content,
             sha: sha
